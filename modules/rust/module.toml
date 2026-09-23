@@ -1,0 +1,4 @@
+description = "Rust compiler, Cargo, rustfmt, Clippy, rust-analyzer, GCC, pkg-config, and GDB."
+
+versions = ["1.95", "1.96", "1.97", "1.98"]
+default = "1.98"

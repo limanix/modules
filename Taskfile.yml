@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: '3.53.1'
+
+includes:
+  nix:
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/nix/Taskfile.yml
+
+tasks:
+  ci/fmt:
+    desc: Check Nix formatting
+    cmds:
+      - task: nix:nixfmt
+
+  ci/lint:
+    desc: Lint Nix modules and checks
+    cmds:
+      - task: nix:statix
+      - task: nix:deadnix
+
+  ci/test:
+    desc: Validate the catalog and evaluate NixOS configurations
+    cmds:
+      - task: nix:_nix/tool
+        vars:
+          CMD: >-
+            nix eval --show-trace --json
+            --option allow-import-from-derivation false
+            --file checks/default.nix

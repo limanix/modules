@@ -1,0 +1,4 @@
+description = "Python 3 with venv and virtualenv."
+
+versions = ["3.12", "3.13", "3.14"]
+default = "3.14"
