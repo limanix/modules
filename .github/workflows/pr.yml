@@ -1,4 +1,4 @@
-name: PR validation
+name: PR flow
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     types: [opened, reopened, synchronize, labeled, unlabeled]
 
 concurrency:
-  group: pr-validation-${{ github.event.pull_request.number }}
+  group: pr-flow-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:

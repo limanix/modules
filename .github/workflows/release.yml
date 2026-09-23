@@ -1,4 +1,4 @@
-name: Release Limanix modules
+name: Release flow
 
 on:
   push:
@@ -15,6 +15,10 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     steps:
+      - name: Check module tag format
+        uses: mr-chelyshkin/actions/check-tag-format@v1
+        with:
+          pattern: '^v[1-9][0-9]*$'
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -34,25 +38,25 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
           generate_release_notes: true
+          prerelease: false
+          draft: false
 
-  notify-limanix:
-    name: Notify Limanix
+  notify-client:
+    name: Notify client
     needs: release
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
-      - name: Create Limanix access token
+      - name: Create client access token
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          owner: mr-chelyshkin
-          repositories: limanix
           permission-contents: write
+          repositories: client
+          owner: limanix
       - name: Send module release event
         shell: bash
         env:
@@ -61,6 +65,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          gh api --method POST repos/mr-chelyshkin/limanix/dispatches \
+          gh api --method POST repos/limanix/client/dispatches \
             -f event_type=limanix-modules-release \
             -f "client_payload[tag]=$MODULES_TAG"
