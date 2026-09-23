@@ -1,0 +1,17 @@
+schema_version = 1
+name = "module-lab"
+env = {}
+mounts = []
+
+[resources]
+arch = "arm64"
+cpu = 2
+mem = "4GiB"
+disk = "16GiB"
+
+[nixos]
+modules = ["third-party:dev-tools"]
+
+[network.ports]
+tcp = []
+udp = []
