@@ -1,0 +1,31 @@
+name: PR flow
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: pr-flow-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  nix:
+    uses: mr-chelyshkin/actions/.github/workflows/pr-nix.yml@v1
+    permissions:
+      contents: read
+
+  gate:
+    if: always()
+    needs: [nix]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: mr-chelyshkin/actions/check-job-results@v1
+        with:
+          results: ${{ toJSON(needs) }}

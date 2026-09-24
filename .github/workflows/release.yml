@@ -1,0 +1,70 @@
+name: Release flow
+
+on:
+  push:
+    tags: ['v[0-9]*']
+
+concurrency:
+  group: limanix-modules-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check module tag format
+        uses: mr-chelyshkin/actions/check-tag-format@v1
+        with:
+          pattern: '^v[1-9][0-9]*$'
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: mr-chelyshkin/actions/check-tag-branch@v1
+        with:
+          branch: main
+
+  release:
+    name: Create GitHub release
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: false
+          draft: false
+
+  notify-client:
+    name: Notify client
+    needs: release
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Create client access token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          repositories: client
+          owner: limanix
+      - name: Send module release event
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          MODULES_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          gh api --method POST repos/limanix/client/dispatches \
+            -f event_type=limanix-modules-release \
+            -f "client_payload[tag]=$MODULES_TAG"
