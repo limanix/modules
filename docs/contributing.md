@@ -171,7 +171,15 @@ task --yes ci/test
 The Taskfile imports the shared Nix tooling at the pinned `v0.0.4` revision.
 It is the entry point for the repository's validation commands.
 
-`ci/test` evaluates both `aarch64-linux` and `x86_64-linux`:
+Without `ARCH`, `ci/test` evaluates both `aarch64-linux` and `x86_64-linux`.
+To evaluate one architecture, pass `ARCH`:
+
+```console
+task --yes ci/test ARCH=amd64
+task --yes ci/test ARCH=arm64
+```
+
+The PR workflow runs these two commands in parallel. Each architecture uses the same cases:
 
 | Case                 | Selected modules                                             |
 |----------------------|--------------------------------------------------------------|

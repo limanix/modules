@@ -26,3 +26,4 @@ tasks:
             nix eval --show-trace --json
             --option allow-import-from-derivation false
             --file checks/default.nix
+            {{if .ARCH}}{{.ARCH | shellQuote}}{{end}}

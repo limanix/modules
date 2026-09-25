@@ -18,9 +18,23 @@ jobs:
     permissions:
       contents: read
 
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run Nix tests
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with: { command: 'ci/test ARCH=${{ matrix.arch }}' }
+
   gate:
     if: always()
-    needs: [nix]
+    needs: [nix, test]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
