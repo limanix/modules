@@ -32,6 +32,28 @@ jobs:
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with: { command: 'ci/test ARCH=${{ matrix.arch }}' }
 
+  pkgs:
+    name: Nixpkgs updates
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check for Nixpkgs updates
+        id: update
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with: { command: nixpkgs/update }
+      - name: Write update summary
+        if: always()
+        shell: bash
+        env:
+          UPDATE_OUTCOME: ${{ steps.update.outcome }}
+        run: python3 .github/scripts/nixpkgs-summary.py
+
   gate:
     if: always()
     needs: [nix, test]

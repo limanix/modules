@@ -6,6 +6,13 @@ includes:
     taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/nix/Taskfile.yml
 
 tasks:
+  nixpkgs/update:
+    desc: Update the Nixpkgs revision
+    cmds:
+      - task: nix:_nix/tool
+        vars:
+          CMD: nix flake update nixpkgs --flake path:.
+
   ci/fmt:
     desc: Check Nix formatting
     cmds:
@@ -18,7 +25,7 @@ tasks:
       - task: nix:deadnix
 
   ci/test:
-    desc: Validate the catalog and evaluate NixOS configurations
+    desc: Validate the catalog and evaluate NixOS configs
     cmds:
       - task: nix:_nix/tool
         vars:

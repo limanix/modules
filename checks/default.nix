@@ -1,7 +1,8 @@
 let
-  catalog = import ./catalog.nix ../modules;
+  catalog = import ./catalog.nix ../catalog;
   variants = builtins.concatMap (module: module.variants) catalog;
   nixpkgs = import ./nixpkgs.nix;
+  userName = "module-check";
   systems = {
     arm64 = "aarch64-linux";
     amd64 = "x86_64-linux";
@@ -11,53 +12,51 @@ let
     arch: system:
     let
       checkResult =
-        config: selected:
+        configuration: selected:
         let
-          parent = builtins.dirOf selected.path;
-          versioned = builtins.baseNameOf parent == "versions";
-          directory = if versioned then builtins.dirOf parent else parent;
-          name = builtins.baseNameOf directory;
-          metadata = builtins.fromTOML (builtins.readFile (directory + "/module.toml"));
-          version =
-            if versioned then
-              builtins.replaceStrings [ ".nix" ] [ "" ] (builtins.baseNameOf selected.path)
-            else
-              metadata.default;
-          tools = import (directory + "/packages.nix") { inherit version system; };
-          package = tools.${if name == "rust" then "rustc" else name};
-          valid =
-            if
-              builtins.elem name [
-                "git"
-                "neovim"
-              ]
-            then
-              config.programs.${name}.enable
-            else if name == "docker" then
-              config.virtualisation.docker.enable
-              && config.virtualisation.docker.package.outPath == package.outPath
-              && builtins.elem "docker" config.users.users.dev.extraGroups
-            else
-              builtins.any (installed: installed.outPath == package.outPath) config.environment.systemPackages;
+          hasPackage =
+            package:
+            builtins.any (
+              installed: installed.outPath == package.outPath
+            ) configuration.config.environment.systemPackages;
+          valid = import selected.check {
+            inherit (configuration) config pkgs;
+            inherit (selected) version;
+            inherit userName hasPackage;
+          };
         in
         if valid then
           true
         else
           throw "Module result: ${selected.name} does not match its expected packages or program/service settings";
+      configurationFor =
+        selected:
+        import ./nixos.nix {
+          inherit
+            nixpkgs
+            arch
+            system
+            userName
+            ;
+          modules = builtins.map (module: module.path) selected;
+        };
       evaluate =
         label: selected:
         let
-          configuration = import ./nixos.nix {
-            inherit nixpkgs arch system;
-            modules = builtins.map (module: module.path) selected;
-          };
+          configuration = configurationFor selected;
         in
         builtins.trace "Checking ${system}: ${label}" (
           builtins.addErrorContext "while checking ${label} on ${system}" (
-            assert builtins.all (checkResult configuration.config) selected;
+            assert builtins.all (checkResult configuration) selected;
             configuration.config.system.build.toplevel.drvPath
           )
         );
+      versionChecks = builtins.listToAttrs (
+        builtins.map (variant: {
+          inherit (variant) name;
+          value = evaluate variant.name [ variant ];
+        }) variants
+      );
     in
     {
       individual = builtins.listToAttrs (
@@ -67,12 +66,7 @@ let
         }) catalog
       );
       combined = evaluate "all modules" catalog;
-      versions = builtins.listToAttrs (
-        builtins.map (variant: {
-          inherit (variant) name;
-          value = evaluate variant.name [ variant ];
-        }) variants
-      );
+      versions = versionChecks;
       combinations = builtins.listToAttrs (
         builtins.concatMap (
           module:
@@ -84,6 +78,26 @@ let
           }) module.variants
         ) catalog
       );
+      dockerVersionConflict =
+        let
+          dockerVersions =
+            (builtins.head (builtins.filter (module: module.name == "docker") catalog)).variants;
+          selected = [
+            (builtins.elemAt dockerVersions 0)
+            (builtins.elemAt dockerVersions 1)
+          ];
+          configuration = configurationFor selected;
+        in
+        assert
+          builtins.length dockerVersions >= 2 || throw "Docker conflict check needs two declared versions";
+        builtins.deepSeq (map (variant: versionChecks.${variant.name}) selected) (
+          builtins.trace "Checking ${system}: Docker version conflict" (
+            if (builtins.tryEval configuration.config.virtualisation.docker.package.outPath).success then
+              throw "Module result: selecting two Docker versions must fail"
+            else
+              true
+          )
+        );
     };
 in
 builtins.deepSeq catalog (builtins.mapAttrs checkSystem systems)

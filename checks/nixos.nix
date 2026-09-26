@@ -3,14 +3,15 @@
   arch,
   system,
   modules,
+  userName,
 }:
 let
   runtime = {
     name = "module-check";
     inherit arch;
     user = {
-      name = "dev";
-      home = "/home/dev";
+      name = userName;
+      home = "/home/${userName}";
       uid = 1000;
       sudo = false;
     };

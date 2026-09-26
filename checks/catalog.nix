@@ -19,6 +19,7 @@ let
       );
       versions = metadata.versions or [ ];
       default = metadata.default or "";
+      check = directory + "/check.nix";
       versionFiles = if versions == [ ] then { } else builtins.readDir (directory + "/versions");
       readVersion =
         version:
@@ -31,6 +32,7 @@ let
           versionFiles."${version}.nix" or null == "regular"
         ) "${name}: missing versions/${version}.nix";
         {
+          inherit check version;
           name = "${name}-${version}";
           path = directory + "/versions/${version}.nix";
         };
@@ -41,6 +43,7 @@ let
     assert require (
       files."module.toml" or null == "regular"
     ) "${name}/module.toml must be a regular file";
+    assert require (files."check.nix" or null == "regular") "${name}/check.nix must be a regular file";
     assert require (builtins.all (
       field:
       builtins.elem field [
@@ -75,11 +78,22 @@ let
       )
     ) "${name}: duplicate versions";
     {
-      inherit name;
+      inherit name check;
       inherit (metadata) description;
       path = directory + "/default.nix";
+      version = if versions == [ ] then null else default;
       variants = builtins.map readVersion versions;
     };
+
+  catalog = builtins.map readModule names;
+  selectors = builtins.concatMap (
+    module: [ module.name ] ++ builtins.map (variant: variant.name) module.variants
+  ) catalog;
+  uniqueSelectors = builtins.foldl' (
+    seen: selector:
+    assert require (!builtins.hasAttr selector seen) "duplicate selector: ${selector}";
+    seen // { ${selector} = true; }
+  ) { } selectors;
 in
 assert require (names != [ ]) "no modules found";
-builtins.map readModule names
+builtins.seq uniqueSelectors catalog
