@@ -4,8 +4,27 @@ version: '3.53.1'
 includes:
   nix:
     taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/nix/Taskfile.yml
+    internal: true
+  python:
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/python/Taskfile.yml
+    internal: true
 
 tasks:
+  docs/prepare:
+    desc: Build docs for the LimaNix site
+    vars:
+      modules_ref:
+        sh: |
+          {{if .MODULES_REF}}
+          printf '%s\n' {{.MODULES_REF | shellQuote}}
+          {{else}}
+          git -C {{.ROOT_DIR | shellQuote}} rev-parse HEAD
+          {{end}}
+    cmds:
+      - task: python:_uv/tool
+        vars:
+          CMD: python scripts/build_docs.py --ref {{.modules_ref | shellQuote}}
+
   nixpkgs/update:
     desc: Update the Nixpkgs revision
     cmds:

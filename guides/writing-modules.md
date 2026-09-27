@@ -1,208 +1,167 @@
-# Write your first module
+---
+myst:
+  heading_anchors: 2
+---
 
-Add `curl`, `jq`, and `ripgrep` to a VM with a custom NixOS module.
-You will create the source files, register a copy with Limanix, and select it in your VM configuration.
+# Write a module
 
-**Before you start:** install Limanix and choose a project directory on your Mac.
-All commands run on your **Mac** unless marked **inside the VM**.
+Write a custom module when you need software or settings that the catalog does not provide.
+A custom module is a directory with a `default.nix` file.
+It needs no catalog metadata and no flake.
 
-## 1. Create the files
+## Create a module
 
-From your project directory:
-
-```console
-mkdir -p modules/dev-tools
-```
-
-Create these two files:
+Keep a project's modules in its repository, one directory per module:
 
 ```text
 my-project/
 ├── limanix.toml
 └── modules/
     └── dev-tools/
-        ├── default.nix
-        └── tools.nix
+        └── default.nix
 ```
 
-**`modules/dev-tools/default.nix`** is the entry point:
+Save this as `modules/dev-tools/default.nix`:
 
 ```{literalinclude} examples/dev-tools/default.nix
 :language: nix
 ```
 
-**`modules/dev-tools/tools.nix`** selects the packages:
+The module adds `jq` and `ripgrep` to the VM.
+[NixOS basics](nixos-basics.md) explains the syntax, and the [package search](https://search.nixos.org/packages) finds other packages.
 
-```{literalinclude} examples/dev-tools/tools.nix
-:language: nix
-```
+Download: {download}`default.nix <examples/dev-tools/default.nix>`.
 
-| Nix expression | What it does |
-|---|---|
-| `imports = [ ./tools.nix ];` | Includes the file beside `default.nix` |
-| `pkgs.jq` | Selects the `jq` package from the VM's Nixpkgs package set |
-| `environment.systemPackages` | Makes these programs available to users inside the VM |
+## Use it in a VM
 
-A small module can keep everything in `default.nix`.
-This example uses a second file to show how relative imports work.
-
-Download: {download}`default.nix <examples/dev-tools/default.nix>` · {download}`tools.nix <examples/dev-tools/tools.nix>`.
-
-## 2. Register the module
+On your Mac, import the directory from the project root:
 
 ```console
 limanix modules add dev-tools ./modules/dev-tools
-limanix modules list
 ```
 
-The list now includes **`third-party:dev-tools`**.
-Registration copies the files without evaluating Nix; see [Import a module](https://limanix.dev/categories/client/modules.html#import-a-module) for the command's requirements and [Module names](https://limanix.dev/categories/client/modules.html#module-names) for valid names.
-
-## 3. Apply it to a VM
-
-```{warning}
-Updating interrupts running work in the VM; see [Apply a configuration change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
-```
-
-**Existing `module-lab` VM:** add `third-party:dev-tools` to its `nixos.modules` list, keeping the other settings.
-Run `limanix update --config limanix.toml`, then enter with `limanix shell module-lab` and continue with the version commands below.
-
-**For a new VM**, save this complete configuration as **`limanix.toml`** in your project directory on your Mac:
-
-```{literalinclude} examples/module-lab.toml
-:language: toml
-```
-
-Use `arch = "amd64"` on an Intel Mac.
-The example does not add application firewall ports and shares no project directory.
-
-Download: {download}`limanix.toml <examples/module-lab.toml>`.
-
-Create the VM and enter its shell:
-
-```console
-limanix create --config limanix.toml
-limanix shell module-lab
-```
-
-Run **inside the VM**:
-
-```console
-curl --version
-jq --version
-rg --version
-```
-
-Each command prints its installed version.
-Run `exit` to return to your Mac.
-
-## 4. Make a change
-
-Add `pkgs.tree` to the package list in your source `tools.nix`.
-Follow [Replace an imported module](https://limanix.dev/categories/client/modules.html#replace-an-imported-module) to refresh the copy of `dev-tools` and apply it:
-
-```console
-limanix modules remove dev-tools
-limanix modules add dev-tools ./modules/dev-tools
-limanix update --config limanix.toml
-limanix shell module-lab -- tree --version
-```
-
-The last command prints the version of `tree` inside the updated VM.
-
-## Add a web service
-
-Packages provide programs; NixOS service options also configure how a daemon runs.
-To try this, save **`modules/dev-tools/web.nix`**:
-
-```{literalinclude} examples/dev-tools/web.nix
-:language: nix
-```
-
-Replace the `imports` line in `default.nix` with:
-
-```nix
-imports = [ ./tools.nix ./web.nix ];
-```
-
-Repeat the remove, add, and update commands from the previous step.
-Then enter the VM with `limanix shell module-lab` and run:
-
-```console
-curl http://127.0.0.1/
-systemctl status nginx
-```
-
-The HTTP response is `Hello from Limanix`.
-The service status should show `active (running)`.
-
-Run `exit` to return to your Mac.
-To reach the server from your Mac, edit the existing firewall table in your project's `limanix.toml` on the Mac:
+Add its selector to `nixos.modules`, next to the modules that the VM already uses:
 
 ```toml
-[network.ports]
-tcp = [80]
-udp = []
+[nixos]
+modules = ["lmx:git", "third-party:dev-tools"]
 ```
 
-Apply the TOML change on your Mac:
+Then [apply the configuration change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
+Inside the VM, the `jq` and `rg` commands are now available.
 
-```console
-limanix update --config limanix.toml
-limanix list
+The client imports a copy of the directory.
+After you edit the module, [replace the imported module](https://limanix.dev/categories/client/modules.html#replace-an-imported-module) and update the VM again.
+
+## Configure programs and services
+
+Use options when you need more than commands on `PATH`.
+This module installs Neovim and makes it the default editor:
+
+```nix
+{
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+  };
+}
 ```
 
-Open `http://<ADDRESS>/`, replacing `<ADDRESS>` with the VM address shown in the list.
+It takes no arguments because it only sets options.
 
-```{note}
-`network.ports` opens ports in the guest firewall.
-Use the VM's address to reach the service from your Mac.
-This setting does not forward the service to your Mac's `localhost`.
+Services work the same way.
+This module runs PostgreSQL and creates a database and a database user named after the VM's user:
+
+```nix
+{ runtime, ... }:
+{
+  services.postgresql = {
+    enable = true;
+    ensureDatabases = [ runtime.user.name ];
+    ensureUsers = [
+      {
+        name = runtime.user.name;
+        ensureDBOwnership = true;
+      }
+    ];
+  };
+}
 ```
 
-## Keep the source portable
+After the update, running `psql` inside the VM connects to that database without a password.
+The [`runtime` argument](#read-vm-settings-with-runtime) supplies the user's name.
+Each service documents its options, including the ones it requires, in the [option search](https://search.nixos.org/options).
+Keep passwords out of modules; see [Trust and secrets](concepts.md#trust-and-secrets).
 
-Nix resolves a path such as `./tools.nix` relative to the file containing it.
-Keep these files inside the module directory; see [Keep imports self-contained](https://limanix.dev/categories/client/modules.html#keep-imports-self-contained) for what Limanix can copy.
+## Split a module into files
 
-The `default.nix` entry point does not need a `module.toml` or `flake.nix` for a personal module.
-Catalog metadata is covered in [Contributing to the catalog](contributing.md).
+A larger module can import other files through its entry point:
 
-```{warning}
-Modules can configure privileged services and access directories shared with the VM.
-Use code you trust and keep credentials out of Nix source.
-Source files can enter the Nix store; see {ref}`Source files and the Nix store <module-nix-store>`.
+```text
+dev-tools/
+├── default.nix
+├── tools.nix
+└── editor.nix
 ```
 
-(module-runtime)=
+```nix
+{
+  imports = [ ./tools.nix ./editor.nix ];
+}
+```
+
+Each imported file is a module of its own, such as the package list and the Neovim example above.
+Paths are relative to the file that contains them.
+Keep every imported file inside the module directory, because the client copies only that directory; see [Keep imports self-contained](https://limanix.dev/categories/client/modules.html#keep-imports-self-contained).
+
+`imports` combines modules.
+The Nix function `import ./file.nix` is different: it evaluates a file and returns its value.
+
+## Combine with other modules
+
+NixOS merges your module with the base system and every other selected module:
+
+| Definitions in different modules | Result |
+| --- | --- |
+| Lists, such as `environment.systemPackages` | Combined |
+| Two different values for a single-value option | The build stops with a `conflicting definition values` error |
+| A value wrapped in `lib.mkDefault`, and an ordinary value | The ordinary value wins |
+| A value wrapped in `lib.mkForce` | Replaces definitions with weaker priority, including ordinary values and `lib.mkDefault` |
+
+Use `lib.mkDefault` for a value that other modules may replace:
+
+```nix
+{ lib, ... }:
+{
+  environment.variables.EXAMPLE_BUILD_MODE = lib.mkDefault "development";
+}
+```
+
+Another module can then set `environment.variables.EXAMPLE_BUILD_MODE = "test";` without a conflict.
+The order of `nixos.modules` does not resolve conflicts.
+Use `lib.mkForce` for intentional replacement; for list options, it replaces entire lists from weaker definitions.
+Definitions with the same priority still merge or conflict.
+
+When two packages provide the same command, NixOS keeps one of them on `PATH` and the build succeeds.
+To choose which one, raise the priority of the package you want:
+
+```nix
+{ lib, pkgs, ... }:
+{
+  environment.systemPackages = [ (lib.hiPrio pkgs.netcat-openbsd) ];
+}
+```
+
+Catalog modules that support side-by-side versions already set package priorities.
+Their newest selected line supplies the ordinary commands.
+Inside the VM, `readlink -f "$(command -v nc)"` shows which package provides a command.
+
+To give a module its own settings, such as an `enable` switch, see [option declarations](https://nixos.org/manual/nixos/stable/#sec-option-declarations) and [conditional definitions with `mkIf`](https://nixos.org/manual/nixos/stable/#sec-option-definitions-delaying-conditionals) in the NixOS manual.
+
 ## Read VM settings with `runtime`
 
-Limanix passes `runtime` as an argument to NixOS modules when evaluating the VM configuration.
-It contains the following fields:
-
-| Field | Nix type | Value |
-| --- | --- | --- |
-| `runtime.name` | string | VM name from `name`, also used as the guest hostname |
-| `runtime.arch` | string | Guest architecture from `resources.arch`: `"arm64"` or `"amd64"` |
-| `runtime.user.name` | string | Guest account name from `user.name` |
-| `runtime.user.home` | string | Absolute guest home path from `user.home` |
-| `runtime.user.uid` | integer | UID of the Mac user running Limanix, reused for the guest account |
-| `runtime.user.sudo` | boolean | Whether `user.sudo` enables passwordless sudo for the guest account |
-| `runtime.ports.tcp` | list of integers | Guest firewall ports from `network.ports.tcp` |
-| `runtime.ports.udp` | list of integers | Guest firewall ports from `network.ports.udp` |
-| `runtime.modules` | list of strings | Generated module entry paths relative to the VM's flake directory, such as `modules/0000/default.nix` |
-
-The configuration values include defaults for settings omitted from TOML.
-They describe the client's inputs, not the final NixOS settings after all modules are combined.
-`runtime.arch` uses Limanix's architecture names: `"arm64"` maps to Nix's `"aarch64-linux"`, and `"amd64"` maps to `"x86_64-linux"`.
-The UID comes from the host; there is no `user.uid` TOML setting.
-
-```{note}
-`runtime.modules` contains resolved import paths, not the `lmx:` or `third-party:` selectors from `nixos.modules`.
-Limanix already imports these entries into the VM configuration.
-```
-
-For settings that belong to the guest account, use `runtime.user.name` instead of assuming the username is `dev`:
+Limanix passes a `runtime` argument that contains the VM's settings.
+Use it instead of hard-coding values, such as the user name `dev`:
 
 ```nix
 { pkgs, runtime, ... }:
@@ -211,9 +170,24 @@ For settings that belong to the guest account, use `runtime.user.name` instead o
 }
 ```
 
-`runtime` is specific to Limanix.
-To use a module that requires it in a standalone NixOS configuration, supply the argument through `specialArgs`.
+| Field | Type | Value |
+| --- | --- | --- |
+| `runtime.name` | string | VM name, also used as the hostname |
+| `runtime.arch` | string | `"arm64"` or `"amd64"`, which Nix calls `aarch64-linux` and `x86_64-linux` |
+| `runtime.user.name` | string | Guest account name, from `user.name` |
+| `runtime.user.home` | string | Guest home directory, from `user.home` |
+| `runtime.user.uid` | integer | UID of the Mac user running Limanix; `limanix.toml` has no UID setting |
+| `runtime.user.sudo` | boolean | Whether the guest account has passwordless `sudo`, from `user.sudo` |
+| `runtime.ports.tcp` | list of integers | Firewall ports from `network.ports.tcp` |
+| `runtime.ports.udp` | list of integers | Firewall ports from `network.ports.udp` |
+| `runtime.modules` | list of strings | Paths of the selected modules' copies, such as `modules/0000/default.nix`; Limanix already imports them |
 
-[Module concepts](concepts.md) explains which settings belong in TOML and which belong in a module.
+The values come from `limanix.toml`, with defaults applied for omitted settings.
+They do not reflect changes that modules make.
+`runtime` exists only in Limanix; to reuse a module in another NixOS configuration, pass the argument through NixOS `specialArgs`.
 
-Continue with [Make a module configurable](reusable-modules.md) when projects need different settings for the same feature.
+## Next steps
+
+- [Native dependencies](native-dependencies.md): build or run code that needs system libraries.
+- [Troubleshooting](troubleshooting.md): fix errors that a module causes.
+- [Catalog development](extending-catalog.md): add a module to the catalog.

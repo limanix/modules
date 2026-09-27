@@ -27,13 +27,41 @@ jobs:
         with:
           branch: main
 
+  docs:
+    name: Prepare documentation
+    needs: verify
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Prepare documentation sources
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: docs/prepare MODULES_REF=${{ github.ref_name }}
+      - name: Package documentation
+        run: tar -czf build/docs.tar.gz -C build/docs .
+      - name: Upload documentation archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: docs
+          path: build/docs.tar.gz
+          if-no-files-found: error
+          overwrite: true
+
   release:
     name: Create GitHub release
-    needs: verify
+    needs: docs
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
+      - name: Download documentation archive
+        uses: actions/download-artifact@v8
+        with:
+          name: docs
+          path: build
+      # v3 uploads assets to a draft before publishing a normal release.
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
@@ -41,6 +69,9 @@ jobs:
           generate_release_notes: true
           prerelease: false
           draft: false
+          files: build/docs.tar.gz
+          fail_on_unmatched_files: true
+          overwrite_files: false
 
   notify-client:
     name: Notify client

@@ -1,48 +1,36 @@
-# NixOS modules
+# Modules
 
-Modules add tools and services to a Limanix Linux VM.
-Choose ready-made modules in `limanix.toml`, or write a small Nix file for a tool the catalog does not include.
+Limanix configures every VM with [NixOS](https://nixos.org/).
+A module is a piece of that configuration: it adds packages, runs services, or changes system settings inside the VM.
+Limanix ships a catalog of ready-made modules, and you can write your own for anything the catalog does not cover.
 
 ```toml
 [nixos]
-modules = ["lmx:git", "lmx:python"]
+modules = ["lmx:go", "lmx:docker", "third-party:dev-tools"]
 ```
 
-This selection adds Git and Python inside the VM.
-The [getting started guide](using-modules.md) shows how to create the VM and run them.
+This selection adds Go and Docker from the catalog, and a custom module named `dev-tools`.
 
-## Start here
-
-| You want to… | Read |
+| Page | Read it to |
 | --- | --- |
-| Install a language toolchain or Docker | [Use catalog modules](using-modules.md) |
-| Find a tool's versions and commands | [Module catalog](catalog.md) |
-| Understand a Nix module | [Module concepts](concepts.md) |
-| Install a package or enable a service of your own | [Write your first module](writing-modules.md) |
-| Give a shared module configurable settings | [Make a module configurable](reusable-modules.md) |
-| Build or run dependencies that need system libraries | [Use native dependencies](native-dependencies.md) |
-| Import, replace, or remove a local module | [Choose and manage modules](https://limanix.dev/categories/client/modules.html) |
-| Diagnose an error | [Troubleshooting](troubleshooting.md) |
-| Add a module to this repository | [Contributing to the catalog](contributing.md) |
+| [Catalog](catalog.md) | Choose ready-made toolchains and services, and their versions |
+| [NixOS basics](nixos-basics.md) | Learn the NixOS terms and file format that modules use |
+| [Concepts](concepts.md) | See how Limanix builds a VM from its base system and your selection |
+| [Write a module](writing-modules.md) | Add packages, programs, and services that the catalog does not provide |
+| [Native dependencies](native-dependencies.md) | Build or run project dependencies that need system libraries |
+| [Troubleshooting](troubleshooting.md) | Fix errors in module code and programs that fail inside the VM |
+| [Catalog development](extending-catalog.md) | Add or update an entry in the catalog |
 
-These guides cover catalog tools and Nix code.
-The client guide [Choose and manage modules](https://limanix.dev/categories/client/modules.html) covers CLI commands, selectors, and the local registry.
-
-```{note}
-These pages describe the catalog in this repository revision.
-Run `limanix modules list` on your Mac to see what your installed client includes.
-```
+The client guide [Choose and manage modules](https://limanix.dev/categories/client/modules.html) covers the commands that list, import, and apply modules.
 
 ```{toctree}
 :hidden:
-:maxdepth: 1
 
-using-modules
 catalog
+nixos-basics
 concepts
 writing-modules
-reusable-modules
 native-dependencies
 troubleshooting
-contributing
+extending-catalog
 ```

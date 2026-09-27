@@ -1,35 +1,30 @@
 # Rust
 
-Installs rustc, Cargo, rustfmt, Clippy, rust-analyzer, GCC, pkg-config, and GDB inside the VM.
-
-## Enable
-
-Add a Rust selector to the existing `nixos.modules` list, keeping the other modules your VM needs:
+Installs the Rust toolchain (rustc, Cargo, rustfmt, and Clippy) with the rust-analyzer language server, GCC, pkg-config, and GDB.
 
 ```toml
 [nixos]
 modules = ["lmx:rust"]
 ```
 
-Follow [Use catalog modules](../../guides/using-modules.md) to apply the configuration from your Mac and enter the VM.
+Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
 
 ## Versions
 
-| Selector | Rust toolchain | rust-analyzer |
-|----------|----------------|---------------|
-| `lmx:rust` / `lmx:rust-1.98` | 1.98.1 | 2026-08-03 |
-| `lmx:rust-1.97` | 1.97.1 | 2026-08-03 |
-| `lmx:rust-1.96` | 1.96.1 | 2026-06-15 |
-| `lmx:rust-1.95` | 1.95.0 | 2026-04-27 |
+| Selector | Rust | rust-analyzer | Notes |
+| --- | --- | --- | --- |
+| `lmx:rust`, `lmx:rust-1.98` | 1.98.1 | 2026-08-03 | Default |
+| `lmx:rust-1.97` | 1.97.1 | 2026-08-03 | End of life |
+| `lmx:rust-1.96` | 1.96.1 | 2026-06-15 | End of life |
+| `lmx:rust-1.95` | 1.95.0 | 2026-04-27 | End of life |
 
-The unversioned selector uses Rust 1.98 in this catalog revision.
-The toolchain includes rustc, Cargo, rustfmt, and Clippy from the same Rust package set.
-GCC, pkg-config, and GDB come from the VM's base Nixpkgs.
-The catalog marks Rust 1.95–1.97 as end of life and emits a warning when one of those versions is selected.
+rustc, Cargo, rustfmt, and Clippy come from the same Rust release.
+GCC, pkg-config, and GDB come from the [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins) for every line.
+Selecting an end-of-life line prints a warning when the VM is built.
 
 ## Use
 
-Inside the VM, run these commands from a Rust project containing `Cargo.toml`:
+Inside the VM, run from a directory that contains `Cargo.toml`:
 
 ```console
 cargo build
@@ -38,44 +33,34 @@ cargo fmt
 cargo clippy
 ```
 
-| Command | Result |
-| --- | --- |
-| `cargo build` | Compiles the project and its dependencies |
-| `cargo test` | Runs tests and reports their results |
-| `cargo fmt` | Formats the project's Rust source files |
-| `cargo clippy` | Reports common mistakes and code improvement suggestions |
-
-## Editor support
-
-The module installs the `rust-analyzer` language server inside the VM.
-See [Use language servers](../../guides/using-modules.md#use-language-servers) for connecting your editor and the [rust-analyzer editor setup](https://rust-analyzer.github.io/book/installation.html) for configuration.
+Debug the resulting programs with `gdb`.
 
 ## Native dependencies
 
-This module includes GCC and pkg-config for building code that uses system libraries.
-Your project may also need library headers and pkg-config search paths.
-See [Use native dependencies](../../guides/native-dependencies.md) to configure them.
+Crates that bind to system libraries, such as `openssl-sys`, build with the included GCC and pkg-config.
+They also need the library's headers and a pkg-config search path; see [Native dependencies](../../guides/native-dependencies.md).
 
-## Use several versions
+## Several versions
 
-Select the required versions together:
+Select several lines to install them side by side:
 
 ```toml
 [nixos]
 modules = ["lmx:rust-1.95", "lmx:rust-1.98"]
 ```
 
-After updating the VM from your Mac, use the versioned Cargo wrapper inside the VM for the corresponding toolchain:
+Each line adds versioned commands: `cargo-1.95`, `rustc-1.95`, `rustdoc-1.95`, `rustfmt-1.95`, and `rust-analyzer-1.95` for Rust 1.95.
 
 ```console
 cargo-1.95 build
-cargo-1.95 fmt
 cargo-1.95 clippy
 ```
 
-The wrapper places its selected rustc, Cargo, rustfmt, Clippy, and rust-analyzer packages at the front of `PATH`.
-This selects the matching compiler and Cargo subcommands unless the project or environment explicitly overrides them.
+`cargo-1.95` puts the whole Rust 1.95 toolchain first on `PATH`.
+Its subcommands and build scripts use that version, including `cargo fmt` and `cargo clippy`.
+Commands without a version come from the newest selected line.
 
-Each selection also provides versioned `rustc`, `rustdoc`, `rustfmt`, and `rust-analyzer` commands, such as `rustc-1.95` and `rust-analyzer-1.95`.
-The versioned rust-analyzer wrapper uses the same toolchain on `PATH`.
-The highest selected version takes priority for the ordinary toolchain commands.
+## Editor support
+
+The module installs `rust-analyzer` for editors that support the Language Server Protocol.
+See [Editor integration](../../guides/catalog.md#editor-integration) and the [rust-analyzer editor setup](https://rust-analyzer.github.io/book/installation.html).

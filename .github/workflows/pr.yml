@@ -52,7 +52,7 @@ jobs:
         shell: bash
         env:
           UPDATE_OUTCOME: ${{ steps.update.outcome }}
-        run: python3 .github/scripts/nixpkgs-summary.py
+        run: python3 scripts/summarize_nixpkgs_updates.py
 
   gate:
     if: always()

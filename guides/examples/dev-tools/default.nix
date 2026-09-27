@@ -1,3 +1,4 @@
+{ pkgs, ... }:
 {
-  imports = [ ./tools.nix ];
+  environment.systemPackages = [ pkgs.jq pkgs.ripgrep ];
 }

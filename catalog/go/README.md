@@ -1,88 +1,77 @@
 # Go
 
-Installs the Go compiler, the gopls language server, the Delve debugger, and GCC inside the VM.
-
-## Enable
-
-Add a Go selector to the existing `nixos.modules` list, keeping the other modules your VM needs:
+Installs the Go toolchain, the gopls language server, the Delve debugger, and GCC for cgo.
 
 ```toml
 [nixos]
 modules = ["lmx:go"]
 ```
 
-Follow [Use catalog modules](../../guides/using-modules.md) to apply the configuration from your Mac and enter the VM.
+Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
 
 ## Versions
 
-| Selector | Go | gopls | Delve |
-|----------|----|-------|-------|
-| `lmx:go` / `lmx:go-1.27` | 1.27.1 | 0.23.0 | 1.27.2 |
-| `lmx:go-1.26` | 1.26.7 | 0.23.0 | 1.27.2 |
-| `lmx:go-1.25` | 1.25.13 | 0.22.0 | 1.26.3 |
-| `lmx:go-1.24` | 1.24.13 | 0.20.0 | 1.25.2 |
+| Selector | Go | gopls | Delve | Notes |
+| --- | --- | --- | --- | --- |
+| `lmx:go`, `lmx:go-1.27` | 1.27.1 | 0.23.0 | 1.27.2 | Default |
+| `lmx:go-1.26` | 1.26.7 | 0.23.0 | 1.27.2 | |
+| `lmx:go-1.25` | 1.25.13 | 0.22.0 | 1.26.3 | End of life |
+| `lmx:go-1.24` | 1.24.13 | 0.20.0 | 1.25.2 | End of life |
 
-The unversioned selector uses Go 1.27 in this catalog revision.
-The catalog marks Go 1.24 and 1.25 as end of life and emits a warning when either is selected.
+Selecting an end-of-life line prints a warning when the VM is built.
+GCC comes from the [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins) for every line.
 
 ## Use
 
-Inside the VM, run these commands from a Go project containing `go.mod`:
+Inside the VM, run from a directory that contains `go.mod`:
 
 ```console
 go build ./...
 go test ./...
 ```
 
-`go build ./...` compiles the project's packages and reports build errors.
-`go test ./...` runs their tests and reports the results for each package.
-The debugger is available as `dlv`.
-
-GCC is included for cgo and the race detector:
+GCC enables cgo and the race detector:
 
 ```console
 go test -race ./...
 ```
 
-Projects that link to external C libraries need those libraries and their headers separately.
+Packages that link to C libraries also need those libraries; see [Native dependencies](../../guides/native-dependencies.md).
+The Delve debugger runs as `dlv`.
 
-## Editor support
+## Several versions
 
-The module installs the `gopls` language server inside the VM.
-See [Use language servers](../../guides/using-modules.md#use-language-servers) for connecting your editor and the [gopls editor setup](https://go.dev/gopls/#editors) for configuration.
-
-## Use several versions
-
-Select the required versions together:
+Select several lines to install them side by side:
 
 ```toml
 [nixos]
 modules = ["lmx:go-1.26", "lmx:go-1.27"]
 ```
 
-After updating the VM from your Mac, use the versioned command inside the VM to choose an installed Go distribution:
+Each line adds a command with its version, such as `go-1.26`:
 
 ```console
 go-1.26 test ./...
-go-1.27 test ./...
 ```
 
-The highest selected Go version takes priority for the ordinary `go`, `gopls`, and `dlv` commands.
-Only `go` receives a versioned command; the module does not add names such as `gopls-1.26` or `dlv-1.26`.
+`go`, `gopls`, and `dlv` come from the newest selected line.
+Only `go` has versioned commands.
 
 ## Toolchain downloads
 
-Go can select or download another toolchain according to `GOTOOLCHAIN`, `go.mod`, and `go.work`, including when started through a versioned command.
-To use only the toolchain bundled with the selected `go` command, set `GOTOOLCHAIN` in the VM configuration:
+When a project's `go.mod` or `go.work` requires a newer Go version, Go can download and run that toolchain instead, including when you run a versioned command.
+To use only the installed toolchain, set `GOTOOLCHAIN` in the `[env]` table of `limanix.toml`:
 
 ```toml
 [env]
 GOTOOLCHAIN = "local"
 ```
 
-Add the key to an existing `[env]` table if you already have one.
-If the configuration contains the top-level `env = {}` line, remove it before adding the table.
-Apply the configuration as described in [Use catalog modules](../../guides/using-modules.md).
+The client guide describes the [`[env]` table](https://limanix.dev/categories/client/configuration.html#set-the-guest-environment).
+With this setting, a project that requires a newer Go version fails to build instead of downloading a toolchain.
+See [Go toolchains](https://go.dev/doc/toolchain#select) for the selection rules.
 
-With `GOTOOLCHAIN = "local"`, a project requiring a newer Go version fails instead of switching toolchains.
-See [Go toolchain selection](https://go.dev/doc/toolchain#select) for the selection rules.
+## Editor support
+
+The module installs `gopls` for editors that support the Language Server Protocol.
+See [Editor integration](../../guides/catalog.md#editor-integration) and the [gopls editor setup](https://go.dev/gopls/#editors).

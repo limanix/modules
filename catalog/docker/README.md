@@ -1,87 +1,69 @@
 # Docker
 
-Installs Docker Engine, its command-line client, and the Compose plugin inside the VM.
-
-## Enable
-
-Add a Docker selector to the existing `nixos.modules` list, keeping the other modules your VM needs:
+Runs Docker Engine as a system service in the VM, with the Docker CLI and the Compose plugin.
 
 ```toml
 [nixos]
 modules = ["lmx:docker"]
 ```
 
-Follow [Use catalog modules](../../guides/using-modules.md) to apply the configuration from your Mac and enter the VM.
+Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
 
 ## Versions
 
-| Selector | Engine / CLI |
-|----------|--------------|
-| `lmx:docker` / `lmx:docker-29` | 29.8.0 |
-| `lmx:docker-28` | 28.5.2 |
+| Selector | Docker Engine and CLI | Notes |
+| --- | --- | --- |
+| `lmx:docker`, `lmx:docker-29` | 29.8.0 | Default |
+| `lmx:docker-28` | 28.5.2 | End of life |
 
-The unversioned selector uses Docker 29 in this catalog revision.
-The catalog marks Docker 28 as end of life and emits a warning when it is selected.
+Selecting an end-of-life line prints a warning when the VM is built.
+
+Select only one line per VM.
+Both lines configure the same Docker service.
+Selecting two of them stops the build with this error:
+
+```text
+The option `virtualisation.docker.package' is defined multiple times while it's expected to be unique.
+```
+
+Both lines keep their containers, images, and volumes in the same storage in the VM; switching lines does not create a separate Docker environment.
 
 ## Use
 
-Run Docker commands inside the VM:
+Inside the VM, check that Docker Engine runs:
 
 ```console
 docker ps
 ```
 
-This lists running containers.
-An empty list is normal before you start any containers.
+The command lists running containers; an empty list is normal before you start any.
 
-If your Compose project is on your Mac, [Share a project directory](../../guides/using-modules.md#share-a-project-directory) first.
-Inside the VM, change to the project directory containing the Compose file, then start its services:
+To run a Compose project from your Mac, first [share its directory with the VM](https://limanix.dev/categories/client/configuration.html#share-project-directories).
+Then run this inside the VM, from the directory that contains the Compose file:
 
 ```console
 docker compose up -d
 ```
 
-The module enables the system Docker service and adds the configured VM user to the `docker` group.
+## Permissions
+
+The module adds the VM's user to the `docker` group to allow Docker commands without `sudo`.
 
 > [!WARNING]
-> Membership in the `docker` group grants root-equivalent access inside the VM.
+> Membership in the `docker` group is equivalent to root access in the VM.
 
-Select one Docker version per VM.
-Selecting Docker 28 and 29 together causes an evaluation error for `virtualisation.docker.package` during create or update.
-The selectors configure the same system daemon and storage; changing the version does not create separate containers or volumes.
+## Published ports
 
-## Reach a container from your Mac
+`docker run -p 8080:80 IMAGE` publishes the container's port 80 on port 8080 of the VM.
+To connect from your Mac, use the VM's address and the published port; [Reach services in the VM](https://limanix.dev/categories/client/networking.html) shows how to find the address.
 
-With Docker's default bridge network, `-p 8080:80` maps TCP port `8080` on the **VM** to port `80` in the container.
-Inside the VM, run the following command, replacing `IMAGE` with an image whose application listens on `0.0.0.0:80`:
+Docker manages the firewall rules for published ports itself:
 
-```console
-docker run --rm -p 8080:80 IMAGE
-```
+- A published port is reachable without adding it to `network.ports` in `limanix.toml`.
+- Removing a port from `network.ports` does not close a published port.
+- To keep a port inside the VM, publish it on the loopback address, such as `-p 127.0.0.1:8080:80`.
 
-In another terminal on your **Mac**, run `limanix list` and read the VM's `ADDRESS`.
-For an HTTP application, open `http://<ADDRESS>:8080` in your browser.
-Limanix does not forward this port to `localhost:8080` on your Mac.
-
-| Publication | Access |
-| --- | --- |
-| `-p 8080:80` | Port `8080` on the VM's network addresses |
-| `-p 127.0.0.1:8080:80` | Published on the VM's loopback address, unavailable through its network IP from your Mac |
-| No `-p` | No port mapping on the VM's addresses |
-
-Compose's `ports: ["8080:80"]` publishes the same mapping.
-
-### How `network.ports` applies
-
-In the standard Docker module configuration, you do not need to add `8080` to `network.ports.tcp` for this bridge-network publication.
-Docker creates its own forwarding rules; incoming traffic to the published port follows NAT and `FORWARD`, bypassing the guest firewall's `INPUT` port rules.
-Those `INPUT` rules are what Limanix configures through `network.ports`.
-
-> [!WARNING]
-> Removing a port from `network.ports` does not close a Docker-published bridge port.
-> `-p 8080:80` publishes on all VM addresses by default, allowing connections from any host that can reach them.
-> Publish only the ports you need, or bind to `127.0.0.1` when access through the VM's loopback address is sufficient.
-
-With `--network host`, the application uses the VM's network directly, `-p` is ignored, and the normal guest firewall rules apply.
-Custom Docker network or firewall settings can change the behavior described above.
-See Docker's [port publishing](https://docs.docker.com/engine/network/port-publishing/) and [firewall rules](https://docs.docker.com/engine/network/firewall-iptables/) for details and source-address filtering.
+Compose `ports:` entries behave the same way.
+A container started with `--network host` uses the VM's network directly.
+`network.ports` applies to it as to any other service in the VM.
+For details, see Docker's guides to [port publishing](https://docs.docker.com/engine/network/port-publishing/) and [firewall rules](https://docs.docker.com/engine/network/firewall-iptables/).

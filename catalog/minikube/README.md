@@ -1,80 +1,64 @@
 # Minikube
 
-Installs Minikube for running local Kubernetes clusters inside the VM.
-
-## Enable
-
-For the Docker driver, add both selectors to the existing `nixos.modules` list, keeping the other modules your VM needs:
+Installs Minikube, which runs local Kubernetes clusters inside the VM.
 
 ```toml
 [nixos]
 modules = ["lmx:docker", "lmx:minikube"]
 ```
 
-Follow [Use catalog modules](../../guides/using-modules.md) to apply the configuration from your Mac and enter the VM.
+Minikube's Docker driver runs clusters in containers.
+The example selects the [Docker module](../docker/README.md) to provide Docker, which the Minikube module does not install.
+Add the selectors to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
 
 ## Versions
 
-| Selector | Minikube |
-|----------|----------|
-| `lmx:minikube` / `lmx:minikube-1.38` | 1.38.1 |
-| `lmx:minikube-1.37` | 1.37.0 |
-| `lmx:minikube-1.36` | 1.36.0 |
+| Selector | Minikube | Notes |
+| --- | --- | --- |
+| `lmx:minikube`, `lmx:minikube-1.38` | 1.38.1 | Default |
+| `lmx:minikube-1.37` | 1.37.0 | |
+| `lmx:minikube-1.36` | 1.36.0 | |
 
-The unversioned selector uses Minikube 1.38 in this catalog revision.
+## Requirements
+
+[Minikube requires](https://minikube.sigs.k8s.io/docs/start/#what-youll-need) at least 2 CPUs, 2 GB of free memory, and 20 GB of free disk space.
+Inside the VM, these come from the `[resources]` table of `limanix.toml`, which also has to cover NixOS, Docker, and your other workloads: `mem = "2GiB"` does not leave 2 GB free.
+The client guide describes how to [choose resources](https://limanix.dev/categories/client/configuration.html#choose-resources-and-identity).
+The VM also needs internet access to download Kubernetes components and container images.
 
 ## Use
 
-Check the VM's capacity against [Minikube's requirements](https://minikube.sigs.k8s.io/docs/start/#what-youll-need):
-
-| VM setting | Minikube requirement inside the VM |
-| --- | --- |
-| `resources.cpu` | At least 2 CPUs |
-| `resources.mem` | At least 2 GB of free memory |
-| `resources.disk` | At least 20 GB of free disk space |
-
-The `[resources]` table sets the VM's total capacity, including what NixOS, Docker, and other workloads use.
-Allocating `mem = "2GiB"` does not guarantee 2 GB free for Minikube.
-The `16GiB` disk in the getting-started example is smaller than Minikube's free-space requirement.
-Increase insufficient allocations in the existing `[resources]` table on your Mac, then [apply the configuration](../../guides/using-modules.md) before starting the cluster.
-The VM also needs internet access to download Kubernetes components and container images.
-
-Start a cluster inside the VM:
+The module does not start a cluster.
+Inside the VM, create and start one named `dev`, then check its state:
 
 ```console
 minikube start --driver=docker --profile=dev
 minikube status --profile=dev
 ```
 
-The first command creates and starts the `dev` cluster.
-The second reports its current state.
-The Minikube module installs the command but does not start a cluster or enable Docker.
-The example enables Docker separately through the [Docker module](../docker/README.md).
-
-To list pods in all namespaces of the `dev` cluster, run inside the VM:
+Run kubectl commands through Minikube, which downloads a matching `kubectl` when needed:
 
 ```console
 minikube kubectl --profile=dev -- get pods -A
 ```
 
-Minikube downloads a matching `kubectl` when needed; a separate installation is not required.
-Keep `--profile=dev` before `--`, which separates Minikube's options from the kubectl arguments.
+Options before `--` go to Minikube, and the arguments after it go to kubectl.
 
-## Use several versions
+## Several versions
 
-Select the required versions together:
+Select several lines to install them side by side:
 
 ```toml
 [nixos]
 modules = ["lmx:docker", "lmx:minikube-1.36", "lmx:minikube-1.38"]
 ```
 
-After updating the VM from your Mac, start separate cluster profiles inside the VM when working with different versions:
+Each line adds a command with its version, such as `minikube-1.36`.
+Give each version its own cluster profile:
 
 ```console
 minikube-1.36 start --driver=docker --profile=mk136
 minikube-1.38 start --driver=docker --profile=mk138
 ```
 
-The highest selected version supplies the ordinary `minikube` command.
-The versioned commands select the Minikube executable; the profile names distinguish the clusters.
+`minikube` runs the newest selected line.

@@ -26,31 +26,35 @@ import (nixpkgs + "/nixos/lib/eval-config.nix") {
   inherit system;
   specialArgs = { inherit runtime; };
   modules = [
-    {
-      networking.hostName = runtime.name;
-      system.stateVersion = "26.05";
+    (
+      { config, ... }:
+      {
+        networking.hostName = runtime.name;
+        # Each check evaluates a fresh system without persistent VM state.
+        system.stateVersion = config.system.nixos.release;
 
-      boot.loader.grub = {
-        device = "nodev";
-        efiSupport = true;
-        efiInstallAsRemovable = true;
-      };
-      fileSystems = {
-        "/" = {
-          device = "/dev/disk/by-label/nixos";
-          fsType = "ext4";
+        boot.loader.grub = {
+          device = "nodev";
+          efiSupport = true;
+          efiInstallAsRemovable = true;
         };
-        "/boot" = {
-          device = "/dev/vda1";
-          fsType = "vfat";
+        fileSystems = {
+          "/" = {
+            device = "/dev/disk/by-label/nixos";
+            fsType = "ext4";
+          };
+          "/boot" = {
+            device = "/dev/vda1";
+            fsType = "vfat";
+          };
         };
-      };
 
-      users.users.${runtime.user.name} = {
-        isNormalUser = true;
-        inherit (runtime.user) uid home;
-      };
-    }
+        users.users.${runtime.user.name} = {
+          isNormalUser = true;
+          inherit (runtime.user) uid home;
+        };
+      }
+    )
   ]
   ++ modules;
 }

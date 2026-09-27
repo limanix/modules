@@ -19,9 +19,9 @@ Use the client to create and manage environments; this repository supplies their
 | --- | --- |
 | [Modules](catalog/) | Toolchains, services, and utilities, with a README for each module |
 | [Nixpkgs pin](flake.lock) | The package collection revision used by the client’s VMs and catalog checks |
-| [Guides](guides/index.md) | Using, writing, and extending modules |
+| [Guides](guides/index.md) | NixOS basics, module authoring, and native dependencies |
 | [Checks](checks/) | Catalog validation and NixOS configuration evaluation |
 
-To add or update a module, see [Contributing to the catalog](guides/contributing.md).
+To add or update a module, see [Catalog development](guides/extending-catalog.md).
 
 Licensed under [Apache 2.0](LICENSE).

@@ -1,58 +1,63 @@
+---
+myst:
+  heading_anchors: 2
+---
+
 # Troubleshooting
 
-Start with the step that failed.
-The client guide covers registry and VM operations; this page covers Nix and programs inside the guest.
+This page covers errors in module code and programs that fail inside the VM.
+For failed imports, VMs that do not start, and interrupted updates, see the client's [Troubleshooting](https://limanix.dev/categories/client/troubleshooting.html).
 
-| Problem | Start here |
+## Read a Nix error
+
+When a module contains an error, `limanix create` or `limanix update` fails and prints the output of the NixOS build.
+Find the last `error:` line in that output; it states the cause.
+The lines above it show what Nix was evaluating, often with a file name and line number.
+
+File paths such as `/nix/store/…-source/modules/0002/default.nix` point to the copies that the client made.
+The number is the module's position in `nixos.modules`, counting from `0000`.
+
+## Errors in module code
+
+| The error contains | Cause | Fix |
+| --- | --- | --- |
+| `syntax error, unexpected` | A missing `;`, bracket, or quote | Check the reported line and the line before it |
+| `undefined variable 'pkgs'` | The module uses `pkgs` without requesting it | Start the module with `{ pkgs, ... }:` |
+| `attribute '…' missing` | A package name that does not exist in Nixpkgs | Look up the attribute name in the [package search](https://search.nixos.org/packages) |
+| `The option … does not exist` | A misspelled option, or an option that the catalog's NixOS release does not have | Look up the option in the [option search](https://search.nixos.org/options) for the [pinned release](concepts.md#nixos-version-and-package-pins) |
+| `has conflicting definition values` | Two modules set different values for the same option | See [Combine with other modules](writing-modules.md#combine-with-other-modules) |
+| `is defined multiple times while it's expected to be unique` | Two modules set an option that allows one definition, such as two Docker versions | Remove one of the definitions |
+| `path '…' does not exist` | An import points to a missing file or outside the module directory | Keep imported files inside the module directory |
+| `infinite recursion encountered` | An `if` that reads `config` decides what the module defines | Wrap the conditional settings in [`lib.mkIf`](https://nixos.org/manual/nixos/stable/#sec-option-definitions-delaying-conditionals) |
+
+If the conflicting option belongs to the base system, such as the hostname or the guest account, remove it from the module and change it in `limanix.toml`; see [The base system](concepts.md#the-base-system).
+
+For a failed download, check the reported URL and the VM's network access before retrying.
+For a compilation or test failure, read the failing package's build log for the cause.
+Use [`nix log`](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-log.html) inside the VM with the `.drv` path from the error to see the available log.
+
+## Warnings
+
+Warnings do not stop the build.
+When you select an end-of-life version line, the output contains a warning such as:
+
+```text
+evaluation warning: Docker Engine 28.5.2 no longer receives upstream security updates.
+```
+
+To stop the warning, select a supported line from the module's page.
+
+## A program fails inside the VM
+
+Run the failing command inside the VM and read its complete error.
+
+| Symptom | Cause and next step |
 | --- | --- |
-| A selector is missing or rejected | [List available modules](https://limanix.dev/categories/client/modules.html#list-available-modules) |
-| `modules add` fails | [Import a module](https://limanix.dev/categories/client/modules.html#import-a-module) |
-| An edit has no effect | [Replace an imported module](https://limanix.dev/categories/client/modules.html#replace-an-imported-module) |
-| Nix reports an error | [Read the build failure](#nix-evaluation-or-build-fails) |
-| A project build needs tools or system libraries | [Check native dependencies](native-dependencies.md) |
-| A program or import fails after installation | [Check the runtime error](#a-program-fails-after-installation) |
-| An update stopped or failed | [Create or update failed during provisioning](https://limanix.dev/categories/client/troubleshooting.html#create-or-update-failed-during-provisioning) |
+| `command not found` | The module is not selected or not applied yet, or the package's command has another name, such as `rg` for `pkgs.ripgrep` |
+| A change to a custom module has no effect | The VM still uses the previously imported copy; [replace the imported module](https://limanix.dev/categories/client/modules.html#replace-an-imported-module) and update the VM |
+| An unexpected version of a command runs | Two packages provide the same command; see [Combine with other modules](writing-modules.md#combine-with-other-modules) |
+| `Could not start dynamically linked executable` | The program was built for another Linux distribution; see [Downloaded programs](native-dependencies.md#downloaded-programs) |
+| `cannot open shared object file`, for example for `libstdc++.so.6` | A native extension or program needs a library; see [Native dependencies](native-dependencies.md) |
+| `Exec format error` | The program was built for another architecture than the VM's `resources.arch`; use a build for that architecture |
 
-(nix-evaluation-or-build-fails)=
-## Nix evaluation or build fails
-
-Read the original Nix error from `limanix create` or `limanix update`.
-
-| Error | Next step |
-| --- | --- |
-| Syntax error | Check the reported file and line for missing braces, semicolons, or quotes |
-| File does not exist | Check import paths and keep required files in the module directory |
-| Option does not exist | Check its spelling and availability in NixOS 26.05, which the current catalog pins |
-| Conflicting definitions | Compare the definitions named in the error and remove or resolve the conflict |
-| Package file collision | Compare the package paths in the error and {ref}`resolve the overlapping files <package-file-collisions>` |
-| Download or build failure | Read the failing URL or package error before retrying |
-
-After changing a custom module, follow [Replace an imported module](https://limanix.dev/categories/client/modules.html#replace-an-imported-module) before retrying.
-For a conflict, check whether you are redefining VM settings such as the hostname, user, or filesystems.
-Use the TOML setting when Limanix provides one.
-{ref}`Option priorities <understand-how-settings-combine>` explain when to use `mkDefault` or `mkForce`.
-
-(package-file-collisions)=
-### Resolve package file collisions
-
-Two packages can provide different files at the same installed path, such as a command in `bin/`.
-Check the package paths in the error and the custom modules that add them.
-Remove an unwanted package, or wrap the preferred package with [lib.hiPrio](https://nixos.org/manual/nixpkgs/stable/#function-library-lib.meta.hiPrio) in `environment.systemPackages`.
-Keep the other package at its default priority.
-Catalog modules that support installing multiple versions together already set package priorities.
-These package priorities are separate from the `mkDefault` and `mkForce` option priorities.
-
-(a-program-fails-after-installation)=
-## A program fails after installation
-
-A successful VM update or package installation does not prove that a program can run.
-Run the failing command **inside the VM** and read the full error.
-
-| Symptom | What to check |
-| --- | --- |
-| `command not found` | Check the command name and `PATH` inside the VM; for catalog tools, also check that the module is selected and applied |
-| `libstdc++.so.6: cannot open shared object file`, or another missing shared library | The program or native extension needs runtime libraries; see {ref}`Run prebuilt code <native-runtime-dependencies>` |
-| `No such file or directory` although the executable exists | Check the script interpreter or binary loader; see {ref}`Run prebuilt code <native-runtime-dependencies>` for NixOS compatibility |
-| `Exec format error` | Check that the executable targets Linux and the VM's architecture from `resources.arch` |
-
-For missing build tools or headers reported by a project's install command, see {ref}`Configure build dependencies <native-build-dependencies>`.
+To see which package provides a command, run `readlink -f "$(command -v go)"` with the command's name instead of `go`.

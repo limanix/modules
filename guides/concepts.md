@@ -1,134 +1,107 @@
-# Module concepts
+---
+myst:
+  heading_anchors: 2
+---
 
-A module describes tools, services, or settings for the Linux guest.
-You can use the [catalog](catalog.md) without writing Nix.
-This page explains the pieces you will meet when reading or writing a module.
+# Concepts
 
-## What a module changes
+Limanix builds each VM from a single NixOS configuration.
+The client contributes a base system, and the modules you select add everything else.
 
 ```mermaid
 flowchart LR
-    accTitle: Modules contribute to the guest system
-    accDescr: Limanix combines its guest base and selected modules into one Linux VM configuration.
-    base["Limanix guest base"] --> system["Linux VM configuration"]
-    selected["Selected modules"] --> system
-    system --> tools["Tools and services"]
+    base["Base system<br/>client and limanix.toml"] --> config["NixOS configuration"]
+    catalog["Catalog modules<br/>lmx:…"] --> config
+    custom["Custom modules<br/>third-party:…"] --> config
+    config -->|"built in the VM on create and update"| vm["Tools and services in the VM"]
 ```
 
-| File or component | Controls | Example |
+## The base system
+
+The client reads these settings from `limanix.toml`:
+
+- the guest account, its home directory, and its `sudo` access;
+- the hostname, shared directories, and environment values;
+- firewall ports from `network.ports`;
+- VM resources, including disk size.
+
+Set these values in `limanix.toml`.
+A module that sets a different hostname, for example, makes the build fail with a conflict.
+
+The client also supplies the boot, filesystem, and SSH configuration internally.
+These settings are not exposed in `limanix.toml`.
+Modules build on this base.
+
+## Select modules
+
+List modules in the `nixos.modules` setting of `limanix.toml`:
+
+```toml
+[nixos]
+modules = ["lmx:git", "lmx:python-3.12", "third-party:dev-tools"]
+```
+
+| Selector | Selects |
+| --- | --- |
+| `lmx:NAME` | Catalog entry `NAME` at its default version |
+| `lmx:NAME-VERSION` | A version line of a catalog entry, such as `lmx:python-3.12` |
+| `third-party:NAME` | A custom module that you imported into the client's registry |
+
+The catalog ships inside the client: each client release bundles one release of this repository.
+Selecting `lmx:` modules therefore fetches no module code from the network, although the VM still downloads the packages that they install.
+Custom modules come from the client's local registry, which you manage with `limanix modules add` and `limanix modules remove`.
+The client guide covers these commands in [Choose and manage modules](https://limanix.dev/categories/client/modules.html).
+
+## When changes apply
+
+Selecting, editing, or removing a module changes nothing on its own.
+The change reaches the VM when the client creates or updates it:
+
+1. The client copies each selected module into the VM's configuration: catalog modules from its bundled catalog, and custom modules from its registry.
+2. The VM builds the new NixOS system, downloading or building the packages it needs.
+3. The VM restarts into the new system.
+
+Because the client works with copies, editing a custom module's files has no effect until you [replace the imported module](https://limanix.dev/categories/client/modules.html#replace-an-imported-module) and update the VM.
+
+Removing a module from `nixos.modules` removes its packages and services with the next update.
+Data they created, such as Docker images or database files, stays on the VM's disk.
+
+## One system for all modules
+
+All selected modules configure the same system.
+Nothing isolates them from each other: they share one filesystem, one set of users, one `PATH`, and one network.
+Containers run with the [Docker module](../catalog/docker/README.md) are the exception.
+
+When several modules define the same settings, NixOS merges them:
+
+- Lists, such as `environment.systemPackages`, combine.
+- Two different values for a single-value option stop the build, unless one module marks its value as a default.
+- When two packages provide the same command, only one of them is on `PATH`.
+
+[Combine with other modules](writing-modules.md#combine-with-other-modules) explains how to resolve both cases.
+
+## NixOS version and package pins
+
+This catalog pins **NixOS 26.05** and an exact Nixpkgs revision in its `flake.lock`.
+The client uses the pin from its bundled catalog as the base package collection for every VM it builds.
+
+| Packages from | Examples | Change when |
 | --- | --- | --- |
-| `limanix.toml` | VM resources, shared directories, ports, and module selection | Select `lmx:python` |
-| A NixOS module | Guest packages and system services | Install Python or enable Docker |
-| Project files | Your application's code and dependencies | `package.json` or `pyproject.toml` |
+| The base Nixpkgs revision | Git, Neovim, the GCC in the Go and Rust modules, and `pkgs` in custom modules | A client release bundles a catalog with a new base pin |
+| A catalog module's own pin | Docker, Go, Minikube, Node.js, Python, and Rust | A catalog release updates that module |
 
-Adding a module changes the VM's system configuration.
-It does not install the tool on your Mac or install your project's application dependencies.
+Search for packages and options in the NixOS 26.05 release.
+A [version line](catalog.md#versions) selects which of a module's own pins the VM uses.
 
-## Names you will meet
+## Trust and secrets
 
-| Name | Meaning |
-| --- | --- |
-| Nix language | The language used in `.nix` files |
-| Nix | The tool that evaluates Nix expressions and builds or downloads their results |
-| Nixpkgs | A collection of packages and NixOS modules |
-| NixOS | The Linux operating system configured by those modules |
+A module has full control over the VM.
+It can install software, run services as root, and read the directories you share with the VM.
+Import custom modules only from sources you trust.
 
-For example, `pkgs.jq` is a **package** containing the `jq` program.
-A **module** can add that package to the system:
-
-```nix
-{ pkgs, ... }:
-{
-  environment.systemPackages = [ pkgs.jq ];
-}
-```
-
-## Read the Nix example
-
-| Part | Meaning |
-| --- | --- |
-| `{ pkgs, ... }:` | A function that receives `pkgs` and accepts other arguments |
-| The second `{ ... }` | A set of named values returned by that function |
-| `environment.systemPackages` | The NixOS option being configured |
-| `pkgs.jq` | The `jq` package from the supplied package collection |
-| `[ ... ]` | A list, with spaces between entries |
-| `;` | The end of an assignment |
-
-NixOS supplies the function's arguments.
-The most common are `pkgs` for packages, `lib` for helpers, and `config` for the combined configuration.
-A module that needs no arguments can be a plain set:
-
-```nix
-{
-  programs.git.enable = true;
-}
-```
-
-The [Nix language tutorial](https://nix.dev/tutorials/nix-language.html) has more syntax examples.
-
-## Find the right package or option
-
-| You need… | Look up | Set |
-| --- | --- | --- |
-| A command-line tool | [NixOS packages](https://search.nixos.org/packages) | `environment.systemPackages` |
-| A configured service | [NixOS options](https://search.nixos.org/options) | Its service options, such as `services.nginx.enable` |
-
-A package's attribute can differ from its command name.
-For example, `pkgs.ripgrep` provides `rg`.
-The current catalog pins NixOS 26.05 as the guest base.
-Clients use the pin from their bundled catalog.
-Select that release when looking up packages and options.
-
-```{tip}
-Use a service's NixOS options when you want it configured and started.
-Adding its executable to `environment.systemPackages` only makes the program available.
-```
-
-## Split a module into files
-
-A `default.nix` can load another module beside it:
-
-```nix
-{
-  imports = [ ./tools.nix ];
-}
-```
-
-The path is relative to the file containing it.
-Keep supporting files inside the directory you register with Limanix.
-
-| Form | What it does |
-| --- | --- |
-| `imports = [ ./tools.nix ];` | Includes another NixOS module in the configuration |
-| `import ./settings.nix` | Evaluates a Nix file and returns its value |
-
-For a directory layout and working commands, follow [Write your first module](writing-modules.md).
-
-## Combining modules
-
-All selected modules contribute to one configuration.
-NixOS combines their values according to each option's type and definition priorities.
-
-| Definitions from different modules | Result |
-| --- | --- |
-| Two ordinary package lists | Both lists contribute packages |
-| Two different ordinary values for the hostname | A conflicting-definition error |
-| A suggested value with `lib.mkDefault` and an ordinary value | The ordinary value wins |
-
-Reordering your selections is not a general way to override settings.
-[Make a module configurable](reusable-modules.md) explains options, defaults, and deliberate overrides.
-
-(module-nix-store)=
-## Source files and the Nix store
-
-Nix places source inputs and build results under `/nix/store/…`.
-Store files are immutable.
-To change an imported module, edit its original source and follow [Replace an imported module](https://limanix.dev/categories/client/modules.html#replace-an-imported-module).
+Everything in `/nix/store` is readable by every user in the VM, and module source files and the configuration files that NixOS generates end up there.
 
 ```{warning}
-Keep passwords, tokens, and private keys out of module source.
-Source files and configuration values can enter the world-readable Nix store.
-Use a service's runtime secret-file option when it provides one.
+Keep passwords, tokens, and private keys out of modules.
+For a service that needs a secret, use the service's secret-file option, if it has one, and create that file inside the VM.
 ```
-
-Read the [Nix store overview](https://nix.dev/manual/nix/2.35/store/) for more detail.

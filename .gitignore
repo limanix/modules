@@ -8,3 +8,6 @@
 # Task runner cache
 .cache/
 .task/
+
+# Build artifacts
+/build/
