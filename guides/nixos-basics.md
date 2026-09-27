@@ -38,7 +38,11 @@ For a Limanix VM, this means:
 
 This module installs `jq` and enables Git:
 
-```nix
+```{code-block} nix
+:linenos:
+:name: nixos-basics-module
+:class: code-example
+
 { pkgs, ... }:
 {
   environment.systemPackages = [ pkgs.jq ];
@@ -46,14 +50,13 @@ This module installs `jq` and enables Git:
 }
 ```
 
-| Part | Meaning |
+| Code | Meaning |
 | --- | --- |
-| `{ pkgs, ... }:` | A function that receives `pkgs` from NixOS; `...` accepts the other arguments it does not use |
-| `{ ... }` after the `:` | The settings that the module contributes |
-| `environment.systemPackages = [ pkgs.jq ];` | Adds the `jq` package for every user |
-| `programs.git.enable = true;` | Sets a NixOS option |
-| `[ pkgs.jq ]` | A list; separate entries with spaces, not commas |
-| `;` | Ends every setting |
+| [1](#nixos-basics-module.1){.external .code-lines} | A function that receives `pkgs` from NixOS; `...` accepts the other arguments it does not use |
+| [2–5](#nixos-basics-module.2-5){.external .code-lines} | The braces enclose the settings that the module contributes |
+| [3](#nixos-basics-module.3){.external .code-lines} | Adds `jq` for every user; square brackets form a list whose entries are separated with spaces, not commas |
+| [4](#nixos-basics-module.4){.external .code-lines} | Enables Git through a NixOS option |
+| [3–4](#nixos-basics-module.3-4){.external .code-lines} | Each setting ends with a semicolon |
 
 Besides `pkgs`, modules often use `lib`, a library of helper functions, and `config`, the final configuration after all modules are merged.
 A module that needs no arguments can be a plain set of settings: `{ programs.git.enable = true; }`.

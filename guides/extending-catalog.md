@@ -98,12 +98,21 @@ default = "1.27"
 
 Its `default.nix` loads the default line:
 
-```nix
+```{code-block} nix
+:linenos:
+:name: catalog-default-version
+:class: code-example
+
 let
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
 in
 import (./versions + "/${metadata.default}.nix")
 ```
+
+| Code | Purpose |
+| --- | --- |
+| [2](#catalog-default-version.2){.external .code-lines} | Reads `module.toml` and parses its fields into `metadata` |
+| [4](#catalog-default-version.4){.external .code-lines} | Loads the version file named by `default`, such as `versions/1.27.nix` |
 
 Each line's file, such as `versions/1.27.nix`, passes its version to the shared module:
 

@@ -72,7 +72,11 @@ It takes no arguments because it only sets options.
 Services work the same way.
 This module runs PostgreSQL and creates a database and a database user named after the VM's user:
 
-```nix
+```{code-block} nix
+:linenos:
+:name: custom-module-postgresql
+:class: code-example
+
 { runtime, ... }:
 {
   services.postgresql = {
@@ -88,8 +92,14 @@ This module runs PostgreSQL and creates a database and a database user named aft
 }
 ```
 
+| Code | Purpose |
+| --- | --- |
+| [1](#custom-module-postgresql.1){.external .code-lines} | Receives the VM's settings through the [`runtime` argument](#read-vm-settings-with-runtime) |
+| [4](#custom-module-postgresql.4){.external .code-lines} | Enables the PostgreSQL service |
+| [5](#custom-module-postgresql.5){.external .code-lines} | Creates a database named after the VM's user |
+| [6–11](#custom-module-postgresql.6-11){.external .code-lines} | Creates a database user with the same name and makes it the owner of that database |
+
 After the update, running `psql` inside the VM connects to that database without a password.
-The [`runtime` argument](#read-vm-settings-with-runtime) supplies the user's name.
 Each service documents its options, including the ones it requires, in the [option search](https://search.nixos.org/options).
 Keep passwords out of modules; see [Trust and secrets](concepts.md#trust-and-secrets).
 

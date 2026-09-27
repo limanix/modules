@@ -26,7 +26,11 @@ The Python and Node.js modules include no build tools.
 
 This module installs build tools and makes the headers and pkg-config files of the listed libraries available:
 
-```nix
+```{code-block} nix
+:linenos:
+:name: native-dependencies-build-tools
+:class: code-example
+
 { lib, pkgs, ... }:
 let
   # System libraries that your dependencies build against.
@@ -54,12 +58,12 @@ in
 Replace `openssl` and `zlib` with the libraries your project needs; the [package search](https://search.nixos.org/packages) lists their attribute names.
 Keep only the build tools that your project uses and that your language modules do not already provide.
 
-| Part | Purpose |
+| Code | Purpose |
 | --- | --- |
-| `pkgs.gcc` and `pkgs.gnumake` | Compile C and C++ code, for example Python packages built from source or npm packages built with `node-gyp` |
-| `pkgs.pkg-config` | Tells build scripts where a library's headers and files are |
-| `lib.getDev` | Selects a library's development output, which contains its headers and `.pc` files |
-| `PKG_CONFIG_PATH` | Points pkg-config to those `.pc` files |
+| [8](#native-dependencies-build-tools.8){.external .code-lines} | Selects each library's development output, which contains its headers and `.pc` files |
+| [12–13](#native-dependencies-build-tools.12-13){.external .code-lines} | Compile C and C++ code, for example Python packages built from source or npm packages built with `node-gyp` |
+| [14](#native-dependencies-build-tools.14){.external .code-lines} | Tells build scripts where a library's headers and files are |
+| [18–21](#native-dependencies-build-tools.18-21){.external .code-lines} | Points pkg-config to those `.pc` files |
 
 The Nix toolchain records runtime paths for libraries passed to the linker from `/nix/store`.
 Libraries loaded later by a program can still need runtime search paths; see [Native extensions](#native-extensions-in-python-and-nodejs).
