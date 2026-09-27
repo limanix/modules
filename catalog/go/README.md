@@ -11,12 +11,12 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
-| Selector | Go | gopls | Delve | Notes |
-| --- | --- | --- | --- | --- |
-| `lmx:go`, `lmx:go-1.27` | 1.27.1 | 0.23.0 | 1.27.2 | Default |
-| `lmx:go-1.26` | 1.26.7 | 0.23.0 | 1.27.2 | |
-| `lmx:go-1.25` | 1.25.13 | 0.22.0 | 1.26.3 | End of life |
-| `lmx:go-1.24` | 1.24.13 | 0.20.0 | 1.25.2 | End of life |
+| Selector                | Go      | gopls  | Delve  | Notes       |
+|-------------------------|---------|--------|--------|-------------|
+| `lmx:go`, `lmx:go-1.27` | 1.27.1  | 0.23.0 | 1.27.2 | Default     |
+| `lmx:go-1.26`           | 1.26.7  | 0.23.0 | 1.27.2 |             |
+| `lmx:go-1.25`           | 1.25.13 | 0.22.0 | 1.26.3 | End of life |
+| `lmx:go-1.24`           | 1.24.13 | 0.20.0 | 1.25.2 | End of life |
 
 Selecting an end-of-life line prints a warning when the VM is built.
 GCC comes from the [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins) for every line.
@@ -36,7 +36,7 @@ GCC enables cgo and the race detector:
 go test -race ./...
 ```
 
-Packages that link to C libraries also need those libraries; see [Native dependencies](../../guides/native-dependencies.md).
+Packages that link to C libraries also need those libraries; see [Handle native dependencies](../../guides/writing-modules.md#handle-native-dependencies).
 The Delve debugger runs as `dlv`.
 
 ## Several versions

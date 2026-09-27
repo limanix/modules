@@ -11,12 +11,12 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
-| Selector | Node.js | Notes |
-| --- | --- | --- |
-| `lmx:nodejs`, `lmx:nodejs-26` | 26.9.0 | Default |
-| `lmx:nodejs-25` | 25.9.0 | End of life |
-| `lmx:nodejs-24` | 24.20.0 | |
-| `lmx:nodejs-23` | 23.11.0 | End of life |
+| Selector                      | Node.js | Notes       |
+|-------------------------------|---------|-------------|
+| `lmx:nodejs`, `lmx:nodejs-26` | 26.9.0  | Default     |
+| `lmx:nodejs-25`               | 25.9.0  | End of life |
+| `lmx:nodejs-24`               | 24.20.0 |             |
+| `lmx:nodejs-23`               | 23.11.0 | End of life |
 
 Each line includes npm and npx for its Node.js version.
 Selecting an end-of-life line prints a warning when the VM is built.
@@ -36,7 +36,7 @@ npm run build
 
 npm packages built with `node-gyp` need Python, `make`, and a C/C++ compiler, which this module does not install.
 Prebuilt programs and native addons in npm packages can also need system libraries.
-See [Native dependencies](../../guides/native-dependencies.md) for both cases.
+See [Handle native dependencies](../../guides/writing-modules.md#handle-native-dependencies) for both cases.
 
 ## Several versions
 

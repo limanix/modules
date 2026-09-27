@@ -13,11 +13,11 @@ Add the selectors to your VM's `nixos.modules` list and [apply the change](https
 
 ## Versions
 
-| Selector | Minikube | Notes |
-| --- | --- | --- |
-| `lmx:minikube`, `lmx:minikube-1.38` | 1.38.1 | Default |
-| `lmx:minikube-1.37` | 1.37.0 | |
-| `lmx:minikube-1.36` | 1.36.0 | |
+| Selector                            | Minikube | Notes   |
+|-------------------------------------|----------|---------|
+| `lmx:minikube`, `lmx:minikube-1.38` | 1.38.1   | Default |
+| `lmx:minikube-1.37`                 | 1.37.0   |         |
+| `lmx:minikube-1.36`                 | 1.36.0   |         |
 
 ## Requirements
 

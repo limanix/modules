@@ -11,11 +11,11 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
-| Selector | Python | virtualenv | Notes |
-| --- | --- | --- | --- |
-| `lmx:python`, `lmx:python-3.14` | 3.14.7 | 21.6.1 | Default |
-| `lmx:python-3.13` | 3.13.15 | 21.6.1 | |
-| `lmx:python-3.12` | 3.12.14 | 21.6.1 | |
+| Selector                        | Python  | virtualenv | Notes   |
+|---------------------------------|---------|------------|---------|
+| `lmx:python`, `lmx:python-3.14` | 3.14.7  | 21.6.1     | Default |
+| `lmx:python-3.13`               | 3.13.15 | 21.6.1     |         |
+| `lmx:python-3.12`               | 3.12.14 | 21.6.1     |         |
 
 Each line also adds a command with its version, such as `python-3.14`.
 
@@ -35,7 +35,7 @@ Run `deactivate` to leave the environment.
 
 > [!NOTE]
 > A virtual environment does not provide system libraries.
-> A pip package that compiles C code or loads a native extension can need build tools or libraries even after it installs; see [Native dependencies](../../guides/native-dependencies.md).
+> A pip package that compiles C code or loads a native extension can need build tools or libraries even after it installs; see [Handle native dependencies](../../guides/writing-modules.md#handle-native-dependencies).
 
 ## Several versions
 

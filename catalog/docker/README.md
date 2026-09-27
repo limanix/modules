@@ -11,10 +11,10 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
-| Selector | Docker Engine and CLI | Notes |
-| --- | --- | --- |
-| `lmx:docker`, `lmx:docker-29` | 29.8.0 | Default |
-| `lmx:docker-28` | 28.5.2 | End of life |
+| Selector                      | Docker Engine and CLI | Notes       |
+|-------------------------------|-----------------------|-------------|
+| `lmx:docker`, `lmx:docker-29` | 29.8.0                | Default     |
+| `lmx:docker-28`               | 28.5.2                | End of life |
 
 Selecting an end-of-life line prints a warning when the VM is built.
 

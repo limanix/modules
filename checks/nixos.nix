@@ -30,7 +30,6 @@ import (nixpkgs + "/nixos/lib/eval-config.nix") {
       { config, ... }:
       {
         networking.hostName = runtime.name;
-        # Each check evaluates a fresh system without persistent VM state.
         system.stateVersion = config.system.nixos.release;
 
         boot.loader.grub = {

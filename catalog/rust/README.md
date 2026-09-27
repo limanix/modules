@@ -11,12 +11,12 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
-| Selector | Rust | rust-analyzer | Notes |
-| --- | --- | --- | --- |
-| `lmx:rust`, `lmx:rust-1.98` | 1.98.1 | 2026-08-03 | Default |
-| `lmx:rust-1.97` | 1.97.1 | 2026-08-03 | End of life |
-| `lmx:rust-1.96` | 1.96.1 | 2026-06-15 | End of life |
-| `lmx:rust-1.95` | 1.95.0 | 2026-04-27 | End of life |
+| Selector                    | Rust   | rust-analyzer | Notes       |
+|-----------------------------|--------|---------------|-------------|
+| `lmx:rust`, `lmx:rust-1.98` | 1.98.1 | 2026-08-03    | Default     |
+| `lmx:rust-1.97`             | 1.97.1 | 2026-08-03    | End of life |
+| `lmx:rust-1.96`             | 1.96.1 | 2026-06-15    | End of life |
+| `lmx:rust-1.95`             | 1.95.0 | 2026-04-27    | End of life |
 
 rustc, Cargo, rustfmt, and Clippy come from the same Rust release.
 GCC, pkg-config, and GDB come from the [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins) for every line.
@@ -38,7 +38,7 @@ Debug the resulting programs with `gdb`.
 ## Native dependencies
 
 Crates that bind to system libraries, such as `openssl-sys`, build with the included GCC and pkg-config.
-They also need the library's headers and a pkg-config search path; see [Native dependencies](../../guides/native-dependencies.md).
+They also need the library's headers and a pkg-config search path; see [Handle native dependencies](../../guides/writing-modules.md#handle-native-dependencies).
 
 ## Several versions
 
