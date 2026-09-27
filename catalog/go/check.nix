@@ -10,4 +10,9 @@ let
     inherit (pkgs.stdenv.hostPlatform) system;
   };
 in
-hasPackage tools.go && hasPackage pkgs.gcc
+builtins.all hasPackage [
+  tools.go
+  tools.gopls
+  tools.delve
+  pkgs.gcc
+]

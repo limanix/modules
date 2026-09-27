@@ -38,8 +38,8 @@ Its assignment sets `environment.systemPackages`, the NixOS option that lists pa
 | Code                                                       | Meaning                                                                                                                                |
 |------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
 | [1](#custom-module-dev-tools.1){.external .code-lines}     | A function that receives `pkgs` from NixOS; `...` accepts the other arguments it does not use                                          |
-| [2–4](#custom-module-dev-tools.2-4){.external .code-lines} | The function returns a set of settings, enclosed in braces                                                                             |
-| [3](#custom-module-dev-tools.3){.external .code-lines}     | Assigns a list of packages to the option; list entries are separated with spaces, not commas, and the assignment ends with a semicolon |
+| [2–7](#custom-module-dev-tools.2-7){.external .code-lines} | The function returns a set of settings, enclosed in braces                                                                             |
+| [3–6](#custom-module-dev-tools.3-6){.external .code-lines} | Assigns a list of packages to the option; list entries are separated with spaces, not commas, and the assignment ends with a semicolon |
 
 `pkgs` is the package set supplied to the module.
 `pkgs.jq` selects the `jq` package from it, and `pkgs.ripgrep` selects the package that provides the `rg` command.
@@ -441,10 +441,11 @@ task --yes ci/fmt ci/lint ci/test
 `ci/test` evaluates both `aarch64-linux` and `x86_64-linux`; add `ARCH=arm64` or `ARCH=amd64` to evaluate one.
 For each architecture it checks every entry at its default, alone and all together, and every version line alone and alongside the other entries' defaults.
 It also checks that two Docker lines together fail.
+For Go, Minikube, Node.js, Python, and Rust, it additionally evaluates all declared lines of one entry together with the other entries' defaults.
 
 ```{important}
-These checks evaluate configurations.
-They do not build packages, boot a VM, run installed tools, or cover every combination of several lines of one entry.
+`ci/test` only evaluates configurations.
+It does not build packages, boot a VM, run installed tools, or cover every possible combination of version lines.
 ```
 
 Also test the applied module in a VM by running the commands documented in its README.

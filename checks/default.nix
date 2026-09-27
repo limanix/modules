@@ -1,6 +1,16 @@
 let
   catalog = import ./catalog.nix ../catalog;
   variants = builtins.concatMap (module: module.variants) catalog;
+  multiVersionModules = builtins.filter (
+    module:
+    builtins.elem module.name [
+      "go"
+      "minikube"
+      "nodejs"
+      "python"
+      "rust"
+    ]
+  ) catalog;
   nixpkgs = import ./nixpkgs.nix;
   userName = "module-check";
   systems = {
@@ -77,6 +87,16 @@ let
             );
           }) module.variants
         ) catalog
+      );
+      multiVersion = builtins.listToAttrs (
+        builtins.map (module: {
+          inherit (module) name;
+          value = evaluate "all modules with all ${module.name} versions" (
+            builtins.concatMap (
+              selected: if selected.name == module.name then selected.variants else [ selected ]
+            ) catalog
+          );
+        }) multiVersionModules
       );
       dockerVersionConflict =
         let

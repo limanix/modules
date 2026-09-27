@@ -10,4 +10,4 @@ let
     inherit (pkgs.stdenv.hostPlatform) system;
   };
 in
-hasPackage tools.python
+hasPackage tools.python && hasPackage tools.virtualenv
