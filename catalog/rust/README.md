@@ -7,7 +7,7 @@ Installs the Rust toolchain (rustc, Cargo, rustfmt, and Clippy) with the rust-an
 modules = ["lmx:rust"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Versions
 

@@ -11,7 +11,7 @@ LimaNix ships a catalog of ready-made modules, and you can write your own for an
 | [Write a module](writing-modules.md)  | Write and extend a module, handle native dependencies, and optionally add it to the catalog |
 | [Troubleshooting](troubleshooting.md) | Diagnose module errors, build failures, programs and services, and catalog checks           |
 
-The client guide [Choose and manage modules](https://limanix.dev/categories/client/modules.html) covers the commands that list, import, and apply modules.
+The client guide [Modules](https://limanix.dev/categories/client/modules.html) covers the commands that list, import, and apply modules.
 
 ```{toctree}
 :hidden:

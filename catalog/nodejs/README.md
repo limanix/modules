@@ -7,7 +7,7 @@ Installs Node.js with npm and npx.
 modules = ["lmx:nodejs"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Versions
 

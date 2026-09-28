@@ -9,7 +9,7 @@ modules = ["lmx:docker", "lmx:minikube"]
 
 Minikube's Docker driver runs clusters in containers.
 The example selects the [Docker module](../docker/README.md) to provide Docker, which the Minikube module does not install.
-Add the selectors to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
+Add the selectors to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Versions
 

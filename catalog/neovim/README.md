@@ -7,7 +7,7 @@ Enables the Neovim text editor through the NixOS `programs.neovim` option.
 modules = ["lmx:neovim"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Version
 

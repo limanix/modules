@@ -7,7 +7,7 @@ Runs Docker Engine as a system service in the VM, with the Docker CLI and the Co
 modules = ["lmx:docker"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Versions
 
@@ -55,7 +55,7 @@ The module adds the VM's user to the `docker` group to allow Docker commands wit
 ## Published ports
 
 `docker run -p 8080:80 IMAGE` publishes the container's port 80 on port 8080 of the VM.
-To connect from your Mac, use the VM's address and the published port; [Reach services in the VM](https://limanix.dev/categories/client/networking.html) shows how to find the address.
+To connect from your Mac, use the VM's address and the published port; [Networking](https://limanix.dev/categories/client/networking.html) shows how to find the address.
 
 Docker manages the firewall rules for published ports itself:
 

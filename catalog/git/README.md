@@ -7,7 +7,7 @@ Enables Git, the version control system, through the NixOS `programs.git` option
 modules = ["lmx:git"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/working-with-vms.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Version
 
