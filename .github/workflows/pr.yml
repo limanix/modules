@@ -6,7 +6,7 @@ on:
     types: [opened, reopened, synchronize]
 
 concurrency:
-  group: pr-flow-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
