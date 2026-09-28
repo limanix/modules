@@ -96,5 +96,5 @@ jobs:
           set -euo pipefail
 
           gh api --method POST repos/limanix/client/dispatches \
-            -f event_type=limanix-modules-release \
+            -f event_type=modules-release \
             -f "client_payload[tag]=$MODULES_TAG"
