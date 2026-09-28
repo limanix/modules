@@ -28,7 +28,7 @@ jobs:
           branch: main
 
   docs:
-    name: Prepare documentation
+    name: Prepare docs
     needs: verify
     runs-on: ubuntu-24.04
     steps:
@@ -56,12 +56,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download documentation archive
+      - name: Download docs archive
         uses: actions/download-artifact@v8
         with:
           name: docs
           path: build
-      # v3 uploads assets to a draft before publishing a normal release.
       - uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
@@ -79,7 +78,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
-      - name: Create client access token
+      - name: Create token
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
@@ -88,7 +87,7 @@ jobs:
           permission-contents: write
           repositories: client
           owner: limanix
-      - name: Send module release event
+      - name: Send event
         shell: bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
