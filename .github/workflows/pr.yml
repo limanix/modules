@@ -6,7 +6,7 @@ on:
     types: [opened, reopened, synchronize]
 
 concurrency:
-  group: pr-flow-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -28,9 +28,59 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
+      - name: Cache Nix sources
+        uses: actions/cache@v5
+        with:
+          path: .cache/nix
+          key: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.arch }}-${{ hashFiles('Taskfile.yml') }}-${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}
+          restore-keys: |
+            nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.arch }}-${{ hashFiles('Taskfile.yml') }}-
+      - name: Prepare Nix cache permissions
+        run: |
+          mkdir -p .cache/nix
+          sudo chown -R 0:0 .cache/nix
       - name: Run Nix tests
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with: { command: 'ci/test ARCH=${{ matrix.arch }}' }
+        with:
+          command: >-
+            ci/test ARCH=${{ matrix.arch }}
+            CONTAINER_ENVS=XDG_CACHE_HOME=/workspace/.cache
+      - name: Restore Nix cache ownership
+        if: always()
+        run: |
+          if [ -d .cache/nix ]; then
+            sudo chown -R "$(id -u):$(id -g)" .cache/nix
+          fi
+
+  pkgs:
+    name: Nixpkgs updates
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Prepare lock file permissions
+        run: sudo chown 0:0 flake.lock
+      - name: Check for Nixpkgs updates
+        id: update
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with: { command: nixpkgs/update }
+      - name: Restore lock file ownership
+        if: always()
+        run: |
+          if [ -f flake.lock ]; then
+            sudo chown "$(id -u):$(id -g)" flake.lock
+          fi
+      - name: Write update summary
+        if: always()
+        shell: bash
+        env:
+          UPDATE_OUTCOME: ${{ steps.update.outcome }}
+        run: python3 scripts/summarize_nixpkgs_updates.py
 
   gate:
     if: always()

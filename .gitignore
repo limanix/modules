@@ -8,3 +8,10 @@
 # Task runner cache
 .cache/
 .task/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Build artifacts
+/build/

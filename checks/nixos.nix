@@ -3,14 +3,15 @@
   arch,
   system,
   modules,
+  userName,
 }:
 let
   runtime = {
     name = "module-check";
     inherit arch;
     user = {
-      name = "dev";
-      home = "/home/dev";
+      name = userName;
+      home = "/home/${userName}";
       uid = 1000;
       sudo = false;
     };
@@ -25,31 +26,34 @@ import (nixpkgs + "/nixos/lib/eval-config.nix") {
   inherit system;
   specialArgs = { inherit runtime; };
   modules = [
-    {
-      networking.hostName = runtime.name;
-      system.stateVersion = "26.05";
+    (
+      { config, ... }:
+      {
+        networking.hostName = runtime.name;
+        system.stateVersion = config.system.nixos.release;
 
-      boot.loader.grub = {
-        device = "nodev";
-        efiSupport = true;
-        efiInstallAsRemovable = true;
-      };
-      fileSystems = {
-        "/" = {
-          device = "/dev/disk/by-label/nixos";
-          fsType = "ext4";
+        boot.loader.grub = {
+          device = "nodev";
+          efiSupport = true;
+          efiInstallAsRemovable = true;
         };
-        "/boot" = {
-          device = "/dev/vda1";
-          fsType = "vfat";
+        fileSystems = {
+          "/" = {
+            device = "/dev/disk/by-label/nixos";
+            fsType = "ext4";
+          };
+          "/boot" = {
+            device = "/dev/vda1";
+            fsType = "vfat";
+          };
         };
-      };
 
-      users.users.${runtime.user.name} = {
-        isNormalUser = true;
-        inherit (runtime.user) uid home;
-      };
-    }
+        users.users.${runtime.user.name} = {
+          isNormalUser = true;
+          inherit (runtime.user) uid home;
+        };
+      }
+    )
   ]
   ++ modules;
 }

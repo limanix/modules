@@ -1,3 +1,0 @@
-{
-  imports = [ ./tools.nix ];
-}
