@@ -9,6 +9,7 @@ You can add its tools to a VM by name, without writing Nix.
 | [Docker](../catalog/docker/README.md)     | `lmx:docker`   | Docker Engine, CLI, and Compose                         |
 | [Git](../catalog/git/README.md)           | `lmx:git`      | Git                                                     |
 | [Go](../catalog/go/README.md)             | `lmx:go`       | Go, gopls, Delve, and GCC                               |
+| [K9s](../catalog/k9s/README.md)           | `lmx:k9s`      | Terminal interface for Kubernetes                       |
 | [Minikube](../catalog/minikube/README.md) | `lmx:minikube` | Minikube for local Kubernetes clusters                  |
 | [Neovim](../catalog/neovim/README.md)     | `lmx:neovim`   | Neovim                                                  |
 | [Node.js](../catalog/nodejs/README.md)    | `lmx:nodejs`   | Node.js, npm, and npx                                   |
@@ -23,7 +24,7 @@ To see the selectors that your client provides, [list the available modules](htt
 
 ## Versions
 
-Docker, Go, Minikube, Node.js, Python, and Rust offer several version lines.
+Most of the modules offer several version lines.
 Select a line by adding its version to the selector:
 
 | Selector          | Installs                                     |
@@ -45,8 +46,6 @@ evaluation warning: Go 1.24.13 no longer receives upstream security updates.
 ```
 
 ## Several versions in one VM
-
-Go, Minikube, Node.js, Python, and Rust can install several lines side by side:
 
 ```toml
 [nixos]

@@ -441,7 +441,6 @@ task --yes ci/fmt ci/lint ci/test
 `ci/test` evaluates both `aarch64-linux` and `x86_64-linux`; add `ARCH=arm64` or `ARCH=amd64` to evaluate one.
 For each architecture it checks every entry at its default, alone and all together, and every version line alone and alongside the other entries' defaults.
 It also checks that two Docker lines together fail.
-For Go, Minikube, Node.js, Python, and Rust, it additionally evaluates all declared lines of one entry together with the other entries' defaults.
 
 ```{important}
 `ci/test` only evaluates configurations.
