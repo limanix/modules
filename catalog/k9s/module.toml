@@ -1,0 +1,4 @@
+description = "K9s terminal interface for Kubernetes."
+
+versions = ["0.40", "0.50", "0.51"]
+default = "0.51"

@@ -5,6 +5,7 @@ let
     module:
     builtins.elem module.name [
       "go"
+      "k9s"
       "minikube"
       "nodejs"
       "python"

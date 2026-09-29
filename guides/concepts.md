@@ -41,11 +41,6 @@ A module is not a container or a separate environment: its settings affect the s
 This catalog pins **NixOS 26.05** and an exact Nixpkgs revision in its `flake.lock`.
 That revision provides the NixOS options and the default `pkgs` package set available to modules.
 
-| Package source | Examples |
-| --- | --- |
-| The base Nixpkgs revision | Git, Neovim, and the GCC in the Go and Rust modules |
-| A catalog module's own pins | Docker, Go, Minikube, Node.js, Python, and Rust |
-
 Pins fix the package sources instead of following their latest upstream versions.
 The [catalog's version lines](catalog.md#versions) distinguish the versions a module provides.
 When writing a module, search for packages and options in the NixOS 26.05 release.
