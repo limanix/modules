@@ -9,12 +9,14 @@ You can add its tools to a VM by name, without writing Nix.
 | [Docker](../catalog/docker/README.md)     | `lmx:docker`   | Docker Engine, CLI, and Compose                         |
 | [Git](../catalog/git/README.md)           | `lmx:git`      | Git                                                     |
 | [Go](../catalog/go/README.md)             | `lmx:go`       | Go, gopls, Delve, and GCC                               |
+| [Helm](../catalog/helm/README.md)         | `lmx:helm`     | Helm package manager for Kubernetes                     |
 | [K9s](../catalog/k9s/README.md)           | `lmx:k9s`      | Terminal interface for Kubernetes                       |
 | [Minikube](../catalog/minikube/README.md) | `lmx:minikube` | Minikube for local Kubernetes clusters                  |
 | [Neovim](../catalog/neovim/README.md)     | `lmx:neovim`   | Neovim                                                  |
 | [Node.js](../catalog/nodejs/README.md)    | `lmx:nodejs`   | Node.js, npm, and npx                                   |
 | [Python](../catalog/python/README.md)     | `lmx:python`   | Python, venv, and virtualenv                            |
 | [Rust](../catalog/rust/README.md)         | `lmx:rust`     | Rust toolchain, rust-analyzer, GCC, pkg-config, and GDB |
+| [Terraform](../catalog/terraform/README.md) | `lmx:terraform` | Terraform CLI for infrastructure as code                |
 
 The Docker module gives the VM user root-equivalent access through the `docker` group.
 

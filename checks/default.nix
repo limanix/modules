@@ -5,11 +5,13 @@ let
     module:
     builtins.elem module.name [
       "go"
+      "helm"
       "k9s"
       "minikube"
       "nodejs"
       "python"
       "rust"
+      "terraform"
     ]
   ) catalog;
   nixpkgs = import ./nixpkgs.nix;
