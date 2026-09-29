@@ -32,12 +32,12 @@ tasks:
         vars:
           CMD: nix flake update nixpkgs --flake path:.
 
-  ci/fmt:
+  ci/nixos-fmt:
     desc: Check Nix formatting
     cmds:
       - task: nix:nixfmt
 
-  ci/lint:
+  ci/nixos-lint:
     desc: Lint Nix modules and checks
     cmds:
       - task: nix:statix
