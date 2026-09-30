@@ -22,4 +22,8 @@ in
     (lib.setPrio priority tools.terraform)
     versionedTerraform
   ];
+
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "Terraform ${tools.terraform.version} no longer receives upstream security updates.";
 }

@@ -33,5 +33,7 @@ in
     versionedNode
   ];
 
-  warnings = lib.optional tools.endOfLife "Node.js ${tools.nodejs.version} no longer receives upstream security updates.";
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "Node.js ${tools.nodejs.version} no longer receives upstream security updates.";
 }

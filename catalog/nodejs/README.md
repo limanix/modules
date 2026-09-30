@@ -19,6 +19,7 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 | `lmx:nodejs-23`               | 23.11.0 | End of life |
 
 Each line includes npm and npx for its Node.js version.
+Support status follows the [Node.js release lifecycle](https://nodejs.org/en/about/previous-releases).
 Selecting an end-of-life line prints a warning when the VM is built.
 
 ## Use

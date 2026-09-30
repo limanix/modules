@@ -22,4 +22,8 @@ in
     (lib.setPrio priority tools.k9s)
     versionedK9s
   ];
+
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "K9s ${tools.k9s.version} no longer receives upstream security updates.";
 }

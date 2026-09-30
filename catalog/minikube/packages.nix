@@ -12,4 +12,5 @@ in
 assert minikube.version == release.version;
 {
   inherit minikube;
+  inherit (release) endOfLife;
 }

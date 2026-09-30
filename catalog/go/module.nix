@@ -29,5 +29,7 @@ in
       pkgs.gcc
     ];
 
-  warnings = lib.optional tools.endOfLife "Go ${tools.go.version} no longer receives upstream security updates.";
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "Go ${tools.go.version} no longer receives upstream security updates.";
 }

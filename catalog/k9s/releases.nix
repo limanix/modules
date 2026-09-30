@@ -15,20 +15,24 @@
   };
 
   versions = {
+    # Upstream maintenance status for these lines has not been confirmed.
     "0.40" = {
       source = "legacy";
       package = "k9s";
       version = "0.40.10";
+      endOfLife = null;
     };
     "0.50" = {
       source = "previous";
       package = "k9s";
       version = "0.50.18";
+      endOfLife = null;
     };
     "0.51" = {
       source = "current";
       package = "k9s";
       version = "0.51.0";
+      endOfLife = null;
     };
   };
 }

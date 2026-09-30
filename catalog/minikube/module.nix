@@ -22,4 +22,8 @@ in
     (lib.setPrio priority tools.minikube)
     versionedMinikube
   ];
+
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "Minikube ${tools.minikube.version} no longer receives upstream security updates.";
 }

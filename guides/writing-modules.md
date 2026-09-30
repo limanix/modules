@@ -490,12 +490,23 @@ The versioned entries share these conventions, which the validator does not requ
 
 | File           | Contents                                                                                                   |
 |----------------|------------------------------------------------------------------------------------------------------------|
-| `releases.nix` | Pinned Nixpkgs revisions and hashes, package attributes, expected versions, and optional `endOfLife` flags |
+| `releases.nix` | Pinned Nixpkgs revisions and hashes, package attributes, expected versions, and an `endOfLife` value for every line |
 | `packages.nix` | Loads the line's packages and asserts their expected versions                                              |
 | `module.nix`   | Configures packages or services for the selected line                                                      |
 
 Entries supporting side-by-side versions add package priorities and versioned commands.
-Versioned entries emit an evaluation warning for lines marked `endOfLife`.
+Set `endOfLife` from the upstream project's maintenance policy:
+
+| Value | Meaning | EOL warning |
+|-------|---------|-------------|
+| `true` | Upstream support for the line has ended | Yes |
+| `false` | The line is supported under the upstream policy | No |
+| `null` | The line's support status has not been confirmed | No |
+
+Export the value from `packages.nix` with `inherit (release) endOfLife;`.
+In `module.nix`, use `lib.optional (tools.endOfLife == true)` for the warning so an unknown status is accepted.
+Mark EOL lines and unknown statuses in the README, and cite the upstream policy used to determine support.
+Review the value when maintaining the catalog; the build does not update it automatically.
 Keep the [release map](../catalog/go/releases.nix), [package loader](../catalog/go/packages.nix), metadata, and README consistent when updating a tool.
 Test each version line's documented commands in addition to the catalog checks.
 

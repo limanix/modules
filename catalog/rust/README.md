@@ -20,6 +20,7 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 rustc, Cargo, rustfmt, and Clippy come from the same Rust release.
 GCC, pkg-config, and GDB come from the [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins) for every line.
+Support status follows the [Rust security policy](https://rust-lang.org/policies/security/).
 Selecting an end-of-life line prints a warning when the VM is built.
 
 ## Use

@@ -22,4 +22,8 @@ in
     (lib.setPrio priority tools.helm)
     versionedHelm
   ];
+
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "Helm ${tools.helm.version} no longer receives upstream security updates.";
 }

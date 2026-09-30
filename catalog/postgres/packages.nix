@@ -7,10 +7,10 @@ let
     url = "https://github.com/NixOS/nixpkgs/archive/${source.rev}.tar.gz";
     inherit (source) sha256;
   }) { inherit system; };
-  k9s = packages.${release.package};
+  postgres = packages.${release.package};
 in
-assert k9s.version == release.version;
+assert postgres.version == release.version;
 {
-  inherit k9s;
+  inherit postgres;
   inherit (release) endOfLife;
 }

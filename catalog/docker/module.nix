@@ -19,5 +19,7 @@ in
 
   users.users.${runtime.user.name}.extraGroups = [ "docker" ];
 
-  warnings = lib.optional tools.endOfLife "Docker Engine ${tools.docker.version} no longer receives upstream security updates.";
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "Docker Engine ${tools.docker.version} no longer receives upstream security updates.";
 }

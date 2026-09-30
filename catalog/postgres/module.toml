@@ -1,0 +1,4 @@
+description = "PostgreSQL database server and command-line tools."
+
+versions = ["16", "17", "18"]
+default = "18"

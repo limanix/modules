@@ -17,6 +17,8 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 | `lmx:python-3.13`               | 3.13.15 | 21.6.1     |         |
 | `lmx:python-3.12`               | 3.12.14 | 21.6.1     |         |
 
+Upstream support stages and EOL dates are listed in [Status of Python versions](https://devguide.python.org/versions/).
+
 Each line also adds a command with its version, such as `python-3.14`.
 
 ## Use

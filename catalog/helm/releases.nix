@@ -15,20 +15,25 @@
   };
 
   versions = {
+    # Latest maintained minors on 2026-09-30: 3.22 and 4.3.
+    # https://helm.sh/docs/topics/version_skew/#supported-versions
     "3.20" = {
       source = "legacy";
       package = "kubernetes-helm";
       version = "3.20.2";
+      endOfLife = true;
     };
     "4.2" = {
       source = "previous";
       package = "kubernetes-helm";
       version = "4.2.4";
+      endOfLife = true;
     };
     "4.3" = {
       source = "current";
       package = "kubernetes-helm";
       version = "4.3.0";
+      endOfLife = false;
     };
   };
 }

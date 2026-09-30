@@ -17,6 +17,9 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 | `lmx:k9s-0.50`            | 0.50.18 |         |
 | `lmx:k9s-0.40`            | 0.40.10 |         |
 
+Upstream maintenance status for these lines has not been confirmed.
+The catalog records their [EOL status](../../guides/catalog.md#versions) as unknown and does not emit an EOL warning for them.
+
 Inside the VM, `k9s version` shows the installed version.
 
 ## Use
