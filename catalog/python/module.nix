@@ -25,5 +25,7 @@ in
     ]
     ++ [ versionedPython ];
 
-  warnings = lib.optional tools.endOfLife "Python ${tools.python.version} no longer receives upstream security updates.";
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "Python ${tools.python.version} no longer receives upstream security updates.";
 }

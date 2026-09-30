@@ -15,20 +15,24 @@
   };
 
   versions = {
+    # Upstream maintenance status for these lines has not been confirmed.
     "1.36" = {
       source = "legacy";
       package = "minikube";
       version = "1.36.0";
+      endOfLife = null;
     };
     "1.37" = {
       source = "previous";
       package = "minikube";
       version = "1.37.0";
+      endOfLife = null;
     };
     "1.38" = {
       source = "current";
       package = "minikube";
       version = "1.38.1";
+      endOfLife = null;
     };
   };
 }

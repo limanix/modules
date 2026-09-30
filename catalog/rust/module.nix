@@ -45,5 +45,7 @@ in
     pkgs.gdb
   ];
 
-  warnings = lib.optional tools.endOfLife "Rust ${tools.rustc.version} no longer receives upstream security updates.";
+  warnings = lib.optional (
+    tools.endOfLife == true
+  ) "Rust ${tools.rustc.version} no longer receives upstream security updates.";
 }

@@ -14,6 +14,7 @@ You can add its tools to a VM by name, without writing Nix.
 | [Minikube](../catalog/minikube/README.md) | `lmx:minikube` | Minikube for local Kubernetes clusters                  |
 | [Neovim](../catalog/neovim/README.md)     | `lmx:neovim`   | Neovim                                                  |
 | [Node.js](../catalog/nodejs/README.md)    | `lmx:nodejs`   | Node.js, npm, and npx                                   |
+| [PostgreSQL](../catalog/postgres/README.md) | `lmx:postgres` | PostgreSQL server and tools for manual use              |
 | [Python](../catalog/python/README.md)     | `lmx:python`   | Python, venv, and virtualenv                            |
 | [Rust](../catalog/rust/README.md)         | `lmx:rust`     | Rust toolchain, rust-analyzer, GCC, pkg-config, and GDB |
 | [Terraform](../catalog/terraform/README.md) | `lmx:terraform` | Terraform CLI for infrastructure as code                |
@@ -37,6 +38,7 @@ Select a line by adding its version to the selector:
 Git and Neovim have no version lines; they come from the [base Nixpkgs revision](concepts.md#nixos-version-and-package-pins).
 
 Docker and Node.js lines fix the major version, allowing minor and patch updates in later catalog releases.
+PostgreSQL lines also fix the major version, allowing minor updates within that major.
 The other versioned modules fix major and minor, allowing only patch updates within a line.
 A catalog release can also choose another default line.
 
@@ -46,6 +48,11 @@ Selecting one prints a warning when the VM is built, and the build continues:
 ```text
 evaluation warning: Go 1.24.13 no longer receives upstream security updates.
 ```
+
+Each version line records whether upstream support has ended.
+When that status has not been confirmed, its module page says it is unknown.
+An unknown status emits no EOL warning; the absence of a warning does not confirm upstream support.
+These statuses are reviewed when the catalog is maintained, not calculated from the current date during a VM build.
 
 ## Several versions in one VM
 

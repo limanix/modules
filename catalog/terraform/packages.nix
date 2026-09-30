@@ -18,4 +18,5 @@ in
 assert terraform.version == release.version;
 {
   inherit terraform;
+  inherit (release) endOfLife;
 }

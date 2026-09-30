@@ -15,20 +15,24 @@
   };
 
   versions = {
+    # Upstream maintenance status for these CLI lines has not been confirmed.
     "1.14" = {
       source = "legacy";
       package = "terraform";
       version = "1.14.9";
+      endOfLife = null;
     };
     "1.15" = {
       source = "previous";
       package = "terraform";
       version = "1.15.9";
+      endOfLife = null;
     };
     "1.16" = {
       source = "current";
       package = "terraform";
       version = "1.16.4";
+      endOfLife = null;
     };
   };
 }

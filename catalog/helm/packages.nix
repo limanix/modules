@@ -12,4 +12,5 @@ in
 assert helm.version == release.version;
 {
   inherit helm;
+  inherit (release) endOfLife;
 }

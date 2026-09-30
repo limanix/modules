@@ -19,6 +19,9 @@ Add the selectors to your VM's `nixos.modules` list and [apply the change](https
 | `lmx:minikube-1.37`                 | 1.37.0   |         |
 | `lmx:minikube-1.36`                 | 1.36.0   |         |
 
+Upstream maintenance status for these Minikube lines has not been confirmed.
+The catalog records their [EOL status](../../guides/catalog.md#versions) as unknown and does not emit an EOL warning for them.
+
 ## Requirements
 
 [Minikube requires](https://minikube.sigs.k8s.io/docs/start/#what-youll-need) at least 2 CPUs, 2 GB of free memory, and 20 GB of free disk space.

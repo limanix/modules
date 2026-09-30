@@ -18,6 +18,7 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 | `lmx:go-1.25`           | 1.25.13 | 0.22.0 | 1.26.3 | End of life |
 | `lmx:go-1.24`           | 1.24.13 | 0.20.0 | 1.25.2 | End of life |
 
+Support status follows the [Go release policy](https://go.dev/doc/devel/release).
 Selecting an end-of-life line prints a warning when the VM is built.
 GCC comes from the [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins) for every line.
 

@@ -9,6 +9,7 @@ let
       "k9s"
       "minikube"
       "nodejs"
+      "postgres"
       "python"
       "rust"
       "terraform"
