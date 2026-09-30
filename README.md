@@ -5,7 +5,7 @@
 <p align="center">
   <img src=".github/assets/readme-header.png"
        alt="LimaNix modules"
-       width="800">
+       width="100%">
 </p>
 
 The NixOS module catalog for [LimaNix](https://github.com/limanix/client).
