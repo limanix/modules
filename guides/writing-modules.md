@@ -429,14 +429,14 @@ Add its row to the table in [Catalog](catalog.md).
 With Task and Docker installed, run from the repository root:
 
 ```console
-task --yes ci/fmt ci/lint ci/test
+task --yes ci/nixos-fmt ci/nixos-lint ci/test
 ```
 
-| Task      | Checks                                                           |
-|-----------|------------------------------------------------------------------|
-| `ci/fmt`  | Nix formatting with nixfmt                                       |
-| `ci/lint` | Nix code with statix and deadnix                                 |
-| `ci/test` | Catalog metadata, NixOS evaluation, and each entry's `check.nix` |
+| Task            | Checks                                                           |
+|-----------------|------------------------------------------------------------------|
+| `ci/nixos-fmt`  | Nix formatting with nixfmt                                       |
+| `ci/nixos-lint` | Nix code with statix and deadnix                                 |
+| `ci/test`       | Catalog metadata, NixOS evaluation, and each entry's `check.nix` |
 
 `ci/test` evaluates both `aarch64-linux` and `x86_64-linux`; add `ARCH=arm64` or `ARCH=amd64` to evaluate one.
 For each architecture it checks every entry at its default, alone and all together, and every version line alone and alongside the other entries' defaults.
