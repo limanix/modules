@@ -1,6 +1,12 @@
 # LimaNix modules
 
-[![License: Apache-2.0](https://img.shields.io/github/license/limanix/modules?label=license)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/github/license/mr-chelyshkin/images?label=license)](LICENSE)
+
+<p align="center">
+  <img src=".github/assets/readme-header.png"
+       alt="github.com/mr-chelyshkin/images"
+       width="800">
+</p>
 
 **Ready-made development tools and services for [LimaNix](https://github.com/limanix/client).**
 
