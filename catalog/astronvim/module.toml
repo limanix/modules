@@ -1,0 +1,4 @@
+description = "AstroNvim development editor with Nix-managed plugins and parsers."
+
+versions = ["6"]
+default = "6"

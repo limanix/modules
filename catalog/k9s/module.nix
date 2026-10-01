@@ -1,16 +1,10 @@
-version:
-{ pkgs, lib, ... }:
+{ version }:
+{ pkgs, ... }:
 let
   tools = import ./packages.nix {
     inherit version;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
-
-  releases = builtins.attrValues (import ./releases.nix).versions;
-  olderReleases = builtins.filter (
-    release: lib.versionOlder release.version tools.k9s.version
-  ) releases;
-  priority = lib.meta.defaultPriority - builtins.length olderReleases;
 
   versionedK9s = pkgs.runCommand "k9s-${version}-command" { } ''
     mkdir -p "$out/bin"
@@ -18,12 +12,8 @@ let
   '';
 in
 {
-  environment.systemPackages = [
-    (lib.setPrio priority tools.k9s)
-    versionedK9s
-  ];
+  imports = [ ./selection.nix ];
 
-  warnings = lib.optional (
-    tools.endOfLife == true
-  ) "K9s ${tools.k9s.version} no longer receives upstream security updates.";
+  lmx.internal.k9s.versions = [ version ];
+  environment.systemPackages = [ versionedK9s ];
 }

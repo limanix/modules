@@ -58,3 +58,13 @@ npm-24 run build
 The versioned `npm` and `npx` commands put their Node.js version first on `PATH`.
 Scripts they run use that version.
 `node`, `npm`, and `npx` come from the newest selected line.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs each selected Node.js line with npm, npx and their versioned commands | `check.nix`, `smoke.nix`: commands |
+| Versioned npm and npx scripts run the matching Node.js interpreter | `smoke.nix`: commands |
+| Selected lines coexist and the newest supplies unqualified commands | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
+| Declares JavaScript/TypeScript/TSX parsers without installing an LSP server or enabling an editor | `check.nix`, `checks/contracts.nix` |
+| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

@@ -9,7 +9,7 @@ modules = ["lmx:neovim"]
 
 Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
-## Version
+## Versions
 
 Neovim comes from the catalog's [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
 This module has no version lines.
@@ -39,3 +39,10 @@ To make Neovim the editor for programs that read `EDITOR`, such as `git commit`,
 The module does not configure Neovim's LSP client.
 To use `gopls` from the [Go module](../go/README.md) or `rust-analyzer` from the [Rust module](../rust/README.md), configure [Neovim's LSP client](https://neovim.io/doc/user/lsp/) to start the server.
 [Editor integration](../../guides/catalog.md#editor-integration) describes the options.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Enables Neovim and installs the configured NixOS editor package | `check.nix` |
+| Leaves the default-editor setting overridable through `programs.neovim.defaultEditor` | `checks/contracts.nix` |

@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   version,
   hasPackage,
@@ -9,5 +10,6 @@ let
     inherit version;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
+  warning = "Terraform ${tools.terraform.version} no longer receives upstream security updates.";
 in
-hasPackage tools.terraform
+hasPackage tools.terraform && (builtins.elem warning config.warnings == (tools.endOfLife == true))

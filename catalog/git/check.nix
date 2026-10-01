@@ -1,2 +1,2 @@
-{ config, ... }:
-config.programs.git.enable
+{ config, hasPackage, ... }:
+config.programs.git.enable && hasPackage config.programs.git.package

@@ -1,6 +1,6 @@
 # Minikube
 
-Installs Minikube, which runs local Kubernetes clusters inside the VM.
+Installs Minikube, which runs local Kubernetes clusters inside the VM, and K9s for browsing them from the terminal.
 
 ```toml
 [nixos]
@@ -47,6 +47,19 @@ minikube kubectl --profile=dev -- get pods -A
 
 Options before `--` go to Minikube, and the arguments after it go to kubectl.
 
+### K9s
+
+After starting the cluster, open its terminal interface:
+
+```console
+k9s --context dev
+```
+
+The module includes the [K9s catalog default](../k9s/README.md#versions) as the `k9s` command when no K9s version is selected explicitly.
+Select `lmx:k9s-VERSION` as well to replace that default and add its version-suffixed command.
+For example, `lmx:k9s-0.40` installs that line instead of the catalog default.
+If several K9s versions are selected explicitly, `k9s` runs the newest selected line.
+
 ## Several versions
 
 Select several lines to install them side by side:
@@ -65,3 +78,13 @@ minikube-1.38 start --driver=docker --profile=mk138
 ```
 
 `minikube` runs the newest selected line.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs the pinned Minikube line and its `minikube-LINE` command | `check.nix`, `smoke.nix`: commands |
+| Selected Minikube lines coexist; the newest supplies `minikube` | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
+| Includes a K9s recommendation that explicit K9s version selections can replace | `check.nix`, `checks/default.nix`: minikubeK9sSelection |
+| Does not enable Docker or create a cluster by being selected | `checks/contracts.nix` |
+| Unknown EOL status emits no EOL warning | `check.nix` |

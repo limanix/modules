@@ -10,7 +10,8 @@ let
   olderReleases = builtins.filter (
     release: lib.versionOlder release.version tools.rustc.version
   ) releases;
-  priority = lib.meta.defaultPriority - builtins.length olderReleases;
+  rank = builtins.length olderReleases;
+  priority = lib.meta.defaultPriority - rank;
 
   toolchain = [
     tools.rustc
@@ -38,12 +39,25 @@ let
       '';
 in
 {
-  environment.systemPackages = map (lib.setPrio priority) toolchain ++ [
-    versionedRust
-    pkgs.gcc
-    pkgs.pkg-config
-    pkgs.gdb
-  ];
+  imports = [ ./tool.nix ];
+
+  lmx.capabilities.editor = {
+    languages.rust.parsers = [ "rust" ];
+    tools.rust-analyzer = lib.mkOverride (1000 - rank) {
+      package = lib.setPrio priority tools.rust-analyzer;
+      command = "${tools.rust-analyzer}/bin/rust-analyzer";
+      languages = [ "rust" ];
+    };
+  };
+
+  environment.systemPackages =
+    map (lib.setPrio priority) (lib.remove tools.rust-analyzer toolchain)
+    ++ [
+      versionedRust
+      pkgs.gcc
+      pkgs.pkg-config
+      pkgs.gdb
+    ];
 
   warnings = lib.optional (
     tools.endOfLife == true

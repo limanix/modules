@@ -10,7 +10,8 @@ let
   olderReleases = builtins.filter (
     release: lib.versionOlder release.version tools.go.version
   ) releases;
-  priority = lib.meta.defaultPriority - builtins.length olderReleases;
+  rank = builtins.length olderReleases;
+  priority = lib.meta.defaultPriority - rank;
 
   versionedGo = pkgs.runCommand "go-${version}-command" { } ''
     mkdir -p "$out/bin"
@@ -18,10 +19,24 @@ let
   '';
 in
 {
+  imports = [ ./tool.nix ];
+
+  lmx.capabilities.editor = {
+    languages.go.parsers = [
+      "go"
+      "gomod"
+      "gosum"
+    ];
+    tools.gopls = lib.mkOverride (1000 - rank) {
+      package = lib.setPrio priority tools.gopls;
+      command = "${tools.gopls}/bin/gopls";
+      languages = [ "go" ];
+    };
+  };
+
   environment.systemPackages =
     map (lib.setPrio priority) [
       tools.go
-      tools.gopls
       tools.delve
     ]
     ++ [

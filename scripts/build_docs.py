@@ -22,7 +22,11 @@ def prepare(root: Path, ref: str) -> Path:
         if not (guides / name).is_file():
             raise ValueError(f"Missing guide: guides/{name}")
 
-    modules = sorted(path for path in (root / "catalog").iterdir() if path.is_dir())
+    modules = sorted(
+        path
+        for path in (root / "catalog").iterdir()
+        if path.is_dir() and not (path.name == "_shared" and not path.is_symlink())
+    )
     if not modules:
         raise ValueError("No modules found in catalog/")
     for module in modules:

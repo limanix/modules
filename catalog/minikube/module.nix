@@ -18,6 +18,8 @@ let
   '';
 in
 {
+  imports = [ ../k9s/default.nix ];
+
   environment.systemPackages = [
     (lib.setPrio priority tools.minikube)
     versionedMinikube

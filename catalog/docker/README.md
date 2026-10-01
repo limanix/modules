@@ -1,6 +1,6 @@
 # Docker
 
-Runs Docker Engine as a system service in the VM, with the Docker CLI and the Compose plugin.
+Runs Docker Engine as a system service in the VM, with the Docker CLI, the Compose plugin, and [Lazydocker](../lazydocker/README.md).
 
 ```toml
 [nixos]
@@ -39,6 +39,8 @@ docker ps
 
 The command lists running containers; an empty list is normal before you start any.
 
+Run `lazydocker` inside the VM for a terminal interface to containers, logs, images, and volumes.
+
 To run a Compose project from your Mac, first [share its directory with the VM](https://limanix.dev/categories/client/configuration.html#share-project-directories).
 Then run this inside the VM, from the directory that contains the Compose file:
 
@@ -68,3 +70,13 @@ Compose `ports:` entries behave the same way.
 A container started with `--network host` uses the VM's network directly.
 `network.ports` applies to it as to any other service in the VM.
 For details, see Docker's guides to [port publishing](https://docs.docker.com/engine/network/port-publishing/) and [firewall rules](https://docs.docker.com/engine/network/firewall-iptables/).
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Enables the selected Docker Engine service and installs its CLI, Compose plugin, and Lazydocker | `check.nix`, `smoke.nix`: commands |
+| Adds the configured development account to the Docker group | `check.nix` |
+| Only one Docker line may configure the service; conflicting lines report the package conflict | `checks/negative.nix`: dockerVersionConflict |
+| Selecting Lazydocker again preserves the system and public settings | `checks/contracts.nix`: composition |
+| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

@@ -1,35 +1,24 @@
 {
   nixpkgs,
-  arch,
   system,
   modules,
   userName,
 }:
 let
-  runtime = {
-    name = "module-check";
-    inherit arch;
-    user = {
-      name = userName;
-      home = "/home/${userName}";
-      uid = 1000;
-      sudo = false;
-    };
-    ports = {
-      tcp = [ ];
-      udp = [ ];
-    };
-    modules = builtins.map toString modules;
-  };
+  shared = import ./shared-files.nix;
 in
 import (nixpkgs + "/nixos/lib/eval-config.nix") {
   inherit system;
-  specialArgs = { inherit runtime; };
   modules = [
+    ../interface.nix
     (
       { config, ... }:
       {
-        networking.hostName = runtime.name;
+        limanix.user = {
+          name = userName;
+          home = "/home/${userName}";
+        };
+        networking.hostName = "module-check";
         system.stateVersion = config.system.nixos.release;
 
         boot.loader.grub = {
@@ -48,12 +37,14 @@ import (nixpkgs + "/nixos/lib/eval-config.nix") {
           };
         };
 
-        users.users.${runtime.user.name} = {
+        users.users.${config.limanix.user.name} = {
           isNormalUser = true;
-          inherit (runtime.user) uid home;
+          uid = 1000;
+          inherit (config.limanix.user) home shell;
         };
       }
     )
   ]
+  ++ shared.public
   ++ modules;
 }

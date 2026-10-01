@@ -65,3 +65,14 @@ Commands without a version come from the newest selected line.
 
 The module installs `rust-analyzer` for editors that support the Language Server Protocol.
 See [Editor integration](../../guides/catalog.md#editor-integration) and the [rust-analyzer editor setup](https://rust-analyzer.github.io/book/installation.html).
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs the selected Rust toolchain, GCC, pkg-config and GDB; supplies the documented versioned commands | `check.nix`, `smoke.nix`: commands |
+| Versioned Cargo runs build, test, fmt and clippy with its matching toolchain | `smoke.nix`: commands |
+| Declares the Rust parser and consumer-independent `rust-analyzer` tool with its package and command | `check.nix`, `checks/contracts.nix` |
+| The newest selected line supplies ordinary commands; a user tool declaration overrides the complete analyzer declaration and installed package | `checks/contracts.nix`, `smoke.nix`: coexistence, providerOverride |
+| Installing Rust does not activate an editor | `checks/contracts.nix` |
+| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

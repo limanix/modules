@@ -7,6 +7,12 @@ If you want to contribute it to this repository, continue with [Add to the catal
 [Concepts](concepts.md) explains the NixOS configuration model.
 This guide introduces the Nix syntax through examples.
 
+| Your task | Start here |
+|---|---|
+| Write a custom module | [Create a module](#create-a-module) |
+| Add or maintain a catalog module | [Catalog contract](catalog-contract.md), then [Add to the catalog](#add-to-the-catalog) |
+| Understand required tests | [Required checks](catalog-contract.md#required-checks-for-every-module) |
+
 ## Create a module
 
 Keep a project's modules in its repository, one directory per module:
@@ -90,33 +96,73 @@ The nested form is useful when setting several options for one program.
 This module needs no `{ pkgs, ... }:` header because it uses no arguments; the first example needs `pkgs` to select packages.
 Modules can also request `lib`, a library of helper functions, and `config`, the final configuration after all modules are merged.
 
-### Read VM settings with `runtime`
+### Read VM user settings
 
-LimaNix modules can request a `runtime` argument with the VM's settings.
-Use it instead of hard-coding values, such as the user name `dev`:
+LimaNix exposes the guest account through typed NixOS options.
+Read these through `config` instead of hard-coding values such as the user name `dev`:
 
 ```nix
-{ pkgs, runtime, ... }:
+{ config, pkgs, ... }:
 {
-  users.users.${runtime.user.name}.packages = [ pkgs.jq ];
+  users.users.${config.limanix.user.name}.packages = [ pkgs.jq ];
 }
 ```
 
-| Field               | Type             | Value                                                                          |
-|---------------------|------------------|--------------------------------------------------------------------------------|
-| `runtime.name`      | string           | VM name, also used as the hostname                                             |
-| `runtime.arch`      | string           | `"arm64"` or `"amd64"`, which Nix calls `aarch64-linux` and `x86_64-linux`     |
-| `runtime.user.name` | string           | Guest account name                                                             |
-| `runtime.user.home` | string           | Guest home directory                                                           |
-| `runtime.user.uid`  | integer          | Guest account's numeric UID, matching the host user                            |
-| `runtime.user.sudo` | boolean          | Whether the guest account has passwordless `sudo`                              |
-| `runtime.ports.tcp` | list of integers | Allowed TCP firewall ports                                                     |
-| `runtime.ports.udp` | list of integers | Allowed UDP firewall ports                                                     |
-| `runtime.modules`   | list of strings  | Module entry-point paths already imported by LimaNix; do not import them again |
+| Option | Type | Value |
+|---|---|---|
+| `limanix.user.name` | string, read-only | Guest account name supplied by the client |
+| `limanix.user.home` | string, read-only | Guest home directory supplied by the client |
+| `limanix.user.shell` | shell package | Login shell; Bash by default, or Zsh with `lmx:zsh` |
 
-These values describe the VM settings supplied to the module; they do not reflect changes made by other modules.
-Read `config` when you need an option's final value instead.
-`runtime` is specific to LimaNix; another NixOS configuration must supply it through `specialArgs` to use a module that requests it.
+These three options are declared in the shared `interface.nix` at the catalog repository root.
+The client supplies the account identity and applies the selected shell to the account.
+Modules that use these options depend on this interface rather than the client's internal VM data layout.
+Their names, types and meanings form the public contract; changing that contract requires a compatibility decision.
+
+Select another login shell in a custom module:
+
+```nix
+{ pkgs, ... }:
+{
+  programs.fish.enable = true;
+  limanix.user.shell = pkgs.fish;
+}
+```
+
+This ordinary assignment overrides the Zsh module's `lib.mkDefault` value.
+Zsh remains installed, and its shell integrations still apply to Zsh.
+Two modules that offer different shells at the same priority still require an explicit choice.
+Set `limanix.user.shell` rather than assigning the guest account's `users.users.<name>.shell` directly.
+
+### Migrate custom modules
+
+The old `runtime` and `inputs` data are no longer available as module arguments.
+Custom modules that read them need changes before their next VM create or update.
+Migration errors from the generated flake link to this section.
+The diagnostic does not restore their values.
+Catalog checks do not supply these arguments or the temporary diagnostics.
+Remove these arguments from the module's function signature and replace their uses as follows:
+
+| Previous reference | Replacement |
+|---|---|
+| `runtime.name` | `config.networking.hostName`, the final hostname |
+| `runtime.arch` | `pkgs.stdenv.hostPlatform`, the guest platform attribute set |
+| `runtime.user.name` | `config.limanix.user.name` |
+| `runtime.user.home` | `config.limanix.user.home` |
+| `runtime.user.uid` | `config.users.users.${config.limanix.user.name}.uid` |
+| `runtime.ports.tcp` | `config.networking.firewall.allowedTCPPorts` |
+| `runtime.ports.udp` | `config.networking.firewall.allowedUDPPorts` |
+| `runtime.user.sudo` | No public replacement |
+| `runtime.modules` | Private client data; no replacement |
+| `inputs` | Private root-flake inputs; no replacement |
+
+`pkgs.stdenv.hostPlatform` is an attribute set, not the previous `"arm64"` or `"amd64"` string.
+Its `system` field is `"aarch64-linux"` or `"x86_64-linux"` for the supported guest architectures.
+Values read through `config` reflect the final merged configuration, including changes from other modules.
+For example, the firewall port lists can contain ports added by services as well as those configured through the client.
+
+Standard NixOS arguments such as `config`, `lib`, `pkgs` and `modulesPath` remain available.
+The generated root flake imports Lima itself; module code does not receive the root flake's `inputs` set.
 
 ### Enable a service
 
@@ -128,14 +174,14 @@ This module runs PostgreSQL and creates a database and a database user named aft
 :name: custom-module-postgresql
 :class: code-example
 
-{ runtime, ... }:
+{ config, ... }:
 {
   services.postgresql = {
     enable = true;
-    ensureDatabases = [ runtime.user.name ];
+    ensureDatabases = [ config.limanix.user.name ];
     ensureUsers = [
       {
-        name = runtime.user.name;
+        name = config.limanix.user.name;
         ensureDBOwnership = true;
       }
     ];
@@ -145,7 +191,7 @@ This module runs PostgreSQL and creates a database and a database user named aft
 
 | Code                                                          | Purpose                                                                                     |
 |---------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| [1](#custom-module-postgresql.1){.external .code-lines}       | Receives the VM's settings through the [`runtime` argument](#read-vm-settings-with-runtime) |
+| [1](#custom-module-postgresql.1){.external .code-lines}       | Receives the [public account settings](#read-vm-user-settings) through `config` |
 | [4](#custom-module-postgresql.4){.external .code-lines}       | Enables the PostgreSQL service                                                              |
 | [5](#custom-module-postgresql.5){.external .code-lines}       | Creates a database named after the VM's user                                                |
 | [6–11](#custom-module-postgresql.6-11){.external .code-lines} | Creates a database user with the same name and makes it the owner of that database          |
@@ -177,7 +223,15 @@ dev-tools/
 
 Each imported file is a module of its own, such as the package list and the Neovim example above.
 Paths are relative to the file that contains them.
-Keep every imported file inside the module directory to make it self-contained.
+For imported third-party modules, keep every imported file inside the module directory to make it self-contained.
+Standard catalog modules may import siblings, for example `imports = [ ../git/default.nix ];`.
+Use the explicit entry-point file so Nix recognizes it as the same module when it is also selected directly.
+The client preserves the whole catalog tree and imports only the selected entry points.
+Nix then follows their imports.
+This lets an aggregate such as `lmx:console` reuse the same modules that users select individually.
+
+Catalog composition, public options, and capability exchange follow the [catalog contract](catalog-contract.md).
+The contract distinguishes repeat imports from explicit version selection and defines who owns common declarations.
 
 `imports` combines modules.
 The Nix function `import ./file.nix` is different: it evaluates a file and returns its value.
@@ -342,6 +396,7 @@ The [nix-ld documentation](https://github.com/nix-community/nix-ld/blob/2.0.6/RE
 
 The module is usable without becoming a catalog entry.
 Continue here only if you want to contribute it to the shared catalog in this repository.
+Every catalog entry follows the [catalog contract](catalog-contract.md), including its documentation and testing requirements.
 
 Place the minimal `dev-tools` example from [Create a module](#create-a-module) in `catalog/dev-tools/`, keeping its `default.nix`.
 The directory name identifies the entry and gives it the selector `lmx:dev-tools`.
@@ -352,7 +407,8 @@ Add the remaining files:
 | `default.nix` | The module's entry point; the existing example installs `jq` and `ripgrep` |
 | `module.toml` | The catalog description and optional version lines                         |
 | `check.nix`   | Checks what the module adds to the evaluated NixOS configuration           |
-| `README.md`   | The entry's documentation page                                             |
+| `README.md`   | The entry's documentation page, including its Guarantees section             |
+| `smoke.nix`    | Build and behavior checks when required by the [contract](catalog-contract.md#required-checks-for-every-module) |
 
 For `catalog/dev-tools/module.toml`, a description is enough:
 
@@ -361,6 +417,7 @@ description = "jq and ripgrep for inspecting project data."
 ```
 
 This entry uses the base Nixpkgs packages and needs no version lines.
+Its package-only behavior needs `check.nix`; it introduces no custom build or startup behavior requiring a separate smoke check.
 
 ### Write the result check
 
@@ -385,13 +442,19 @@ The check must return `true`; accept unused arguments with `...`.
 For a service, check its configuration options rather than only its package membership.
 For separately pinned packages, load the package for `version` as [Go's check](../catalog/go/check.nix) does.
 
+This check verifies the evaluated result only.
+Custom builds and runtime integration require `smoke.nix` under the [smoke requirements](catalog-contract.md#required-checks-for-every-module).
+Every such check must be discovered, built, and executed by blocking catalog CI.
+
 ### Follow the metadata rules
 
-The [validator](../checks/catalog.nix) enforces these rules:
+Catalog entries must follow these structural rules; see the [validator](../checks/catalog.nix).
+The [catalog contract](catalog-contract.md) also requires README guarantees and applicable smoke checks.
 
 | Item                                      | Rule                                                                                                      |
 |-------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | Directory name                            | Up to 63 characters: lowercase letters, digits, and single hyphens between groups, starting with a letter |
+| Reserved names                            | `capabilities` and `internal` cannot be module names; `_shared` is reserved for shared declarations |
 | `default.nix`, `module.toml`, `check.nix` | Required regular files                                                                                    |
 | `module.toml` keys                        | Only `description`, `versions`, and `default`                                                             |
 | `description`                             | A string that is not empty or only whitespace                                                             |
@@ -399,7 +462,13 @@ The [validator](../checks/catalog.nix) enforces these rules:
 | `default`                                 | One of `versions`; empty or omitted when there are no versions                                            |
 | `versions/<line>.nix`                     | A regular file for every version line                                                                     |
 
-Every directory directly under `catalog/` must be an entry.
+Every directory directly under `catalog/` must be an entry, except the reserved `_shared` directory.
+Use `_shared/internal/` for private declarations imported by multiple catalog modules.
+Public declarations belong in `_shared/<area>.nix` and are loaded by the client, including `_shared/editor.nix` for `lmx.capabilities.editor.*`.
+Provider and consumer modules use these public options without importing their declaration files.
+The `_shared` directory has no selector or module metadata and is excluded from generated module documentation.
+The client preserves its files in the catalog source tree.
+All other directory names remain subject to the module rules, and a catalog containing only `_shared` is invalid.
 For example, `dev-tools` is a valid name and `3.14` is a valid version line; `my_module` and `v3.14` are not.
 
 ```{warning}
@@ -419,8 +488,23 @@ Follow the existing pages:
 | Selector            | The entry's default selector and a link to the client guide for applying it                                                                   |
 | `Versions`          | Selectors and exact package versions, marking default and end-of-life lines; for an entry without lines, explain where its package comes from |
 | `Use`               | The first commands to run inside the VM and what they show                                                                                    |
+| `Guarantees`        | The stable behavior promised by the module, with the checks that cover it                                                                     |
 | Additional sections | Entry-specific details such as permissions, native dependencies, or editor support                                                            |
 
+Use this structure for the `Guarantees` section, with observable behavior and the checks that cover it.
+The following editor and language examples illustrate the required format:
+
+```markdown
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| `nvim` opens AstroNvim when neither personal `init.lua` nor `init.vim` exists | `smoke.nix`: startup |
+| Selecting `lmx:go` installs and declares `gopls` | `check.nix` |
+| Selecting AstroNvim together with Go configures the declared `gopls` | `check.nix`, `smoke.nix`: LSP |
+```
+
+Write guarantees for the entry being documented and reference the checks that verify each guarantee.
 Describe the module's behavior, without repeating client instructions.
 Add its row to the table in [Catalog](catalog.md).
 
@@ -432,28 +516,30 @@ With Task and Docker installed, run from the repository root:
 task --yes ci/nixos-fmt ci/nixos-lint ci/test
 ```
 
-| Task            | Checks                                                           |
-|-----------------|------------------------------------------------------------------|
-| `ci/nixos-fmt`  | Nix formatting with nixfmt                                       |
-| `ci/nixos-lint` | Nix code with statix and deadnix                                 |
-| `ci/test`       | Catalog metadata, NixOS evaluation, and each entry's `check.nix` |
+Repository checks must meet the [catalog contract](catalog-contract.md#required-checks-for-every-module):
 
-`ci/test` evaluates both `aarch64-linux` and `x86_64-linux`; add `ARCH=arm64` or `ARCH=amd64` to evaluate one.
-For each architecture it checks every entry at its default, alone and all together, and every version line alone and alongside the other entries' defaults.
-It also checks that two Docker lines together fail.
+| Task | Required coverage |
+|---|---|
+| `ci/nixos-fmt` | Nix formatting with nixfmt |
+| `ci/nixos-lint` | Nix code with statix and deadnix |
+| `ci/test` | Catalog metadata, module and version evaluation, composition, public options and capabilities, and all required `check.nix` and `smoke.nix` checks |
 
-```{important}
-`ci/test` only evaluates configurations.
-It does not build packages, boot a VM, run installed tools, or cover every possible combination of version lines.
-```
+Evaluation must cover every entry at its default in isolation, all compatible defaults together, and every version line in isolation.
+Check documented version coexistence within each module, explicit documented integrations, composition, supported overrides, and expected incompatible selections.
+Run evaluation for both `aarch64-linux` and `x86_64-linux`; `ARCH=arm64` or `ARCH=amd64` selects one architecture for a local run.
+Every applicable `smoke.nix` must be discovered, built, and executed by blocking catalog CI using the module's actual packages and generated configuration.
+Catalog evaluation uses the public interface with test account values; client/catalog compatibility checks must evaluate real `Prepare()` output to verify the client's values.
+Reports must distinguish evaluation, build, runtime, and full-VM checks, and identify the architecture verified at each level.
 
 Also test the applied module in a VM by running the commands documented in its README.
 Keep evaluation results and runtime results distinct.
+Manual VM checks complement the required automated checks; they do not satisfy the CI requirement by themselves.
 
 ## Support multiple versions
 
 Version lines are optional, even for a catalog entry.
-Use them when users need a choice of tool versions.
+Use them when users need a choice of tool versions or an incompatible change requires a new supported contract line.
+Document the relationship between a selector, its upstream versions, and its [compatibility guarantees](catalog-contract.md#guarantees-and-version-lines).
 The [Go entry](../catalog/go/README.md) is a working example.
 Its `module.toml` adds the lines and default alongside its description:
 
@@ -472,13 +558,15 @@ Its `default.nix` loads that default:
 let
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
 in
-import (./versions + "/${metadata.default}.nix")
+{
+  imports = [ (./versions + "/${metadata.default}.nix") ];
+}
 ```
 
 | Code                                                   | Purpose                                                                |
 |--------------------------------------------------------|------------------------------------------------------------------------|
 | [2](#catalog-default-version.2){.external .code-lines} | Reads `module.toml` and parses its fields into `metadata`              |
-| [4](#catalog-default-version.4){.external .code-lines} | Loads the version file named by `default`, such as `versions/1.27.nix` |
+| [4–6](#catalog-default-version.4-6){.external .code-lines} | Imports the concrete version file named by `default`, such as `versions/1.27.nix`, so selecting that same file again is deduplicated |
 
 Each line's file, such as `versions/1.27.nix`, passes its version to a shared module:
 

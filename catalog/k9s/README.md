@@ -48,7 +48,7 @@ Select several lines to install them side by side:
 modules = ["lmx:k9s-0.40", "lmx:k9s-0.50", "lmx:k9s-0.51"]
 ```
 
-Each line adds a command with its version:
+Each explicitly selected version line adds a command with its version:
 
 ```console
 k9s-0.40 version
@@ -57,3 +57,15 @@ k9s-0.51 version
 ```
 
 `k9s` runs the newest selected line.
+Both `lmx:k9s` and [Minikube](../minikube/README.md#k9s) recommend the catalog default through the same entry point.
+An explicit `lmx:k9s-VERSION` replaces that recommendation.
+For example, `lmx:k9s` together with `lmx:k9s-0.40` installs only 0.40.
+Select `lmx:k9s-0.40` and `lmx:k9s-0.51` explicitly to install both.
+The recommendation supplies only `k9s`; explicit version selectors also supply their version-suffixed commands.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs the selected K9s packages; explicit lines provide `k9s-LINE` | `check.nix`, `smoke.nix`: commands |
+| The newest explicitly selected line supplies `k9s`; upstream EOL warnings occur once per selected package | `check.nix`, `checks/default.nix`: minikubeK9sSelection |
