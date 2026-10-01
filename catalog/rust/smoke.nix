@@ -10,7 +10,7 @@ let
     inherit version;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
-  tool = config.lmx.capabilities.editor.tools.rust-analyzer;
+  tool = config.lmx.capabilities.languageSupport.tools.rust-analyzer;
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
   lines = builtins.sort pkgs.lib.versionOlder metadata.versions;
   older = import ./packages.nix {
@@ -22,7 +22,7 @@ let
     map (line: ./versions + "/${line}.nix") lines
     ++ [
       {
-        lmx.capabilities.editor.tools.rust-analyzer = {
+        lmx.capabilities.languageSupport.tools.rust-analyzer = {
           package = older.rust-analyzer;
           command = "${older.rust-analyzer}/bin/rust-analyzer";
           args = [ "--version" ];
@@ -31,7 +31,7 @@ let
       }
     ]
   );
-  selected = overridden.config.lmx.capabilities.editor.tools.rust-analyzer;
+  selected = overridden.config.lmx.capabilities.languageSupport.tools.rust-analyzer;
 in
 {
   providerOverride = pkgs.runCommand "rust-user-selected-provider" { } ''

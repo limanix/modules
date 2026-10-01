@@ -115,7 +115,7 @@ let
       builtins.toJSON (
         builtins.mapAttrs (_: tool: {
           inherit (tool) command args;
-        }) configuration.config.lmx.capabilities.editor.tools
+        }) configuration.config.lmx.capabilities.languageSupport.tools
       )
     );
   suppliedGopls = pkgs.writeShellScriptBin "gopls" ''
@@ -135,7 +135,7 @@ let
         pkgs.go
         suppliedGopls
       ];
-      lmx.capabilities.editor = {
+      lmx.capabilities.languageSupport = {
         tools.gopls = suppliedTool;
         languages.go.parsers = [ "go" ];
       };
@@ -143,7 +143,7 @@ let
   ];
   userOverride = evaluate [
     ../go/default.nix
-    { lmx.capabilities.editor.tools.gopls = suppliedTool; }
+    { lmx.capabilities.languageSupport.tools.gopls = suppliedTool; }
   ];
   checkGo =
     name: configuration:

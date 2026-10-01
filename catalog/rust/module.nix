@@ -41,7 +41,7 @@ in
 {
   imports = [ ./tool.nix ];
 
-  lmx.capabilities.editor = {
+  lmx.capabilities.languageSupport = {
     languages.rust.parsers = [ "rust" ];
     tools.rust-analyzer = lib.mkOverride (1000 - rank) {
       package = lib.setPrio priority tools.rust-analyzer;

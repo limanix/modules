@@ -86,10 +86,10 @@ let
       candidate.outPath == package.outPath
       || builtins.any (winner: packagePriority winner < packagePriority candidate) matching
     ) candidates;
-  capability = configuration: configuration.config.lmx.capabilities.editor;
+  capability = configuration: configuration.config.lmx.capabilities.languageSupport;
   thirdParty = { pkgs, ... }: {
     environment.systemPackages = [ pkgs.gopls ];
-    lmx.capabilities.editor = {
+    lmx.capabilities.languageSupport = {
       tools.gopls = {
         package = pkgs.gopls;
         command = "${pkgs.gopls}/bin/gopls";
@@ -114,7 +114,7 @@ let
       reverseDeclaration = (capability reversed).tools.${identity};
       replacement = (toolsFor name (builtins.head versions).version).${identity};
       override = {
-        lmx.capabilities.editor.tools.${identity} = {
+        lmx.capabilities.languageSupport.tools.${identity} = {
           package = replacement;
           command = "${replacement}/bin/${identity}";
           args = [ "--catalog-override" ];
@@ -127,7 +127,7 @@ let
         (map (variant: variant.path) versions)
         ++ [
           ({ lib, ... }: {
-            lmx.capabilities.editor.tools.${identity} = lib.mkForce {
+            lmx.capabilities.languageSupport.tools.${identity} = lib.mkForce {
               package = replacement;
               command = "${replacement}/bin/${identity}";
             };
@@ -279,7 +279,7 @@ in
     let
       configuration = configurationFor [
         {
-          lmx.capabilities.editor.languages.example.parsers = [ "lua" ];
+          lmx.capabilities.languageSupport.languages.example.parsers = [ "lua" ];
         }
       ];
     in
@@ -313,9 +313,9 @@ in
   languageContributions =
     let
       configuration = configurationFor [
-        { lmx.capabilities.editor.languages.go.parsers = [ "go" ]; }
+        { lmx.capabilities.languageSupport.languages.go.parsers = [ "go" ]; }
         {
-          lmx.capabilities.editor.languages = {
+          lmx.capabilities.languageSupport.languages = {
             go.parsers = [ "gomod" ];
             python.parsers = [ "python" ];
           };
@@ -388,8 +388,8 @@ in
         languages = [ "example" ];
       };
       configuration = configurationFor [
-        { lmx.capabilities.editor.tools.example = lib.mkDefault declaration; }
-        { lmx.capabilities.editor.tools.example = lib.mkDefault declaration; }
+        { lmx.capabilities.languageSupport.tools.example = lib.mkDefault declaration; }
+        { lmx.capabilities.languageSupport.tools.example = lib.mkDefault declaration; }
       ];
     in
     verify "identical complete tool declarations do not duplicate lists" (
@@ -402,9 +402,9 @@ in
         command = "${pkgs.hello}/bin/hello";
       };
       configuration = configurationFor [
-        { lmx.capabilities.editor.tools.example = lib.mkDefault required; }
+        { lmx.capabilities.languageSupport.tools.example = lib.mkDefault required; }
         {
-          lmx.capabilities.editor.tools.example = lib.mkDefault (
+          lmx.capabilities.languageSupport.tools.example = lib.mkDefault (
             required
             // {
               args = [ ];
@@ -425,7 +425,7 @@ in
     let
       weak = { lib, pkgs, ... }: {
         environment.systemPackages = [ pkgs.hello ];
-        lmx.capabilities.editor.tools.example = lib.mkOverride 1000 {
+        lmx.capabilities.languageSupport.tools.example = lib.mkOverride 1000 {
           package = pkgs.hello;
           command = "${pkgs.hello}/bin/hello";
           args = [ "discarded" ];
@@ -433,7 +433,7 @@ in
         };
       };
       conflictingWeak = { lib, pkgs, ... }: {
-        lmx.capabilities.editor.tools.example = lib.mkOverride 1000 {
+        lmx.capabilities.languageSupport.tools.example = lib.mkOverride 1000 {
           package = pkgs.hello;
           command = "${pkgs.hello}/bin/hello";
           args = [ "also-discarded" ];
@@ -441,7 +441,7 @@ in
       };
       strong = { lib, pkgs, ... }: {
         environment.systemPackages = [ pkgs.coreutils ];
-        lmx.capabilities.editor.tools.example = lib.mkOverride 999 {
+        lmx.capabilities.languageSupport.tools.example = lib.mkOverride 999 {
           package = pkgs.coreutils;
           command = "${pkgs.coreutils}/bin/true";
         };

@@ -10,7 +10,7 @@ let
     inherit (config.lmx.internal.astronvim) version;
     parsers = lib.unique (
       lib.concatMap (language: language.parsers) (
-        builtins.attrValues config.lmx.capabilities.editor.languages
+        builtins.attrValues config.lmx.capabilities.languageSupport.languages
       )
     );
   };
@@ -24,7 +24,7 @@ let
         lib.nameValuePair (if identity == "rust-analyzer" then "rust_analyzer" else identity) {
           cmd = [ tool.command ] ++ tool.args;
         }
-      ) config.lmx.capabilities.editor.tools;
+      ) config.lmx.capabilities.languageSupport.tools;
       plugins = lib.mapAttrs (_: toString) packages.plugins;
     }
   );

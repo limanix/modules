@@ -17,13 +17,13 @@ let
   );
   conflictingTools = configurationFor [
     ({ lib, pkgs, ... }: {
-      lmx.capabilities.editor.tools.example = lib.mkOverride 1000 {
+      lmx.capabilities.languageSupport.tools.example = lib.mkOverride 1000 {
         package = pkgs.hello;
         command = "${pkgs.hello}/bin/hello";
       };
     })
     ({ lib, pkgs, ... }: {
-      lmx.capabilities.editor.tools.example = lib.mkOverride 1000 {
+      lmx.capabilities.languageSupport.tools.example = lib.mkOverride 1000 {
         package = pkgs.coreutils;
         command = "${pkgs.coreutils}/bin/true";
       };
@@ -33,7 +33,7 @@ let
     values:
     configurationFor (
       map (fields: { lib, pkgs, ... }: {
-        lmx.capabilities.editor.tools.example = lib.mkOverride 1000 (
+        lmx.capabilities.languageSupport.tools.example = lib.mkOverride 1000 (
           {
             package = pkgs.hello;
             command = "${pkgs.hello}/bin/hello";
@@ -44,17 +44,17 @@ let
     );
   missingPackage = configurationFor [
     {
-      lmx.capabilities.editor.tools.example.command = "/example";
+      lmx.capabilities.languageSupport.tools.example.command = "/example";
     }
   ];
   missingCommand = configurationFor [
     ({ pkgs, ... }: {
-      lmx.capabilities.editor.tools.example.package = pkgs.hello;
+      lmx.capabilities.languageSupport.tools.example.package = pkgs.hello;
     })
   ];
   missingParsers = configurationFor [
     {
-      lmx.capabilities.editor.languages.example = { };
+      lmx.capabilities.languageSupport.languages.example = { };
     }
   ];
 in
@@ -68,11 +68,11 @@ in
     actual = dockerConfiguration.config.virtualisation.docker.package.outPath;
   };
   equalToolPrecedence = {
-    expected = "lmx.capabilities.editor.tools.example' has conflicting definition values";
-    actual = conflictingTools.config.lmx.capabilities.editor.tools.example.command;
+    expected = "lmx.capabilities.languageSupport.tools.example' has conflicting definition values";
+    actual = conflictingTools.config.lmx.capabilities.languageSupport.tools.example.command;
   };
   equalToolPrecedenceArgs = {
-    expected = "lmx.capabilities.editor.tools.example' has conflicting definition values";
+    expected = "lmx.capabilities.languageSupport.tools.example' has conflicting definition values";
     actual =
       (conflictingToolFields [
         {
@@ -87,18 +87,18 @@ in
             "b"
           ];
         }
-      ]).config.lmx.capabilities.editor.tools.example.args;
+      ]).config.lmx.capabilities.languageSupport.tools.example.args;
   };
   equalToolPrecedenceLanguages = {
-    expected = "lmx.capabilities.editor.tools.example' has conflicting definition values";
+    expected = "lmx.capabilities.languageSupport.tools.example' has conflicting definition values";
     actual =
       (conflictingToolFields [
         { languages = [ "go" ]; }
         { languages = [ "rust" ]; }
-      ]).config.lmx.capabilities.editor.tools.example.languages;
+      ]).config.lmx.capabilities.languageSupport.tools.example.languages;
   };
   equalToolPrecedenceDefaultArgs = {
-    expected = "lmx.capabilities.editor.tools.example' has conflicting definition values";
+    expected = "lmx.capabilities.languageSupport.tools.example' has conflicting definition values";
     actual =
       (conflictingToolFields [
         { }
@@ -108,18 +108,18 @@ in
             "a"
           ];
         }
-      ]).config.lmx.capabilities.editor.tools.example.args;
+      ]).config.lmx.capabilities.languageSupport.tools.example.args;
   };
   requiredPackage = {
-    expected = "lmx.capabilities.editor.tools.example.package' was accessed but has no value defined";
-    actual = missingPackage.config.lmx.capabilities.editor.tools.example.package.outPath;
+    expected = "lmx.capabilities.languageSupport.tools.example.package' was accessed but has no value defined";
+    actual = missingPackage.config.lmx.capabilities.languageSupport.tools.example.package.outPath;
   };
   requiredCommand = {
-    expected = "lmx.capabilities.editor.tools.example.command' was accessed but has no value defined";
-    actual = missingCommand.config.lmx.capabilities.editor.tools.example.command;
+    expected = "lmx.capabilities.languageSupport.tools.example.command' was accessed but has no value defined";
+    actual = missingCommand.config.lmx.capabilities.languageSupport.tools.example.command;
   };
   requiredParsers = {
-    expected = "lmx.capabilities.editor.languages.example.parsers' was accessed but has no value defined";
-    actual = missingParsers.config.lmx.capabilities.editor.languages.example.parsers;
+    expected = "lmx.capabilities.languageSupport.languages.example.parsers' was accessed but has no value defined";
+    actual = missingParsers.config.lmx.capabilities.languageSupport.languages.example.parsers;
   };
 }

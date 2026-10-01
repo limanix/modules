@@ -11,7 +11,7 @@ let
     inherit (pkgs.stdenv.hostPlatform) system;
   };
   profile = config.system.path;
-  tool = config.lmx.capabilities.editor.tools.gopls;
+  tool = config.lmx.capabilities.languageSupport.tools.gopls;
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
   lines = builtins.sort pkgs.lib.versionOlder metadata.versions;
   older = import ./packages.nix {
@@ -23,7 +23,7 @@ let
     map (line: ./versions + "/${line}.nix") lines
     ++ [
       {
-        lmx.capabilities.editor.tools.gopls = {
+        lmx.capabilities.languageSupport.tools.gopls = {
           package = older.gopls;
           command = "${older.gopls}/bin/gopls";
           args = [ "version" ];
@@ -32,7 +32,7 @@ let
       }
     ]
   );
-  selected = overridden.config.lmx.capabilities.editor.tools.gopls;
+  selected = overridden.config.lmx.capabilities.languageSupport.tools.gopls;
 in
 {
   providerOverride = pkgs.runCommand "go-user-selected-provider" { } ''

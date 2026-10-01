@@ -464,7 +464,7 @@ The [catalog contract](catalog-contract.md) also requires README guarantees and 
 
 Every directory directly under `catalog/` must be an entry, except the reserved `_shared` directory.
 Use `_shared/internal/` for private declarations imported by multiple catalog modules.
-Public declarations belong in `_shared/<area>.nix` and are loaded by the client, including `_shared/editor.nix` for `lmx.capabilities.editor.*`.
+Public declarations belong in `_shared/<area>.nix` and are loaded by the client, including `_shared/languageSupport.nix` for `lmx.capabilities.languageSupport.*`.
 Provider and consumer modules use these public options without importing their declaration files.
 The `_shared` directory has no selector or module metadata and is excluded from generated module documentation.
 The client preserves its files in the catalog source tree.

@@ -78,9 +78,9 @@ They use documented public options rather than reaching into the catalog's gener
 | `lmx.internal.*` | Catalog modules or `catalog/_shared/internal/` | Private catalog coordination; changed together with its consumers |
 
 The names `capabilities` and `internal` are reserved and cannot be catalog module names.
-Editor capabilities are public: `catalog/_shared/editor.nix` declares `lmx.capabilities.editor.*`.
+Language support capabilities are public: `catalog/_shared/languageSupport.nix` declares `lmx.capabilities.languageSupport.*`.
 The client loads this file; provider and consumer modules use its options without importing it.
-Public area names do not reserve module names: a module named `editor` uses `lmx.editor.*` independently of `lmx.capabilities.editor.*`.
+Public area names do not reserve module names.
 CI must reject reserved module names and declarations whose namespace does not match the declaring file.
 
 A module-specific option exists when its declaring module is imported, directly or through another module.
@@ -102,7 +102,7 @@ See [Migrate custom modules](writing-modules.md#migrate-custom-modules) for the 
 
 ## Capability providers and consumers
 
-The public editor capability area has separate tool declarations and language declarations.
+The public language support capability area has separate tool declarations and language declarations.
 A tool declaration describes an executable supplied by its provider:
 
 | Field | Requirement | Meaning |
