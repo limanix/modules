@@ -63,4 +63,4 @@ tasks:
         vars:
           CMD: bash scripts/run_checks.sh smoke {{.ARCH | default "" | shellQuote}}
           TASK_CONTEXT:
-            ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE %s" (.CONTAINER_RUN_ARGS | default "")))'
+            ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER %s" (.CONTAINER_RUN_ARGS | default "")))'
