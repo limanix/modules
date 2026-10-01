@@ -225,25 +225,10 @@ let
           builtins.deepSeq reversed.config.system.build.toplevel.drvPath result
         );
       versions = versionChecks;
-      combinations = builtins.listToAttrs (
-        builtins.concatMap (
-          module:
-          builtins.map (variant: {
-            inherit (variant) name;
-            value = evaluate "all modules with ${variant.name}" (
-              builtins.map (selected: if selected.name == module.name then variant else selected) catalog
-            );
-          }) module.variants
-        ) catalog
-      );
       multiVersion = builtins.listToAttrs (
         builtins.map (module: {
           inherit (module) name;
-          value = evaluate "all modules with all ${module.name} versions" (
-            builtins.concatMap (
-              selected: if selected.name == module.name then selected.variants else [ selected ]
-            ) catalog
-          );
+          value = evaluate "all ${module.name} versions" module.variants;
         }) multiVersionModules
       );
       minikubeK9sSelection =

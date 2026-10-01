@@ -3,7 +3,7 @@
   pkgs,
   version,
   selector,
-  evaluate,
+  evaluateStandalone,
   ...
 }:
 let
@@ -14,7 +14,7 @@ let
 in
 {
   coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluate;
+    inherit pkgs evaluateStandalone;
     directory = ./.;
     commands = {
       k9s = "k9s";

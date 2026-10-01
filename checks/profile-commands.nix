@@ -1,13 +1,14 @@
 {
   pkgs,
-  evaluate,
+  evaluateStandalone,
   directory,
   commands,
 }:
 let
   metadata = builtins.fromTOML (builtins.readFile (directory + "/module.toml"));
   versions = builtins.sort pkgs.lib.versionOlder metadata.versions;
-  configuration = evaluate (map (version: directory + "/versions/${version}.nix") versions);
+  # The complete version set is independent of the selector requesting this check.
+  configuration = evaluateStandalone (map (version: directory + "/versions/${version}.nix") versions);
   newest = import (directory + "/packages.nix") {
     version = pkgs.lib.last versions;
     inherit (pkgs.stdenv.hostPlatform) system;

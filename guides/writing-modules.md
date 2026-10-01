@@ -524,7 +524,8 @@ Repository checks must meet the [catalog contract](catalog-contract.md#required-
 | `ci/nixos-lint` | Nix code with statix and deadnix |
 | `ci/test` | Catalog metadata, module and version evaluation, composition, public options and capabilities, and all required `check.nix` and `smoke.nix` checks |
 
-Evaluation must cover every entry at its default, alone and with compatible defaults, every version line, composition, supported overrides, and expected incompatible selections.
+Evaluation must cover every entry at its default in isolation, all compatible defaults together, and every version line in isolation.
+Check documented version coexistence within each module, explicit documented integrations, composition, supported overrides, and expected incompatible selections.
 Run evaluation for both `aarch64-linux` and `x86_64-linux`; `ARCH=arm64` or `ARCH=amd64` selects one architecture for a local run.
 Every applicable `smoke.nix` must be discovered, built, and executed by blocking catalog CI using the module's actual packages and generated configuration.
 Catalog evaluation uses the public interface with test account values; client/catalog compatibility checks must evaluate real `Prepare()` output to verify the client's values.

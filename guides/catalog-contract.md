@@ -296,8 +296,8 @@ A module that only selects existing packages can use configuration checks; a mod
 | Applies to | Required check | Level |
 |---|---|---|
 | Every module | Metadata, required files, public guarantees, and its default result in isolation | Structure and evaluation |
-| Every versioned module | Each line, the default, documented coexistence, and expected incompatible selections | Evaluation; build/runtime where applicable |
-| Compatible module sets | Defaults together and each supported line with the applicable defaults | Evaluation |
+| Every versioned module | Each line in isolation, the default, documented coexistence within that module, and expected incompatible selections | Evaluation; build/runtime where applicable |
+| Compatible module sets | All defaults together and explicit documented integrations | Evaluation |
 | Modules importing components | Repeat imports with unchanged choices; recommendation and explicit selection separately | Evaluation and relevant behavior |
 | Public settings | Declaration owner, defaults, supported overrides, and disable switches | Evaluation; runtime for runtime effects |
 | Public capabilities | Declarations with no standard modules selected, parser-only language declarations, provider/consumer independence, third-party contributions, user overrides, and selected command/version agreement | Evaluation and integration |

@@ -6,6 +6,16 @@ let
   nixpkgs = import ./nixpkgs.nix;
   lib = import (nixpkgs + "/lib");
   userName = "module-check";
+  evaluateStandalone =
+    modules:
+    import ./nixos.nix {
+      inherit
+        nixpkgs
+        system
+        userName
+        modules
+        ;
+    };
   checkModule =
     module:
     let
@@ -13,12 +23,7 @@ let
       checkSelection =
         selected:
         let
-          evaluate =
-            extraModules:
-            import ./nixos.nix {
-              inherit nixpkgs system userName;
-              modules = [ selected.path ] ++ extraModules;
-            };
+          evaluate = extraModules: evaluateStandalone ([ selected.path ] ++ extraModules);
           configuration = evaluate [ ];
           hasPackage =
             package:
@@ -32,6 +37,7 @@ let
               userName
               hasPackage
               evaluate
+              evaluateStandalone
               ;
             inherit (selected) version;
             selector = selected.name;

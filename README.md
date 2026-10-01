@@ -72,10 +72,17 @@ task --yes ci/nixos-fmt ci/nixos-lint ci/test
 
 See [Taskfile.yml](Taskfile.yml) for the full task list.
 
-`ci/test` evaluates both guest architectures, then builds and runs every applicable module smoke check for the container's native Linux architecture.
+`ci/test` evaluates both guest architectures and builds and runs every applicable module smoke check for the container's native Linux architecture.
 Use `ci/eval ARCH=arm64` or `ci/eval ARCH=amd64` to evaluate one architecture.
 `ci/smoke ARCH=arm64` or `ci/smoke ARCH=amd64` requires a matching native Linux container; it rejects a different architecture.
 CI runs the complete checks on native ARM64 and AMD64 runners.
+`ci/test` keeps evaluation and smoke in one container and reuses its Nix store.
+The runner evaluates checks in bounded parallel batches and builds each distinct smoke derivation once.
+CI restores source and binary caches separately for each architecture and saves completed builds even when a later check fails.
+Run `PR flow` manually on `main` to prepare a base cache accessible to other branches; a cache saved by a pull request is scoped to that pull request.
+The first cache preparation can compile pinned dependencies that are absent from the public Nix cache.
+The binary cache includes the runtime dependencies of locally built results; Nix still checks the derivation paths against the current configuration.
+Set `NIX_CHECK_JOBS` and `NIX_CHECK_BATCH_SIZE` through `CONTAINER_ENVS` to tune evaluator concurrency and memory use.
 These checks do not boot the complete Lima VM.
 Run a changed module's documented commands in a VM as well.
 

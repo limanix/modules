@@ -2,7 +2,7 @@
   config,
   pkgs,
   version,
-  evaluate,
+  evaluateStandalone,
   ...
 }:
 let
@@ -18,17 +18,20 @@ let
     version = builtins.head lines;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
-  overridden = evaluate [
-    (./versions + "/${pkgs.lib.last lines}.nix")
-    {
-      lmx.capabilities.editor.tools.gopls = {
-        package = older.gopls;
-        command = "${older.gopls}/bin/gopls";
-        args = [ "version" ];
-        languages = [ "go" ];
-      };
-    }
-  ];
+  # Exercise the user override against every supported version in one profile.
+  overridden = evaluateStandalone (
+    map (line: ./versions + "/${line}.nix") lines
+    ++ [
+      {
+        lmx.capabilities.editor.tools.gopls = {
+          package = older.gopls;
+          command = "${older.gopls}/bin/gopls";
+          args = [ "version" ];
+          languages = [ "go" ];
+        };
+      }
+    ]
+  );
   selected = overridden.config.lmx.capabilities.editor.tools.gopls;
 in
 {
@@ -44,7 +47,7 @@ in
     touch "$out"
   '';
   coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluate;
+    inherit pkgs evaluateStandalone;
     directory = ./.;
     commands = {
       go = "go";

@@ -1,12 +1,13 @@
 name: PR flow
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
 
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -32,29 +33,43 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
-      - name: Cache Nix sources
-        uses: actions/cache@v5
+      - name: Restore Nix sources and local builds
+        id: nix-cache
+        uses: actions/cache/restore@v5
         with:
-          path: .cache/nix
-          key: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.arch }}-${{ hashFiles('Taskfile.yml') }}-${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}
+          path: |
+            .cache/nix
+            .cache/nix-binary
+          key: nix-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}-${{ github.sha }}-${{ github.run_attempt }}
           restore-keys: |
-            nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.arch }}-${{ hashFiles('Taskfile.yml') }}-
+            nix-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}-
+            nix-v2-${{ runner.os }}-${{ runner.arch }}-
       - name: Prepare Nix cache permissions
         run: |
-          mkdir -p .cache/nix
-          sudo chown -R 0:0 .cache/nix
+          mkdir -p .cache/nix .cache/nix-binary
+          sudo chown -R 0:0 .cache/nix .cache/nix-binary
       - name: Run Nix tests
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
           command: >-
             ci/test ARCH=${{ matrix.arch }}
-            CONTAINER_ENVS=XDG_CACHE_HOME=/workspace/.cache
+            'CONTAINER_ENVS=XDG_CACHE_HOME=/workspace/.cache NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=4 NIX_CHECK_BATCH_SIZE=2'
       - name: Restore Nix cache ownership
         if: always()
         run: |
-          if [ -d .cache/nix ]; then
-            sudo chown -R "$(id -u):$(id -g)" .cache/nix
-          fi
+          for directory in .cache/nix .cache/nix-binary; do
+            if [ -d "$directory" ]; then
+              sudo chown -R "$(id -u):$(id -g)" "$directory"
+            fi
+          done
+      - name: Save Nix sources and completed builds
+        if: ${{ always() && !cancelled() && steps.nix-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            .cache/nix
+            .cache/nix-binary
+          key: ${{ steps.nix-cache.outputs.cache-primary-key }}
 
   pkgs:
     name: Check Nixpkgs updates
