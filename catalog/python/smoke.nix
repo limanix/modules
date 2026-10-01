@@ -1,8 +1,10 @@
 {
-  config,
+  profile,
+  profileFor,
   pkgs,
   version,
-  evaluateStandalone,
+  allVersionsConfiguration,
+  includeShared,
   ...
 }:
 let
@@ -12,23 +14,15 @@ let
   };
 in
 {
-  coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluateStandalone;
-    directory = ./.;
-    commands = {
-      python = "python";
-      virtualenv = "virtualenv";
-    };
-  };
   commands =
     pkgs.runCommand "python-${version}-commands-smoke"
       {
-        nativeBuildInputs = [ config.system.path ];
+        nativeBuildInputs = [ profile ];
       }
       ''
         export HOME="$TMPDIR/home"
         mkdir -p "$HOME"
-        test "$(readlink -f ${config.system.path}/bin/python-${version})" = "$(readlink -f ${tools.python.interpreter})"
+        test "$(readlink -f ${profile}/bin/python-${version})" = "$(readlink -f ${tools.python.interpreter})"
         python-${version} -c 'import platform; assert platform.python_version() == "${tools.python.version}"'
         python-${version} -m venv environment
         environment/bin/python -m pip --version
@@ -37,4 +31,15 @@ in
         virtual-environment/bin/python -m pip --version
         touch "$out"
       '';
+}
+// pkgs.lib.optionalAttrs includeShared {
+  coexistence = import ../../checks/profile-commands.nix {
+    inherit pkgs;
+    profile = profileFor allVersionsConfiguration;
+    directory = ./.;
+    commands = {
+      python = "python";
+      virtualenv = "virtualenv";
+    };
+  };
 }

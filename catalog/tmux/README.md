@@ -15,9 +15,9 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 | Guarantee | Covered by |
 |---|---|
 | `tmux` and the resurrect/continuum plugins are installed; vi mode, `tmux-256color`, and a 10 ms escape delay are defaults | `check.nix`, `smoke.nix`: configuration |
-| Ordinary assignments can replace `programs.tmux.keyMode`, `programs.tmux.terminal`, and `programs.tmux.escapeTime` | `checks/contracts.nix`: tmuxPreferences; `smoke.nix`: configuration |
+| Ordinary assignments can replace `programs.tmux.keyMode`, `programs.tmux.terminal`, and `programs.tmux.escapeTime` | `tests.nix`: preferences; `smoke.nix`: configuration |
 | Ctrl/Alt-H/J/K/L move and resize panes; prefix followed by Ctrl-H/J/K/L forwards the control key; panes marked by smart-splits receive their navigation keys | `smoke.nix`: configuration |
-| `lmx.tmux.navigation.enable = false` removes the custom navigation and forwarding bindings while retaining mouse, clipboard, copy mode, and restoration plugins | `checks/contracts.nix`: tmuxNavigation; `smoke.nix`: configuration |
+| `lmx.tmux.navigation.enable = false` removes the custom navigation and forwarding bindings while retaining mouse, clipboard, copy mode, and restoration plugins | `tests.nix`: navigation; `smoke.nix`: configuration |
 | In vi copy mode, `v` begins a selection and `y` copies it; tmux emits OSC 52 clipboard output for supported terminals | `smoke.nix`: configuration |
 | Ctrl-B, Ctrl-S saves sessions, panes and working directories under `~/.tmux/resurrect/`; Ctrl-B, Ctrl-R and continuum restore the saved layout | `smoke.nix`: configuration |
 | Continuum is configured to save every 15 minutes through its status-line hook | `smoke.nix`: configuration |

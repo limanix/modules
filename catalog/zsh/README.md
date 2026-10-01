@@ -1,7 +1,6 @@
 # Zsh
 
-Makes Zsh the VM user's login shell and configures command completion, a prompt,
-searchable local history, directory navigation, and project environments.
+Makes Zsh the VM user's login shell and configures Oh My Zsh, command completion, a prompt, searchable local history, directory navigation, and project environments.
 
 ```toml
 [nixos]
@@ -13,13 +12,14 @@ The next `limanix shell` uses Zsh.
 
 ## Versions
 
-All tools come from the catalog's [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
+Oh My Zsh and the other tools come from the catalog's [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
 This module has no version lines. Inside the VM, `zsh --version` shows the shell version.
 
 ## Use
 
 | Tool | Behavior inside the VM |
 | --- | --- |
+| Oh My Zsh | Loads the shell framework; Starship supplies the prompt |
 | Zsh autosuggestions | Suggests commands from shell history; press Right to accept |
 | Zsh syntax highlighting | Highlights commands as you type |
 | fzf-tab and Carapace | Press Tab to search completion candidates |
@@ -54,6 +54,15 @@ Add personal shell settings to `~/.zshrc` inside the VM. A personal
 `~/.config/starship.toml` takes precedence over the module's prompt settings.
 To change managed settings, use a [custom NixOS module](../../guides/writing-modules.md).
 
+For example, enable Oh My Zsh's Git aliases with this custom module:
+
+```nix
+{ ... }:
+{
+  programs.zsh.ohMyZsh.plugins = [ "git" ];
+}
+```
+
 Zsh is the suggested login shell. To keep the Zsh tools while choosing a different
 login shell, set `limanix.user.shell` in a custom module. For example:
 
@@ -72,8 +81,9 @@ and command-line tools.
 
 | Guarantee | Covered by |
 |---|---|
-| Makes Zsh the suggested login shell; an ordinary `limanix.user.shell` assignment can choose another shell | `check.nix`, `checks/contracts.nix`: zshShell |
+| Makes Zsh the suggested login shell; an ordinary `limanix.user.shell` assignment can choose another shell | `check.nix`, `tests.nix`: shell |
+| Loads Oh My Zsh while preserving Tab completion, Atuin Ctrl-R and the Starship prompt | `check.nix`, `smoke.nix`: startup |
 | Generates and sources Carapace initialization, fzf-tab, autosuggestions and highlighting | `check.nix`, `smoke.nix`: startup |
 | Ctrl-R is assigned to Atuin; fzf path selection and zoxide/direnv hooks are available | `smoke.nix`: startup |
-| Starship shows the hostname and failed status; Atuin synchronization and update checks default off and accept ordinary overrides | `check.nix`, `checks/contracts.nix`, `smoke.nix`: startup |
+| Starship shows the hostname and failed status; Atuin synchronization and update checks default off and accept ordinary overrides | `check.nix`, `tests.nix`, `smoke.nix`: startup |
 | Personal `.zshrc` settings remain available after system startup | `smoke.nix`: startup |

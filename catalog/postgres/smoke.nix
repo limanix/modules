@@ -1,8 +1,10 @@
 {
-  config,
+  profile,
+  profileFor,
   pkgs,
   version,
-  evaluateStandalone,
+  allVersionsConfiguration,
+  includeShared,
   ...
 }:
 let
@@ -12,8 +14,21 @@ let
   };
 in
 {
+  commands = pkgs.runCommand "postgres-${version}-commands-smoke" { } ''
+    for executable in ${tools.postgres}/bin/*; do
+      test -x "${profile}/bin/$(basename "$executable")-${version}"
+    done
+    ${profile}/bin/psql-${version} --version | grep -F '${tools.postgres.version}'
+    ${profile}/bin/pg_config-${version} --version | grep -F '${tools.postgres.version}'
+    ${profile}/bin/postgres-${version} --version | grep -F '${tools.postgres.version}'
+    test -d ${profile}/share/postgresql
+    touch "$out"
+  '';
+}
+// pkgs.lib.optionalAttrs includeShared {
   coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluateStandalone;
+    inherit pkgs;
+    profile = profileFor allVersionsConfiguration;
     directory = ./.;
     commands = {
       psql = "postgres";
@@ -23,14 +38,4 @@ in
       pg_config = "postgres";
     };
   };
-  commands = pkgs.runCommand "postgres-${version}-commands-smoke" { } ''
-    for executable in ${tools.postgres}/bin/*; do
-      test -x "${config.system.path}/bin/$(basename "$executable")-${version}"
-    done
-    ${config.system.path}/bin/psql-${version} --version | grep -F '${tools.postgres.version}'
-    ${config.system.path}/bin/pg_config-${version} --version | grep -F '${tools.postgres.version}'
-    ${config.system.path}/bin/postgres-${version} --version | grep -F '${tools.postgres.version}'
-    test -d ${config.system.path}/share/postgresql
-    touch "$out"
-  '';
 }

@@ -23,6 +23,8 @@ Inside the VM, open a file with the `nvim` command:
 nvim notes.md
 ```
 
+The `vi` and `vim` aliases also launch Neovim.
+
 ## Make Neovim the default editor
 
 The module leaves `EDITOR` at its NixOS default, `nano`.
@@ -45,4 +47,4 @@ To use `gopls` from the [Go module](../go/README.md) or `rust-analyzer` from the
 | Guarantee | Covered by |
 |---|---|
 | Enables Neovim and installs the configured NixOS editor package | `check.nix` |
-| Leaves the default-editor setting overridable through `programs.neovim.defaultEditor` | `checks/contracts.nix` |
+| Leaves the default-editor setting overridable through `programs.neovim.defaultEditor` | `tests.nix` |

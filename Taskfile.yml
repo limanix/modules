@@ -44,26 +44,19 @@ tasks:
       - task: nix:deadnix
 
   ci/test:
-    desc: Evaluate catalog configurations and run native build and runtime checks
+    desc: Run native module checks; MODULES selects space-separated module names
     cmds:
       - task: nix:_nix/tool
         vars:
-          CMD: bash scripts/run_checks.sh all {{.ARCH | default "" | shellQuote}}
+          CMD: bash scripts/run_checks.sh modules {{.MODULES | default "" | shellQuote}}
           TASK_CONTEXT:
             ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER --cap-add=SETUID --cap-add=SETGID --cap-add=KILL %s" (.CONTAINER_RUN_ARGS | default "")))'
 
-  ci/eval:
-    desc: Evaluate catalog configurations and expected diagnostics
+  ci/common:
+    desc: Run common PR checks; MODE=release enables deep integrations
     cmds:
       - task: nix:_nix/tool
         vars:
-          CMD: bash scripts/run_checks.sh eval {{.ARCH | default "" | shellQuote}}
-
-  ci/smoke:
-    desc: Build and run module smoke checks for the container's native architecture
-    cmds:
-      - task: nix:_nix/tool
-        vars:
-          CMD: bash scripts/run_checks.sh smoke {{.ARCH | default "" | shellQuote}}
+          CMD: bash scripts/run_checks.sh common {{.MODE | default "pr" | shellQuote}}
           TASK_CONTEXT:
             ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER --cap-add=SETUID --cap-add=SETGID --cap-add=KILL %s" (.CONTAINER_RUN_ARGS | default "")))'

@@ -1,20 +1,12 @@
 {
   config,
   pkgs,
-  evaluate,
+  configurations,
   ...
 }:
 let
-  disabled = evaluate [ { lmx.tmux.navigation.enable = false; } ];
-  overridden = evaluate [
-    {
-      programs.tmux = {
-        keyMode = "emacs";
-        terminal = "screen-256color";
-        escapeTime = 25;
-      };
-    }
-  ];
+  disabled = configurations.navigationDisabled;
+  overridden = configurations.preferencesOverride;
 in
 {
   configuration =

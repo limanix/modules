@@ -30,17 +30,28 @@ in
     zsh = {
       enable = true;
       enableCompletion = true;
+      # Oh My Zsh initializes completion after adding its functions and plugins.
+      enableGlobalCompInit = false;
+      ohMyZsh = {
+        enable = true;
+        preLoaded = ''
+          # Leave Ctrl-R to Atuin when the Oh My Zsh fzf plugin loads.
+          FZF_CTRL_R_COMMAND=""
+        '';
+      };
       autosuggestions.enable = true;
       syntaxHighlighting.enable = true;
 
-      # NixOS runs compinit before this hook. fzf-tab must precede widget wrappers.
-      interactiveShellInit = lib.mkBefore ''
+      # Run after Oh My Zsh's compinit and before highlighting (order 1500).
+      # Autosuggestions wraps widgets at the first precmd, after this hook.
+      interactiveShellInit = lib.mkOrder 1100 ''
         source ${carapaceInit}
         zstyle ':completion:*:descriptions' format '[%d]'
         zstyle ':completion:*' menu no
+        zstyle ':completion:*:*:*:*:*' menu no
+        # fzf-tab must capture Zsh completion, not Oh My Zsh's fzf-completion.
+        bindkey '^I' expand-or-complete
         source ${pkgs.zsh-fzf-tab}/share/fzf-tab/fzf-tab.plugin.zsh
-        # Leave Ctrl-R to Atuin regardless of integration order.
-        FZF_CTRL_R_COMMAND=""
       '';
     };
 

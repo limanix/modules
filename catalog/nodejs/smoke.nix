@@ -1,8 +1,10 @@
 {
-  config,
+  profile,
+  profileFor,
   pkgs,
   version,
-  evaluateStandalone,
+  allVersionsConfiguration,
+  includeShared,
   ...
 }:
 let
@@ -12,24 +14,15 @@ let
   };
 in
 {
-  coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluateStandalone;
-    directory = ./.;
-    commands = {
-      node = "nodejs";
-      npm = "nodejs";
-      npx = "nodejs";
-    };
-  };
   commands =
     pkgs.runCommand "nodejs-${version}-commands-smoke"
       {
-        nativeBuildInputs = [ config.system.path ];
+        nativeBuildInputs = [ profile ];
       }
       ''
         export HOME="$TMPDIR/home"
         mkdir -p "$HOME"
-        test "$(readlink -f ${config.system.path}/bin/node-${version})" = "$(readlink -f ${tools.nodejs}/bin/node)"
+        test "$(readlink -f ${profile}/bin/node-${version})" = "$(readlink -f ${tools.nodejs}/bin/node)"
         node-${version} -e 'if (process.version !== "v${tools.nodejs.version}") process.exit(1)'
         npm-${version} --version
         npx-${version} --version
@@ -39,4 +32,16 @@ in
         npx-${version} --offline -c 'node check.js'
         touch "$out"
       '';
+}
+// pkgs.lib.optionalAttrs includeShared {
+  coexistence = import ../../checks/profile-commands.nix {
+    inherit pkgs;
+    profile = profileFor allVersionsConfiguration;
+    directory = ./.;
+    commands = {
+      node = "nodejs";
+      npm = "nodejs";
+      npx = "nodejs";
+    };
+  };
 }

@@ -294,5 +294,5 @@ Changing a service's major version changes its default data directory and initia
 |---|---|
 | Installs the selected PostgreSQL tools and version-suffixed wrappers for all their executables | `check.nix`, `smoke.nix`: commands |
 | Links PostgreSQL shared data into the profile | `check.nix`, `smoke.nix`: commands |
-| Selected lines coexist; the newest supplies ordinary commands ahead of a separately enabled service package | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
-| Selecting this module alone does not enable a database service or initialize a data directory | `checks/contracts.nix` |
+| Selected lines coexist; the newest supplies ordinary commands ahead of a separately enabled service package | `tests.nix`: coexistence, servicePackagePrecedence; `smoke.nix`: coexistence |
+| Selecting this module alone does not enable a database service or initialize a data directory | `tests.nix` |

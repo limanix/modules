@@ -27,9 +27,54 @@ jobs:
         with:
           branch: main
 
+  plan:
+    needs: verify
+    runs-on: ubuntu-24.04
+    outputs:
+      chunks: ${{ steps.plan.outputs.chunks }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Test module planner
+        run: python3 -B -m unittest discover -s scripts/tests -p 'test_plan_checks.py'
+      - name: Plan all module checks
+        id: plan
+        shell: bash
+        run: |
+          plan=$(python3 -B scripts/plan_checks.py --all)
+          printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Modules (${{ matrix.runner }}, ${{ matrix.chunk.id }})
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        chunk: ${{ fromJSON(needs.plan.outputs.chunks) }}
+    uses: ./.github/workflows/nix-tests.yml
+    with:
+      task: ci/test
+      runner: ${{ matrix.runner }}
+      modules: ${{ matrix.chunk.modules }}
+      cache-id: modules-${{ matrix.chunk.id }}
+
+  common:
+    name: Common (${{ matrix.runner }})
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    uses: ./.github/workflows/nix-tests.yml
+    with:
+      task: ci/common
+      runner: ${{ matrix.runner }}
+      mode: release
+      cache-id: common-release
+
   docs:
     name: Prepare docs
-    needs: verify
+    needs: [test, common]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6

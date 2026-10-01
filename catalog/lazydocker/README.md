@@ -34,4 +34,4 @@ The interface shows containers and their logs, images, and volumes.
 | Guarantee | Covered by |
 |---|---|
 | Installs the base Nixpkgs package providing `lazydocker` | `check.nix` |
-| Selecting Lazydocker alone does not enable Docker Engine | `checks/contracts.nix` |
+| Selecting Lazydocker alone does not enable Docker Engine | `tests.nix` |

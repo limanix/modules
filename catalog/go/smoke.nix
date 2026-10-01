@@ -1,8 +1,12 @@
 {
   config,
+  profile,
+  profileFor,
   pkgs,
   version,
-  evaluateStandalone,
+  allVersionsConfiguration,
+  includeShared,
+  configurations,
   ...
 }:
 let
@@ -10,7 +14,6 @@ let
     inherit version;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
-  profile = config.system.path;
   tool = config.lmx.capabilities.languageSupport.tools.gopls;
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
   lines = builtins.sort pkgs.lib.versionOlder metadata.versions;
@@ -18,43 +21,11 @@ let
     version = builtins.head lines;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
-  # Exercise the user override against every supported version in one profile.
-  overridden = evaluateStandalone (
-    map (line: ./versions + "/${line}.nix") lines
-    ++ [
-      {
-        lmx.capabilities.languageSupport.tools.gopls = {
-          package = older.gopls;
-          command = "${older.gopls}/bin/gopls";
-          args = [ "version" ];
-          languages = [ "go" ];
-        };
-      }
-    ]
-  );
+  overridden = configurations.providerOverride;
+  overriddenProfile = profileFor overridden;
   selected = overridden.config.lmx.capabilities.languageSupport.tools.gopls;
 in
 {
-  providerOverride = pkgs.runCommand "go-user-selected-provider" { } ''
-    export HOME="$TMPDIR/home"
-    mkdir -p "$HOME"
-    test "$(readlink -f ${overridden.config.system.path}/bin/gopls)" = \
-      "$(readlink -f ${older.gopls}/bin/gopls)"
-    test "$(readlink -f ${selected.command})" = \
-      "$(readlink -f ${overridden.config.system.path}/bin/gopls)"
-    test "$(${overridden.config.system.path}/bin/gopls version)" = \
-      "$(${selected.command} ${pkgs.lib.escapeShellArgs selected.args})"
-    touch "$out"
-  '';
-  coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluateStandalone;
-    directory = ./.;
-    commands = {
-      go = "go";
-      gopls = "gopls";
-      dlv = "delve";
-    };
-  };
   commands =
     pkgs.runCommand "go-${version}-commands-smoke"
       {
@@ -76,4 +47,27 @@ in
         go-${version} test -race ./...
         touch "$out"
       '';
+}
+// pkgs.lib.optionalAttrs includeShared {
+  providerOverride = pkgs.runCommand "go-user-selected-provider" { } ''
+    export HOME="$TMPDIR/home"
+    mkdir -p "$HOME"
+    test "$(readlink -f ${overriddenProfile}/bin/gopls)" = \
+      "$(readlink -f ${older.gopls}/bin/gopls)"
+    test "$(readlink -f ${selected.command})" = \
+      "$(readlink -f ${overriddenProfile}/bin/gopls)"
+    test "$(${overriddenProfile}/bin/gopls version)" = \
+      "$(${selected.command} ${pkgs.lib.escapeShellArgs selected.args})"
+    touch "$out"
+  '';
+  coexistence = import ../../checks/profile-commands.nix {
+    inherit pkgs;
+    profile = profileFor allVersionsConfiguration;
+    directory = ./.;
+    commands = {
+      go = "go";
+      gopls = "gopls";
+      dlv = "delve";
+    };
+  };
 }

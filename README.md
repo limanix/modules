@@ -55,8 +55,8 @@ The guides and every module README are also published on the [documentation site
 
 | Path                      | Contents                                                                                       |
 |---------------------------|------------------------------------------------------------------------------------------------|
-| `catalog/NAME/`           | One module: `default.nix`, `module.toml`, `check.nix`, `README.md`, and optional version lines |
-| `checks/`                 | Catalog validation, NixOS evaluation, and build/runtime checks run by `ci/test`                 |
+| `catalog/NAME/`           | One module: entry point, metadata, README, configuration checks, and applicable local and smoke tests |
+| `checks/`                 | Shared module runner, minimal common checks, and complete catalog integration checks                 |
 | `flake.nix`, `flake.lock` | The NixOS release and the base Nixpkgs revision                                                |
 | `guides/`                 | The guides listed above                                                                        |
 | `scripts/`                | Documentation preparation, the check runner, and the Nixpkgs update summary                    |
@@ -68,18 +68,55 @@ Nix runs in a container; you do not need a local Nix installation.
 
 ```console
 task --yes ci/nixos-fmt ci/nixos-lint ci/test
+task --yes ci/common MODE=release
 ```
 
 See [Taskfile.yml](Taskfile.yml) for the full task list.
 
-`ci/test` evaluates both guest architectures and builds and runs every applicable module smoke check for the container's native Linux architecture.
-Use `ci/eval ARCH=arm64` or `ci/eval ARCH=amd64` to evaluate one architecture.
-`ci/smoke ARCH=arm64` or `ci/smoke ARCH=amd64` requires a matching native Linux container; it rejects a different architecture.
-CI runs the complete checks on native ARM64 and AMD64 runners.
-`ci/test` keeps evaluation and smoke in one container and reuses its Nix store.
-The runner evaluates checks in bounded parallel batches and builds each distinct smoke derivation once.
+`ci/test` runs all module suites on the container's native Linux architecture.
+Pass space-separated module directory names to select a subset:
+
+```console
+task --yes ci/test MODULES="go rust"
+task --yes ci/common
+task --yes ci/common MODE=release
+```
+
+Each selected module shares prepared configurations between evaluation and smoke in one evaluator and reuses the container's Nix store.
+Version commands run for each supported line; module-wide coexistence and provider overrides run once per module.
+Runtime profiles use the selected module’s package contributions with the NixOS profile builder, without building the unchanged base system packages.
+The runner bounds parallel module batches and realises each distinct smoke derivation once per module.
+Within each CI job, modules run one at a time so their evaluator memory is released between modules.
+`ci/common` runs the minimal PR set: catalog metadata, shared interfaces, small schema fixtures, and expected diagnostics.
+`ci/common MODE=release` also evaluates all compatible defaults and documented module integrations, then runs the three AstroNvim LSP integration scenarios.
+
+```mermaid
+flowchart TD
+    pr["PR"] --> readme{"Only README changes?"}
+    readme -->|yes| skip["Skip checks"]
+    readme -->|no| changes["Changed modules; shared code or workflows select all"]
+    changes --> haveModules{"Modules selected?"}
+    haveModules -->|yes| selected["ci/test MODULES: parallel groups of up to 4; native AMD64 + ARM64"]
+    haveModules -->|no| noModules["Skip module suites"]
+    readme -->|no| fast["ci/common MODE=pr: native AMD64 + ARM64"]
+    release["Release"] --> all["Every module: same ci/test jobs on both architectures"]
+    all --> selected
+    release --> deep["ci/common MODE=release: native AMD64 + ARM64"]
+    selected --> evaluation["check.nix + tests.nix: defaults, versions, coexistence, local guarantees and expected errors"]
+    evaluation --> smoke["smoke.nix: build and run actual commands, wrappers and generated configuration"]
+    fast --> fixtures["Metadata + shared interfaces + small schema fixtures + expected errors"]
+    deep --> fixtures
+    deep --> integration["All compatible defaults + documented module combinations"]
+    integration --> lsp["AstroNvim: Go/Rust attachment, third-party LSP, user override"]
+```
+
+PR checks select changed module directories and run parallel groups of at most four modules on native AMD64 and ARM64 runners.
+Changes to workflows, the shared interface, shared Nix code, the Nixpkgs pin, or the test runner select every module.
+README-only changes do not run tests.
+The minimal common set runs alongside the selected modules.
+Release validation runs all module suites and the deep common set in parallel on both architectures before documentation and publication.
 CI restores source and binary caches separately for each architecture and saves completed builds even when a later check fails.
-Run `PR flow` manually on `main` to prepare a base cache accessible to other branches; a cache saved by a pull request is scoped to that pull request.
+A manual `PR flow` run selects every module and prepares the caches.
 The first cache preparation can compile pinned dependencies that are absent from the public Nix cache.
 The binary cache includes the runtime dependencies of locally built results; Nix still checks the derivation paths against the current configuration.
 Set `NIX_CHECK_JOBS` and `NIX_CHECK_BATCH_SIZE` through `CONTAINER_ENVS` to tune evaluator concurrency and memory use.

@@ -112,14 +112,14 @@ See the [AstroNvim guide](https://docs.astronvim.com/) and
 
 | Guarantee | Covered by |
 |---|---|
-| The default and explicit `6` selector install the pinned AstroNvim line with Neovim and Lazygit | `check.nix`, `checks/default.nix`: version selection |
-| Console recommends the default line; an explicit line wins independently of import order | `checks/default.nix`: version selection and composition |
+| The default and explicit `6` selector install the pinned AstroNvim line with Neovim and Lazygit | `check.nix`, `tests.nix`: defaultEntryPoint, dependencies |
+| Console recommends the default line; an explicit line wins independently of import order | `checks/integration.nix`: console.astronvimVersionSelection |
 | An existing XDG Neovim `init.lua` or `init.vim` takes precedence; otherwise the bundled setup starts | `smoke.nix`: startup, personalLua, personalVim |
 | Personal `lua/polish.lua` runs after bundled setup | `smoke.nix`: polish |
 | Personal Lazy specifications under the XDG Neovim `lua/plugins/` directory extend bundled setup | `smoke.nix`: personalPlugins |
 | Bundled startup disables automatic plugin installation and update checking | `smoke.nix`: startup |
-| Lua buffers receive active bundled Tree-sitter highlighting; language declarations add their parsers | `smoke.nix`: startup and lsp |
-| The declared `gopls` and `rust-analyzer` attach using their final command; providers remain optional | `checks/contracts.nix`, `smoke.nix`: lsp |
-| Third-party declarations and user overrides supply the LSP executable and its arguments | `checks/contracts.nix`, `smoke.nix`: thirdParty, userOverride |
+| Lua buffers receive active bundled Tree-sitter highlighting; language declarations add their parsers | `smoke.nix`: startup; `integration.nix`: lsp |
+| The declared `gopls` and `rust-analyzer` attach using their final command; providers remain optional | `tests.nix`, `checks/integration.nix`, `integration.nix`: lsp |
+| Third-party declarations and user overrides supply the LSP executable and its arguments | `checks/integration.nix`, `integration.nix`: thirdParty, userOverride |
 | Leader explorer/search/Git bindings and Ctrl/Alt navigation are configured | `smoke.nix`: startup |
-| Users may override `programs.neovim.defaultEditor` and disable `programs.nix-ld.enable` | `checks/contracts.nix` |
+| Users may override `programs.neovim.defaultEditor` and disable `programs.nix-ld.enable` | `tests.nix` |
