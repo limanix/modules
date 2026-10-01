@@ -202,7 +202,10 @@ run_smoke() {
   test "${#derivations[@]}" -gt 0
   cores=${NIX_BUILD_CORES:-$(( $(nproc) / jobs ))}
   ((cores > 0)) || cores=1
-  nix-store --realise --max-jobs "$jobs" --cores "$cores" "${derivations[@]}" &
+  # The CI image disables build users by default. Its nixbld accounts keep
+  # package permission checks meaningful even though Nix manages the store as root.
+  nix-store --realise --option build-users-group nixbld \
+    --max-jobs "$jobs" --cores "$cores" "${derivations[@]}" &
   active_pids=("$!")
   wait "${active_pids[0]}"
   active_pids=()
