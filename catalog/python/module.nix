@@ -18,7 +18,7 @@ let
   '';
 in
 {
-  lmx.capabilities.editor.languages.python.parsers = [ "python" ];
+  lmx.capabilities.languageSupport.languages.python.parsers = [ "python" ];
 
   environment.systemPackages =
     map (lib.setPrio priority) [

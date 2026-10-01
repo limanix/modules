@@ -47,6 +47,7 @@ catalog/
     ├── default.nix           Selected module entry point
     ├── module.toml           Description and optional version selectors
     ├── check.nix             Required configuration result check
+    ├── tests.nix             Optional additional module assertions
     ├── README.md             Usage and supported guarantees
     ├── versions/             Required for declared version lines
     └── smoke.nix             Required for custom builds or runtime behavior
@@ -78,9 +79,9 @@ They use documented public options rather than reaching into the catalog's gener
 | `lmx.internal.*` | Catalog modules or `catalog/_shared/internal/` | Private catalog coordination; changed together with its consumers |
 
 The names `capabilities` and `internal` are reserved and cannot be catalog module names.
-Editor capabilities are public: `catalog/_shared/editor.nix` declares `lmx.capabilities.editor.*`.
+Language support capabilities are public: `catalog/_shared/languageSupport.nix` declares `lmx.capabilities.languageSupport.*`.
 The client loads this file; provider and consumer modules use its options without importing it.
-Public area names do not reserve module names: a module named `editor` uses `lmx.editor.*` independently of `lmx.capabilities.editor.*`.
+Public area names do not reserve module names.
 CI must reject reserved module names and declarations whose namespace does not match the declaring file.
 
 A module-specific option exists when its declaring module is imported, directly or through another module.
@@ -102,7 +103,7 @@ See [Migrate custom modules](writing-modules.md#migrate-custom-modules) for the 
 
 ## Capability providers and consumers
 
-The public editor capability area has separate tool declarations and language declarations.
+The public language support capability area has separate tool declarations and language declarations.
 A tool declaration describes an executable supplied by its provider:
 
 | Field | Requirement | Meaning |
@@ -306,6 +307,9 @@ A module that only selects existing packages can use configuration checks; a mod
 | Every published client/catalog pair | Real `Prepare()` output for every selector individually, the empty selection, and supported integration cases | Evaluation |
 
 Store custom build and behavior checks in the module's `smoke.nix`.
+Store additional module-specific configuration assertions and expected diagnostics in an optional `tests.nix`.
+The [module test context](../checks/module.nix) shares memoized configurations between these assertions and the module's smoke checks.
+The `check.nix` arguments remain `config`, `pkgs`, `version`, `userName`, and `hasPackage`.
 CI must discover, build, and execute all applicable checks rather than merely evaluate their derivation paths.
 A data-only derivation is checked by inspecting its built output; it does not need an unrelated program launch.
 A runtime check must exercise the actual generated configuration, not a separate copy of the setup.
@@ -313,15 +317,24 @@ For example, an editor parser guarantee needs a real buffer with active highligh
 
 ```mermaid
 flowchart TB
-    contract["README guarantees"] --> evaluation["check.nix: configuration"]
+    contract["README guarantees"] --> evaluation["check.nix + optional tests.nix"]
     contract --> behavior["smoke.nix: built behavior"]
-    evaluation --> catalogci["Blocking catalog CI"]
-    behavior --> catalogci
-    catalogci --> pair["Client + catalog: Prepare and eval"]
+    evaluation --> modules["ci/test: selected modules"]
+    behavior --> modules
+    shared["Metadata + shared schema fixtures"] --> common["ci/common: MODE=pr or release"]
+    combinations["All defaults + documented integrations + AstroNvim LSP runtime"] -->|"MODE=release"| common
+    modules --> validation["Release validation"]
+    common --> validation
+    validation --> pair["Client + catalog: Prepare and eval"]
     pair --> release["Publish compatible pair"]
 ```
 
-Run configuration checks for ARM64 and AMD64.
+The repository's [Taskfile](../Taskfile.yml) exposes module checks as `ci/test` and common checks as `ci/common`.
+`ci/test` accepts space-separated directory names through `MODULES`; omitting it selects all modules.
+`ci/common` uses `MODE=pr` by default to validate catalog metadata and shared interfaces through small fixtures.
+`MODE=release` also evaluates all compatible defaults and documented module combinations, then builds and runs the three AstroNvim LSP integration scenarios.
+Release validation combines every module's checks with `ci/common MODE=release`.
+Each task uses the runner's native Linux system from `builtins.currentSystem`.
 Build and runtime checks must identify the guest architecture they actually verify.
 Evaluating an ARM64 derivation on an AMD64 runner is not evidence of an ARM64 build or execution.
 Reports must distinguish structure, evaluation, build, runtime, and full-VM verification.

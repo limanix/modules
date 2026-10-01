@@ -77,6 +77,6 @@ For details, see Docker's guides to [port publishing](https://docs.docker.com/en
 |---|---|
 | Enables the selected Docker Engine service and installs its CLI, Compose plugin, and Lazydocker | `check.nix`, `smoke.nix`: commands |
 | Adds the configured development account to the Docker group | `check.nix` |
-| Only one Docker line may configure the service; conflicting lines report the package conflict | `checks/negative.nix`: dockerVersionConflict |
-| Selecting Lazydocker again preserves the system and public settings | `checks/contracts.nix`: composition |
+| Only one Docker line may configure the service; conflicting lines report the package conflict | `tests.nix`: versionConflict |
+| Selecting Lazydocker again preserves the system and public settings | `tests.nix`: composition |
 | Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

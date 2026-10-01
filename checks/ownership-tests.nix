@@ -18,7 +18,7 @@ let
   scalar = lib.mkOption { type = lib.types.str; };
   tmuxFile = toString ../catalog/tmux/default.nix;
   zshFile = toString ../catalog/zsh/default.nix;
-  editorFile = toString ../catalog/_shared/editor.nix;
+  languageSupportFile = toString ../catalog/_shared/languageSupport.nix;
   nested = file: childFile: {
     _file = file;
     options.lmx.tmux.example = lib.mkOption {
@@ -59,14 +59,14 @@ assert rejects [
 ];
 assert rejects [
   {
-    _file = editorFile;
+    _file = languageSupportFile;
     options.lmx.editor.example = scalar;
   }
 ];
 assert rejects [
   {
     _file = tmuxFile;
-    options.lmx.capabilities.editor.example = scalar;
+    options.lmx.capabilities.languageSupport.example = scalar;
   }
 ];
 assert rejects [

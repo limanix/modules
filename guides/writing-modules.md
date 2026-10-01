@@ -409,6 +409,7 @@ Add the remaining files:
 | `check.nix`   | Checks what the module adds to the evaluated NixOS configuration           |
 | `README.md`   | The entry's documentation page, including its Guarantees section             |
 | `smoke.nix`    | Build and behavior checks when required by the [contract](catalog-contract.md#required-checks-for-every-module) |
+| `tests.nix` | Optional additional configuration assertions and expected diagnostics for the module |
 
 For `catalog/dev-tools/module.toml`, a description is enough:
 
@@ -428,14 +429,14 @@ For this two-package example, `catalog/dev-tools/check.nix` checks for both:
 hasPackage pkgs.jq && hasPackage pkgs.ripgrep
 ```
 
-The [test runner](../checks/default.nix) discovers every entry's `check.nix` and calls it with these arguments:
+The [module test runner](../checks/module.nix) discovers each selected entry's `check.nix` and calls it with these arguments:
 
 | Argument     | Value                                                                                          |
 |--------------|------------------------------------------------------------------------------------------------|
 | `config`     | The evaluated NixOS configuration                                                              |
 | `pkgs`       | The configuration's package set                                                                |
 | `version`    | The selected version line, or `null` for an entry without version lines                        |
-| `userName`   | The test VM's user name                                                                        |
+| `userName`   | The fixture's configured user name                                                             |
 | `hasPackage` | Checks whether `config.environment.systemPackages` contains a package with the same store path |
 
 The check must return `true`; accept unused arguments with `...`.
@@ -445,6 +446,15 @@ For separately pinned packages, load the package for `version` as [Go's check](.
 This check verifies the evaluated result only.
 Custom builds and runtime integration require `smoke.nix` under the [smoke requirements](catalog-contract.md#required-checks-for-every-module).
 Every such check must be discovered, built, and executed by blocking catalog CI.
+
+Keep additional module-specific assertions in an optional `tests.nix`, as [tmux's checks](../catalog/tmux/tests.nix) do.
+The runner passes the memoized default, individual-version, and coexisting-version configurations from [checks/module.nix](../checks/module.nix).
+The file can return `evaluation` assertions, `diagnostics` with expected messages and failing expressions, and named `configurations` reused by its smoke checks.
+This test context belongs to the repository's checks; it does not change the module arguments supplied by the client.
+The [smoke runner](../checks/module-smoke.nix) discovers the derivations returned by `smoke.nix` and checks their target system before building them.
+It runs each real version's commands and each module-wide coexistence or provider-override scenario once.
+Equivalent default entry points share runtime checks after their configuration equivalence is verified.
+K9s retains a separate check for its default recommendation.
 
 ### Follow the metadata rules
 
@@ -464,7 +474,7 @@ The [catalog contract](catalog-contract.md) also requires README guarantees and 
 
 Every directory directly under `catalog/` must be an entry, except the reserved `_shared` directory.
 Use `_shared/internal/` for private declarations imported by multiple catalog modules.
-Public declarations belong in `_shared/<area>.nix` and are loaded by the client, including `_shared/editor.nix` for `lmx.capabilities.editor.*`.
+Public declarations belong in `_shared/<area>.nix` and are loaded by the client, including `_shared/languageSupport.nix` for `lmx.capabilities.languageSupport.*`.
 Provider and consumer modules use these public options without importing their declaration files.
 The `_shared` directory has no selector or module metadata and is excluded from generated module documentation.
 The client preserves its files in the catalog source tree.
@@ -501,7 +511,7 @@ The following editor and language examples illustrate the required format:
 |---|---|
 | `nvim` opens AstroNvim when neither personal `init.lua` nor `init.vim` exists | `smoke.nix`: startup |
 | Selecting `lmx:go` installs and declares `gopls` | `check.nix` |
-| Selecting AstroNvim together with Go configures the declared `gopls` | `check.nix`, `smoke.nix`: LSP |
+| Selecting AstroNvim together with Go configures the declared `gopls` | `checks/integration.nix`, `catalog/astronvim/integration.nix`: release |
 ```
 
 Write guarantees for the entry being documented and reference the checks that verify each guarantee.
@@ -510,23 +520,39 @@ Add its row to the table in [Catalog](catalog.md).
 
 ### Check the result
 
-With Task and Docker installed, run from the repository root:
+With Task and Docker installed, run the tasks defined in the repository's [Taskfile](../Taskfile.yml) from the repository root:
 
 ```console
-task --yes ci/nixos-fmt ci/nixos-lint ci/test
+task --yes ci/test
 ```
 
 Repository checks must meet the [catalog contract](catalog-contract.md#required-checks-for-every-module):
 
-| Task | Required coverage |
+| Task | Coverage |
 |---|---|
 | `ci/nixos-fmt` | Nix formatting with nixfmt |
 | `ci/nixos-lint` | Nix code with statix and deadnix |
-| `ci/test` | Catalog metadata, module and version evaluation, composition, public options and capabilities, and all required `check.nix` and `smoke.nix` checks |
+| `ci/test` | Selected modules' default and version configurations, local assertions, expected diagnostics, and built smoke checks |
+| `ci/common` | Catalog metadata, shared declarations, ownership, and capability-schema fixtures; `MODE=release` also checks all compatible defaults, intermodule configuration, and AstroNvim LSP runtime |
 
-Evaluation must cover every entry at its default in isolation, all compatible defaults together, and every version line in isolation.
-Check documented version coexistence within each module, explicit documented integrations, composition, supported overrides, and expected incompatible selections.
-Run evaluation for both `aarch64-linux` and `x86_64-linux`; `ARCH=arm64` or `ARCH=amd64` selects one architecture for a local run.
+Select modules by their directory names:
+
+```console
+task --yes ci/test MODULES="go rust"
+```
+
+Omitting `MODULES` selects every catalog module.
+Each invocation checks the container's native Linux system, reported as `aarch64-linux` or `x86_64-linux`.
+Module evaluation and smoke share the same memoized configurations during `ci/test`.
+Module checks cover their documented version coexistence, composition, supported overrides, and incompatible selections.
+`ci/common` uses `MODE=pr` by default and checks the shared contract through small fixtures.
+Release validation runs every module with `ci/test` and the common task in release mode:
+
+```console
+task --yes ci/common MODE=release
+```
+
+Release mode adds the full-catalog configuration checks in [checks/integration.nix](../checks/integration.nix) and the three [AstroNvim LSP runtime scenarios](../catalog/astronvim/integration.nix).
 Every applicable `smoke.nix` must be discovered, built, and executed by blocking catalog CI using the module's actual packages and generated configuration.
 Catalog evaluation uses the public interface with test account values; client/catalog compatibility checks must evaluate real `Prepare()` output to verify the client's values.
 Reports must distinguish evaluation, build, runtime, and full-VM checks, and identify the architecture verified at each level.

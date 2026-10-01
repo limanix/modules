@@ -63,5 +63,5 @@ The settings are written to the VM's system Git configuration; a repository or u
 |---|---|
 | Installs every command listed in Use and enables Git | `check.nix` |
 | Generated Git settings select delta for paging and interactive diff filtering | `check.nix`, `smoke.nix`: gitConfig |
-| Users may replace the pager/filter defaults through NixOS settings or personal Git configuration | `checks/contracts.nix`, `smoke.nix`: gitConfig |
-| Selecting Git again preserves the system and public settings | `checks/contracts.nix`: composition |
+| Users may replace the pager/filter defaults through NixOS settings or personal Git configuration | `tests.nix`, `smoke.nix`: gitConfig |
+| Selecting Git again preserves the system and public settings | `tests.nix`: composition |

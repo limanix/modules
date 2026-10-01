@@ -14,13 +14,16 @@ let
 in
 builtins.all hasPackage [
   tools.go
-  config.lmx.capabilities.editor.tools.gopls.package
+  config.lmx.capabilities.languageSupport.tools.gopls.package
   tools.delve
   pkgs.gcc
 ]
-&& builtins.all (parser: builtins.elem parser config.lmx.capabilities.editor.languages.go.parsers) [
-  "go"
-  "gomod"
-  "gosum"
-]
+&&
+  builtins.all
+    (parser: builtins.elem parser config.lmx.capabilities.languageSupport.languages.go.parsers)
+    [
+      "go"
+      "gomod"
+      "gosum"
+    ]
 && (builtins.elem warning config.warnings == (tools.endOfLife == true))

@@ -65,6 +65,6 @@ Scripts they run use that version.
 |---|---|
 | Installs each selected Node.js line with npm, npx and their versioned commands | `check.nix`, `smoke.nix`: commands |
 | Versioned npm and npx scripts run the matching Node.js interpreter | `smoke.nix`: commands |
-| Selected lines coexist and the newest supplies unqualified commands | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
-| Declares JavaScript/TypeScript/TSX parsers without installing an LSP server or enabling an editor | `check.nix`, `checks/contracts.nix` |
+| Selected lines coexist and the newest supplies unqualified commands | `tests.nix`: coexistence, `smoke.nix`: coexistence |
+| Declares JavaScript/TypeScript/TSX parsers without installing an LSP server or enabling an editor | `check.nix`, `tests.nix` |
 | Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

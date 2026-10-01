@@ -5,7 +5,7 @@ Each component can also be selected separately.
 
 | Component | Provides |
 |---|---|
-| [Zsh](../zsh/README.md) | Completion, suggestions, Starship, local Atuin history, zoxide and direnv |
+| [Zsh](../zsh/README.md) | Oh My Zsh, completion, suggestions, Starship, local Atuin history, zoxide and direnv |
 | [tmux](../tmux/README.md) | Panes, sessions, clipboard integration and saved layouts |
 | [AstroNvim](../astronvim/README.md) | Configured editor, language-server integration and Nix-built parsers |
 | [CLI tools](../cli-tools/README.md) | Search, previews, Git diffs, structured data and system tools |
@@ -107,7 +107,7 @@ Explicit supported selections follow each component's selection policy.
 | Guarantee | Covered by |
 |---|---|
 | Imports the seven components listed above through their ordinary entry points | `components.nix`, `check.nix` |
-| Repeating component imports preserves the system derivation and public option values | `checks/default.nix`, `checks/contracts.nix`: composition |
-| The AstroNvim recommendation accepts an explicit supported line | `checks/default.nix`: astronvimVersionSelection |
-| Bash login-shell and disabled tmux-navigation overrides remain available | `checks/default.nix`: consoleContracts |
+| Repeating component imports preserves the system derivation and public option values | `tests.nix`: composition |
+| The AstroNvim recommendation accepts an explicit supported line | `checks/integration.nix`: console.astronvimVersionSelection |
+| Bash login-shell and disabled tmux-navigation overrides remain available | `checks/integration.nix`: console.shell, console.navigation |
 | Component startup and integration behavior remains owned by its component | Component `check.nix` and `smoke.nix` checks |

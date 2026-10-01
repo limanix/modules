@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  profile,
   lib,
   ...
 }:
@@ -31,11 +32,19 @@ let
     setopt ERR_EXIT
     TRAPZERR() { print -u2 "Zsh startup assertion failed at $funcfiletrace[1]"; }
     [[ $LMX_PERSONAL == yes ]]
+    [[ $ZSH == ${config.programs.zsh.ohMyZsh.package}/share/oh-my-zsh ]]
+    [[ ''${+functions[omz]} == 1 ]]
     [[ ''${+functions[_carapace_completer]} == 1 ]]
     [[ ''${+functions[_zsh_highlight]} == 1 ]]
     [[ ''${+functions[_zsh_autosuggest_start]} == 1 ]]
     [[ ''${+functions[__zoxide_z]} == 1 ]]
     [[ ''${+functions[_direnv_hook]} == 1 ]]
+    # The -i -c probe has no prompt; run the first-prompt widget binding explicitly.
+    _zsh_autosuggest_start
+    bindkey '^I' | grep -F fzf-tab-complete
+    [[ $widgets[.fzf-tab-orig-expand-or-complete] == completion:* ]]
+    zstyle -s ':completion:complete:cd:argument-rest:local-directories' menu menu_style
+    [[ $menu_style == no ]]
     zle -l | grep -F fzf-tab-complete
     zle -l | grep -F fzf-file-widget
     bindkey '^R' | grep -F atuin
@@ -55,14 +64,14 @@ in
     pkgs.runCommand "zsh-startup-smoke"
       {
         nativeBuildInputs = [
-          config.system.path
+          profile
           pkgs.python3
           pkgs.proot
           pkgs.gnugrep
         ];
         LMX_ZSH = "${pkgs.zsh}/bin/zsh";
         LMX_ETC = etc;
-        LMX_PROFILE = config.system.path;
+        LMX_PROFILE = profile;
         LMX_CHECK = check;
         TERMINFO_DIRS = "${pkgs.ncurses}/share/terminfo";
       }

@@ -84,7 +84,7 @@ minikube-1.38 start --driver=docker --profile=mk138
 | Guarantee | Covered by |
 |---|---|
 | Installs the pinned Minikube line and its `minikube-LINE` command | `check.nix`, `smoke.nix`: commands |
-| Selected Minikube lines coexist; the newest supplies `minikube` | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
-| Includes a K9s recommendation that explicit K9s version selections can replace | `check.nix`, `checks/default.nix`: minikubeK9sSelection |
-| Does not enable Docker or create a cluster by being selected | `checks/contracts.nix` |
+| Selected Minikube lines coexist; the newest supplies `minikube` | `tests.nix`: coexistence, `smoke.nix`: coexistence |
+| Includes a K9s recommendation that explicit K9s version selections can replace | `check.nix`, `checks/integration.nix`: minikubeK9sSelection |
+| Does not enable Docker or create a cluster by being selected | `tests.nix` |
 | Unknown EOL status emits no EOL warning | `check.nix` |

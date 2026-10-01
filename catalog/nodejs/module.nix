@@ -28,7 +28,7 @@ let
       '';
 in
 {
-  lmx.capabilities.editor.languages = {
+  lmx.capabilities.languageSupport.languages = {
     javascript.parsers = [ "javascript" ];
     typescript.parsers = [
       "typescript"

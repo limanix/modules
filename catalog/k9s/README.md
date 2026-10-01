@@ -68,4 +68,4 @@ The recommendation supplies only `k9s`; explicit version selectors also supply t
 | Guarantee | Covered by |
 |---|---|
 | Installs the selected K9s packages; explicit lines provide `k9s-LINE` | `check.nix`, `smoke.nix`: commands |
-| The newest explicitly selected line supplies `k9s`; upstream EOL warnings occur once per selected package | `check.nix`, `checks/default.nix`: minikubeK9sSelection |
+| The newest explicitly selected line supplies `k9s`; upstream EOL warnings occur once per selected package | `check.nix`, `tests.nix`: coexistence; `checks/integration.nix`: minikubeK9sSelection |

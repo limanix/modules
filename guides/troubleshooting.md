@@ -120,13 +120,32 @@ Keep the `while checking … on …` context: it identifies the entry or combina
 | Diagnostic                                                                          | What to check                                                           | Next step                                                                                                                              |
 |-------------------------------------------------------------------------------------|-------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
 | `Module catalog:`                                                                   | The named entry's files, metadata, or selector collision                | Follow the specific message and the [metadata rules](writing-modules.md#follow-the-metadata-rules)                                     |
-| `Module result: … does not match its expected packages or program/service settings` | The entry's `check.nix` returned `false`                                | Compare its expectations with the module's evaluated settings; see [Write the result check](writing-modules.md#write-the-result-check) |
+| `Module result:` | The named module's configuration assertion | Compare `check.nix` or `tests.nix` with the evaluated settings; see [Write the result check](writing-modules.md#write-the-result-check) |
+| `Module smoke:` | The returned checks and their target system | Inspect the module's `smoke.nix` and the reported check |
+| `Common contract:` | A shared declaration or capability-schema assertion | Inspect the named fixture in [checks/common.nix](../checks/common.nix) |
+| `Catalog integration:` | A full-catalog or intermodule assertion | Inspect the named combination in [checks/integration.nix](../checks/integration.nix) |
 | `Catalog base:`                                                                     | The root Nixpkgs input and lock file                                    | Follow the diagnostic and [Update the NixOS base](writing-modules.md#update-the-nixos-base)                                            |
 | `assertion … failed` in an entry's `packages.nix`                                   | The assertion at the reported line, including expected package versions | Check the [release map and package loader](writing-modules.md#support-multiple-versions) together                                      |
 
-`ci/eval` evaluates configurations and verifies expected diagnostics for invalid selections.
-`ci/smoke` builds and runs the module smoke checks on the container's native Linux architecture.
-`ci/test` runs both tasks; its output identifies the architecture checked at each level.
+Run the tasks in the repository's [Taskfile](../Taskfile.yml) from the repository root.
+Select the modules involved in the failure:
+
+```console
+task --yes ci/test MODULES="go rust"
+```
+
+`ci/test` evaluates the selected modules, verifies their expected diagnostics, and discovers, builds, and runs their smoke checks.
+Omitting `MODULES` selects every module.
+Module evaluation and smoke instantiation reuse the same configurations.
+`ci/common` uses `MODE=pr` by default to check metadata and shared interfaces through small fixtures.
+Use release mode to investigate full-catalog and intermodule failures:
+
+```console
+task --yes ci/common MODE=release
+```
+
+Release mode also evaluates all compatible defaults and documented module combinations, then runs the three AstroNvim LSP integration scenarios.
+Both tasks use the container's native Linux architecture and identify it in their output.
 These checks do not boot a complete Lima VM.
 A passing check does not replace testing the module's documented commands in a VM.
 

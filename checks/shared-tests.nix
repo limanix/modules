@@ -7,7 +7,7 @@ let
   inherit (pkgs) lib;
   check = modules: import ./shared-declarations.nix { inherit lib pkgs modules; };
   rejects = modules: !(builtins.tryEval (check modules)).success;
-  publicFile = toString ../catalog/_shared/editor.nix;
+  publicFile = toString ../catalog/_shared/languageSupport.nix;
   privateFile = toString ../catalog/_shared/internal/example.nix;
   declaration = lib.mkOption {
     type = lib.types.listOf lib.types.str;
@@ -17,7 +17,7 @@ in
 assert check [
   {
     _file = publicFile;
-    options.lmx.capabilities.editor.example = declaration;
+    options.lmx.capabilities.languageSupport.example = declaration;
   }
 ];
 assert check [

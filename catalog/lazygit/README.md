@@ -31,4 +31,4 @@ Configure your commit identity as described in the [Git module](../git/README.md
 | Guarantee | Covered by |
 |---|---|
 | Installs Lazygit and enables Git | `check.nix` |
-| Selecting Git again preserves the system and public settings | `checks/contracts.nix`: composition |
+| Selecting Git again preserves the system and public settings | `tests.nix`: composition |

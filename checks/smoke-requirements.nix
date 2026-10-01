@@ -27,6 +27,7 @@ let
           "check.nix"
           "smoke.nix"
           "test.nix"
+          "tests.nix"
         ]
         || builtins.match "(.*-(check|smoke|test)|(check|smoke|test)-.*)[.]nix" name != null;
     in

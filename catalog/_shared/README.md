@@ -1,10 +1,10 @@
-# Public editor capabilities
+# Public language support capabilities
 
-The client loads `editor.nix` in every guest configuration, including an empty catalog selection.
+The client loads `languageSupport.nix` in every guest configuration, including an empty catalog selection.
 It only declares options and never activates an editor or installs a tool.
 The schema belongs to the client/catalog interface described in the [catalog contract](../../guides/catalog-contract.md).
 
-`lmx.capabilities.editor.tools.<identity>` contains:
+`lmx.capabilities.languageSupport.tools.<identity>` contains:
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -20,7 +20,7 @@ An ordinary user definition overrides provider recommendations; conflicting decl
 The provider installs the final selected declaration's package for the ordinary command.
 Consumers use that final command and arguments without choosing a provider themselves.
 
-`lmx.capabilities.editor.languages.<language>.parsers` is a required list of parser identities.
+`lmx.capabilities.languageSupport.languages.<language>.parsers` is a required list of parser identities.
 These additive declarations do not require a language server.
 Consumers deduplicate parser requirements and map them to their parser configuration.
 Third-party modules assign these public options without importing catalog files.

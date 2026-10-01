@@ -21,7 +21,7 @@ in
 {
   imports = [ ./tool.nix ];
 
-  lmx.capabilities.editor = {
+  lmx.capabilities.languageSupport = {
     languages.go.parsers = [
       "go"
       "gomod"
