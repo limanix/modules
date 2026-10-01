@@ -1,1 +1,1 @@
-import ../module.nix "0.50"
+import ../module.nix { version = "0.50"; }

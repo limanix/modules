@@ -52,3 +52,11 @@ helm-4.3 version --short
 ```
 
 `helm` runs the newest selected line.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs the pinned Helm line and its `helm-LINE` command | `check.nix`, `smoke.nix`: commands |
+| Selected lines coexist and the newest supplies `helm` | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
+| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

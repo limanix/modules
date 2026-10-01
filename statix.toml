@@ -1,0 +1,2 @@
+# The module guide requires comparison with true because endOfLife can be null.
+disabled = ["bool_comparison"]

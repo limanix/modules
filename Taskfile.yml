@@ -44,12 +44,23 @@ tasks:
       - task: nix:deadnix
 
   ci/test:
-    desc: Validate the catalog and evaluate NixOS configs
+    desc: Evaluate catalog configurations and run native build and runtime checks
+    cmds:
+      - task: ci/eval
+      - task: ci/smoke
+
+  ci/eval:
+    desc: Evaluate catalog configurations and expected diagnostics
     cmds:
       - task: nix:_nix/tool
         vars:
-          CMD: >-
-            nix eval --show-trace --json
-            --option allow-import-from-derivation false
-            --file checks/default.nix
-            {{if .ARCH}}{{.ARCH | shellQuote}}{{end}}
+          CMD: bash scripts/run_checks.sh eval {{.ARCH | default "" | shellQuote}}
+
+  ci/smoke:
+    desc: Build and run module smoke checks for the container's native architecture
+    cmds:
+      - task: nix:_nix/tool
+        vars:
+          CMD: bash scripts/run_checks.sh smoke {{.ARCH | default "" | shellQuote}}
+          TASK_CONTEXT:
+            ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE %s" (.CONTAINER_RUN_ARGS | default "")))'

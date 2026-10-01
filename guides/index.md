@@ -9,6 +9,7 @@ LimaNix ships a catalog of ready-made modules, and you can write your own for an
 | [Catalog](catalog.md)                 | Choose ready-made toolchains and services, and their versions                               |
 | [Concepts](concepts.md)               | Understand NixOS modules, how their settings combine, and where their packages come from    |
 | [Write a module](writing-modules.md)  | Write and extend a module, handle native dependencies, and optionally add it to the catalog |
+| [Catalog contract](catalog-contract.md) | Follow the ownership, compatibility, composition, and testing rules for catalog modules |
 | [Troubleshooting](troubleshooting.md) | Diagnose module errors, build failures, programs and services, and catalog checks           |
 
 The client guide [Modules](https://limanix.dev/categories/client/modules.html) covers the commands that list, import, and apply modules.
@@ -19,5 +20,6 @@ The client guide [Modules](https://limanix.dev/categories/client/modules.html) c
 catalog
 concepts
 writing-modules
+catalog-contract
 troubleshooting
 ```

@@ -48,3 +48,11 @@ terraform-1.16 version
 ```
 
 `terraform` runs the newest selected line.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs the pinned Terraform line and its `terraform-LINE` command | `check.nix`, `smoke.nix`: commands |
+| Selected lines coexist and the newest supplies `terraform` | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
+| Unknown EOL status emits no EOL warning | `check.nix` |

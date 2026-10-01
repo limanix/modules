@@ -155,15 +155,15 @@ It accepts connections only from inside the VM by default; [Mac access](#connect
 Save it on the Mac as `modules/postgres-service/default.nix`:
 
 ```nix
-{ pkgs, runtime, ... }:
+{ config, pkgs, ... }:
 {
   services.postgresql = {
     enable = true;
     package = pkgs.postgresql_18;
-    ensureDatabases = [ runtime.user.name ];
+    ensureDatabases = [ config.limanix.user.name ];
     ensureUsers = [
       {
-        name = runtime.user.name;
+        name = config.limanix.user.name;
         ensureDBOwnership = true;
       }
     ];
@@ -287,3 +287,12 @@ If the Mac's source address changes, update the authentication rule as well.
 Use the same major version to initialize and run a data directory.
 Moving existing data to another major version requires a [PostgreSQL upgrade](https://www.postgresql.org/docs/18/upgrading.html).
 Changing a service's major version changes its default data directory and initializes a new instance if that directory is empty; it does not migrate the old databases.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs the selected PostgreSQL tools and version-suffixed wrappers for all their executables | `check.nix`, `smoke.nix`: commands |
+| Links PostgreSQL shared data into the profile | `check.nix`, `smoke.nix`: commands |
+| Selected lines coexist; the newest supplies ordinary commands ahead of a separately enabled service package | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
+| Selecting this module alone does not enable a database service or initialize a data directory | `checks/contracts.nix` |

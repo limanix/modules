@@ -9,7 +9,7 @@ modules = ["lmx:git"]
 
 Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
-## Version
+## Versions
 
 Git comes from the catalog's [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
 This module has no version lines.
@@ -27,3 +27,9 @@ git config --global user.email "you@example.com"
 
 Git saves these settings in `~/.gitconfig` in the VM user's home directory.
 To use another identity in one repository, run the same commands with `--local` instead of `--global` inside that repository.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Enables Git and installs the configured NixOS Git package | `check.nix` |

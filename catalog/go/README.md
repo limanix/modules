@@ -76,3 +76,14 @@ See [Go toolchains](https://go.dev/doc/toolchain#select) for the selection rules
 
 The module installs `gopls` for editors that support the Language Server Protocol.
 See [Editor integration](../../guides/catalog.md#editor-integration) and the [gopls editor setup](https://go.dev/gopls/#editors).
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs the selected Go toolchain, Delve and GCC; `go-LINE` uses that line | `check.nix`, `smoke.nix`: commands |
+| The installed Go toolchain builds and tests cgo code with the race detector | `smoke.nix`: commands |
+| Declares Go/gomod/gosum parsers and the selected `gopls` package, command and language under `lmx.capabilities.editor` | `check.nix`, `checks/contracts.nix` |
+| The newest selected line supplies the ordinary tools; a user tool declaration overrides the complete gopls declaration and installed package | `checks/contracts.nix`, `smoke.nix`: coexistence, providerOverride |
+| Installing Go does not activate an editor | `checks/contracts.nix` |
+| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

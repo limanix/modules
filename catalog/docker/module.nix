@@ -2,7 +2,7 @@ version:
 {
   pkgs,
   lib,
-  runtime,
+  config,
   ...
 }:
 let
@@ -12,12 +12,14 @@ let
   };
 in
 {
+  imports = [ ../lazydocker/default.nix ];
+
   virtualisation.docker = {
     enable = true;
     package = tools.docker;
   };
 
-  users.users.${runtime.user.name}.extraGroups = [ "docker" ];
+  users.users.${config.limanix.user.name}.extraGroups = [ "docker" ];
 
   warnings = lib.optional (
     tools.endOfLife == true

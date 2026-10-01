@@ -6,6 +6,15 @@ You can add its tools to a VM by name, without writing Nix.
 
 | Module                                    | Selector       | Provides                                                |
 |-------------------------------------------|----------------|---------------------------------------------------------|
+| [Console](../catalog/console/README.md) | `lmx:console` | Zsh, tmux, AstroNvim, CLI tools and terminal applications |
+| [Zsh](../catalog/zsh/README.md) | `lmx:zsh` | Configured shell, prompt, history, completion and direnv |
+| [tmux](../catalog/tmux/README.md) | `lmx:tmux` | Sessions, panes, clipboard and layout restoration |
+| [AstroNvim](../catalog/astronvim/README.md) | `lmx:astronvim` | Configured Neovim with language-server integration |
+| [CLI tools](../catalog/cli-tools/README.md) | `lmx:cli-tools` | Search, previews, Git diffs, data and system tools |
+| [Lazygit](../catalog/lazygit/README.md) | `lmx:lazygit` | Git terminal interface |
+| [GitHub CLI](../catalog/gh/README.md) | `lmx:gh` | GitHub repositories, pull requests and workflow runs |
+| [Yazi](../catalog/yazi/README.md) | `lmx:yazi` | Terminal file manager |
+| [Lazydocker](../catalog/lazydocker/README.md) | `lmx:lazydocker` | Docker terminal interface; also included by Docker |
 | [Docker](../catalog/docker/README.md)     | `lmx:docker`   | Docker Engine, CLI, and Compose                         |
 | [Git](../catalog/git/README.md)           | `lmx:git`      | Git                                                     |
 | [Go](../catalog/go/README.md)             | `lmx:go`       | Go, gopls, Delve, and GCC                               |
@@ -35,22 +44,24 @@ Select a line by adding its version to the selector:
 | `lmx:python`      | The module's default line, named on its page |
 | `lmx:python-3.12` | The Python 3.12 line                         |
 
-Git and Neovim have no version lines; they come from the [base Nixpkgs revision](concepts.md#nixos-version-and-package-pins).
+AstroNvim provides `lmx:astronvim-6` to select its major line.
+Neovim and its plugins still come from the [base Nixpkgs revision](concepts.md#nixos-version-and-package-pins).
+Git, Neovim and the other console components have no version selectors.
 
-Docker and Node.js lines fix the major version, allowing minor and patch updates in later catalog releases.
+Docker, Node.js and AstroNvim lines fix the major version, allowing minor and patch updates in later catalog releases.
 PostgreSQL lines also fix the major version, allowing minor updates within that major.
 The other versioned modules fix major and minor, allowing only patch updates within a line.
 A catalog release can also choose another default line.
 
-Lines past their upstream end of life stay selectable, and each module page marks them.
+Lines marked as past their upstream end of life stay selectable.
 Selecting one prints a warning when the VM is built, and the build continues:
 
 ```text
 evaluation warning: Go 1.24.13 no longer receives upstream security updates.
 ```
 
-Each version line records whether upstream support has ended.
-When that status has not been confirmed, its module page says it is unknown.
+Modules that track upstream support record its status in their release map and documentation.
+When a tracked status has not been confirmed, the module page says it is unknown.
 An unknown status emits no EOL warning; the absence of a warning does not confirm upstream support.
 These statuses are reviewed when the catalog is maintained, not calculated from the current date during a VM build.
 
@@ -67,11 +78,14 @@ Each module page lists its versioned commands.
 
 Docker runs one system service.
 Select only one Docker line per VM; see the [Docker page](../catalog/docker/README.md).
+AstroNvim also accepts only one line.
+An explicit selector overrides the default recommended by Console; see [AstroNvim versions](../catalog/astronvim/README.md#versions).
 
 ## Editor integration
 
 The Go and Rust modules install language servers: `gopls` and `rust-analyzer`.
-The catalog installs them but does not configure any editor.
+The plain Neovim module does not configure its LSP client.
+[AstroNvim](../catalog/astronvim/README.md), also included in Console, enables the servers declared by selected language modules.
 
 | Where the editor runs         | What connects it to the language server                                                                  |
 |-------------------------------|----------------------------------------------------------------------------------------------------------|

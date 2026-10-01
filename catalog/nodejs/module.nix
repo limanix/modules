@@ -28,6 +28,14 @@ let
       '';
 in
 {
+  lmx.capabilities.editor.languages = {
+    javascript.parsers = [ "javascript" ];
+    typescript.parsers = [
+      "typescript"
+      "tsx"
+    ];
+  };
+
   environment.systemPackages = [
     (lib.setPrio priority tools.nodejs)
     versionedNode

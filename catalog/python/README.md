@@ -57,3 +57,12 @@ python-3.14 -m venv .venv-314
 
 Outside an activated environment, `python` and `virtualenv` come from the newest selected line.
 An activated environment always uses the interpreter that created it.
+
+## Guarantees
+
+| Guarantee | Covered by |
+|---|---|
+| Installs the selected Python interpreter and virtualenv; `python-LINE` selects that interpreter | `check.nix`, `smoke.nix`: commands |
+| Both venv and virtualenv create isolated environments with pip | `smoke.nix`: commands |
+| Selected lines coexist and the newest supplies ordinary commands outside an activated environment | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
+| Declares Python parser support without installing an LSP server or enabling an editor | `check.nix`, `checks/contracts.nix` |
