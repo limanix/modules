@@ -1,8 +1,9 @@
 {
   sources = {
     "1.95" = {
-      rev = "70bf138dfe687985e108978de2c4c60e9f0adf32";
-      sha256 = "sha256-zYRBEX/lrt69yizRwRBytPWuO4VMOkjRmv+R2pi3mBM=";
+      # Promoted NixOS 26.05 snapshot; Rust 1.95 recipes and source hashes are unchanged.
+      rev = "8c50a710ddca43d7a530fb805ad55bde8d0141c5";
+      sha256 = "sha256-md0zn0RnwNvPyASas1yG5YUuwQ4ALA6ucL50l0DvqCo=";
     };
     "1.96" = {
       rev = "ef2a4dc29159b41658eed178a4c1ec07920fc2e6";

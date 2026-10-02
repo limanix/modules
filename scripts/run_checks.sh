@@ -9,7 +9,8 @@ shift
 # Increase NIX_CHECK_JOBS only when the runner has enough memory.
 jobs=${NIX_CHECK_JOBS:-1}
 batch_size=${NIX_CHECK_BATCH_SIZE:-4}
-timeout_seconds=${NIX_CHECK_TIMEOUT:-480}
+timeout_seconds=${NIX_CHECK_TIMEOUT:-1800}
+target_seconds=${NIX_CHECK_TARGET_SECONDS:-600}
 runtime_profile=${NIX_RUNTIME_PROFILE:-all}
 case "$runtime_profile" in
   all|pr) ;;
@@ -36,9 +37,9 @@ case "$mode" in
   modules|common) ;;
   *) printf 'Unsupported check mode: %s\n' "$mode" >&2; exit 2 ;;
 esac
-for value in "$jobs" "$batch_size" "${NIX_BUILD_CORES:-1}" "$timeout_seconds"; do
+for value in "$jobs" "$batch_size" "${NIX_BUILD_CORES:-1}" "$timeout_seconds" "$target_seconds"; do
   if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
-    printf 'Check jobs, batch size, build cores, and timeout must be positive integers\n' >&2
+    printf 'Check jobs, batch size, build cores, timeout, and timing target must be positive integers\n' >&2
     exit 2
   fi
 done
@@ -66,7 +67,7 @@ case "$integration_group" in
     ;;
   *) printf 'Unsupported integration group: %s\n' "$integration_group" >&2; exit 2 ;;
 esac
-# Bound the complete suite, including evaluation, builds and diagnostics.
+# A runaway guard bounds the whole suite; exceeding the speed target does not fail it.
 # GNU timeout terminates the process group, covering Nix worker descendants.
 if test "${_LIMANIX_CHECK_BOUNDED:-}" != 1; then
   command -v timeout >/dev/null || {
@@ -162,6 +163,14 @@ run_diagnostics() {
   done < "$output/cases"
 }
 
+report_timing() {
+  local label=$1 elapsed=$2
+  printf 'Timing %s: %ss (performance target %ss; runaway guard %ss)\n' "$label" "$elapsed" "$target_seconds" "$timeout_seconds"
+  if ((elapsed > target_seconds)); then
+    printf 'Performance target exceeded for %s; completed checks remain valid.\n' "$label"
+  fi
+}
+
 cores=${NIX_BUILD_CORES:-$(( $(nproc) / jobs ))}
 ((cores > 0)) || cores=1
 build_jobs=$jobs
@@ -225,6 +234,7 @@ if test "$mode" = common; then
     realise_smoke "$temporary" 'common release'
   fi
   printf 'Passed common %s (%s) on %s in %ss\n' "$profile" "$integration_group" "$system" "$((SECONDS - started))"
+  report_timing "common $profile" "$((SECONDS - started))"
   exit 0
 fi
 
@@ -240,7 +250,7 @@ workers=$(( (${#modules[@]} + batch_size - 1) / batch_size ))
 build_jobs=$((jobs / workers))
 
 run_batch() {
-  local identifier=$1 name selection started
+  local identifier=$1 name selection started phase_started
   shift
   local output="$temporary/$identifier"
   mkdir "$output"
@@ -248,12 +258,18 @@ run_batch() {
     started=$SECONDS
     selection=$(json_strings "$name")
     printf 'Checking %s on %s: %s (runtime %s; additional versions: %s)\n' "$mode" "$system" "$name" "$runtime_profile" "${runtime_versions[*]:-none}"
+    phase_started=$SECONDS
     # Each module shares evaluation and smoke configurations, then releases its evaluator.
     nix-instantiate checks/modules.nix --show-trace --attr all \
       --option allow-import-from-derivation false \
       --argstr modules "$selection" "${runtime_arguments[@]}" > "$output/derivations"
+    printf "Timing %s evaluation: %ss\n" "$name" "$((SECONDS - phase_started))"
+    phase_started=$SECONDS
     run_diagnostics checks/modules.nix "$output" --argstr modules "$selection" "${runtime_arguments[@]}"
+    printf "Timing %s diagnostics: %ss\n" "$name" "$((SECONDS - phase_started))"
+    phase_started=$SECONDS
     realise_smoke "$output" "$name"
+    printf "Timing %s build and runtime checks: %ss\n" "$name" "$((SECONDS - phase_started))"
     printf 'Passed %s on %s in %ss\n' "$name" "$system" "$((SECONDS - started))"
   done
 }
@@ -287,3 +303,4 @@ while ((offset < ${#modules[@]} || ${#active_pids[@]})); do
   active_pids=("${remaining[@]}")
 done
 printf 'Passed %s module suites on %s in %ss\n' "${#modules[@]}" "$system" "$((SECONDS - started))"
+report_timing "module suites" "$((SECONDS - started))"

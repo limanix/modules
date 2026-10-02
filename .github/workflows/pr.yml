@@ -18,7 +18,7 @@ jobs:
     needs: plan
     if: ${{ needs.plan.outputs.readme-only != 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 7
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -33,7 +33,7 @@ jobs:
 
   plan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 1
+    timeout-minutes: 5
     outputs:
       chunks: ${{ steps.plan.outputs.chunks }}
       has-modules: ${{ steps.plan.outputs.has-modules }}
@@ -55,9 +55,11 @@ jobs:
           else
             plan=$(python3 -B scripts/plan_checks.py --base "$BASE_SHA" --head "$HEAD_SHA")
           fi
-          printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")" >> "$GITHUB_OUTPUT"
-          printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")" >> "$GITHUB_OUTPUT"
-          printf 'readme-only=%s\n' "$(jq -r '.readme_only' <<< "$plan")" >> "$GITHUB_OUTPUT"
+          {
+            printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")"
+            printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")"
+            printf 'readme-only=%s\n' "$(jq -r '.readme_only' <<< "$plan")"
+          } >> "$GITHUB_OUTPUT"
           printf '### Module runtime scope\n\n| Module | Profile | Additional lines |\n| --- | --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
           jq -r '.chunks[] | "| \(.modules) | \(.runtime_profile) | \(.runtime_versions // "") |"' <<< "$plan" >> "$GITHUB_STEP_SUMMARY"
       - name: Test runner and change planning
@@ -70,8 +72,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
         chunk: ${{ fromJSON(needs.plan.outputs.chunks) }}
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
     uses: ./.github/workflows/nix-tests.yml
     with:
       task: ci/test
@@ -100,7 +102,7 @@ jobs:
     needs: plan
     if: ${{ needs.plan.outputs.readme-only != 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 7
+    timeout-minutes: 15
     continue-on-error: true
     permissions:
       contents: read
@@ -131,7 +133,7 @@ jobs:
     if: always()
     needs: [nix, plan, test, common]
     runs-on: ubuntu-24.04
-    timeout-minutes: 1
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:

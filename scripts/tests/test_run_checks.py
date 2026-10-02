@@ -29,6 +29,7 @@ class RunChecksTests(unittest.TestCase):
         self.environment.pop("_LIMANIX_CHECK_BOUNDED", None)
         self.environment.pop("NIX_RUNTIME_PROFILE", None)
         self.environment.pop("NIX_RUNTIME_VERSIONS", None)
+        self.environment.pop("NIX_CHECK_TARGET_SECONDS", None)
         self.stub("nproc", "print(4)")
         self.stub("id", "import os\nprint(os.environ.get('NIX_STUB_UID', '501'))")
         self.stub("nix-instantiate", "print('/nix/store/shared-fixture.drv')")
@@ -58,7 +59,10 @@ elif 'names' in arguments:
 elif any('diagnostics.' in value and '.actual' in value for value in arguments):
     print(os.environ.get('NIX_STUB_DIAGNOSTIC', 'owned option'), file=sys.stderr)
     sys.exit(int(os.environ.get('NIX_STUB_DIAGNOSTIC_STATUS', '1')))
-elif any(value == 'evaluation' or value.startswith('evaluationGroups.') and not value.endswith('.actual') for value in arguments) and '--raw' in arguments:
+elif any(
+    value == 'evaluation' or value.startswith('evaluationGroups.') and not value.endswith('.actual')
+    for value in arguments
+) and '--raw' in arguments:
     print('composition')
 else:
     print('{}')
@@ -181,6 +185,7 @@ os.execvp(arguments[0], arguments)
             "NIX_CHECK_BATCH_SIZE",
             "NIX_BUILD_CORES",
             "NIX_CHECK_TIMEOUT",
+            "NIX_CHECK_TARGET_SECONDS",
         ]:
             for value in ["0", "-1", "x", "1;touch marker"]:
                 with self.subTest(name=name, value=value):
@@ -237,7 +242,9 @@ os.execvp(arguments[0], arguments)
         record = self.root / "instantiate.json"
         self.stub(
             "nix-instantiate",
-            "import json\nimport os\nimport sys\nfrom pathlib import Path\nPath(os.environ['NIX_STUB_RECORD']).write_text(json.dumps(sys.argv))\nprint('/nix/store/shared-fixture.drv')",
+            "import json\nimport os\nimport sys\nfrom pathlib import Path\n"
+            "Path(os.environ['NIX_STUB_RECORD']).write_text(json.dumps(sys.argv))\n"
+            "print('/nix/store/shared-fixture.drv')",
         )
         for profile, versions in [("all", ""), ("pr", "1.26 1.27")]:
             with self.subTest(profile=profile):
@@ -259,6 +266,20 @@ os.execvp(arguments[0], arguments)
                 )
                 self.assertIn(f"runtime {profile}", result.stdout)
                 self.assertIn("Passed 1 module suites", result.stdout)
+
+    def test_speed_target_warns_without_failing_completed_checks(self):
+        result = self.invoke(
+            "common", "pr", NIX_CHECK_TARGET_SECONDS="1", NIX_STUB_DELAY="0.75"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Passed common pr", result.stdout)
+        self.assertIn("Performance target exceeded", result.stdout)
+        self.assertIn("completed checks remain valid", result.stdout)
+
+    def test_default_runaway_guard_is_separate_from_the_speed_target(self):
+        result = self.invoke("common", "pr")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("performance target 600s; runaway guard 1800s", result.stdout)
 
     @unittest.skipUnless(
         shutil.which("timeout"), "GNU timeout is required for process-group test"

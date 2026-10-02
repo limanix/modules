@@ -146,10 +146,18 @@ The local runner defaults to one module evaluator at a time; heavy whole-catalog
 See [Validation memory](guides/troubleshooting.md#validation-memory) for serial execution and Linux-runner sizing.
 Set `NIX_CHECK_JOBS`, `NIX_CHECK_BATCH_SIZE` and `NIX_CHECK_TIMEOUT` through `CONTAINER_ENVS` to tune the local runner.
 
-The required PR path budgets one minute for planning, seven minutes for parallel workers, and one minute for the gate.
-Worker budgets include setup and caches; module suites have a five-minute CI limit and an eight-minute local default.
-An exceeded budget fails the check.
-Queues and cold dependency downloads can add time or prevent a successful run within that budget.
+PR checks aim to finish within ten minutes. This is a performance target; a successful slower check remains successful.
+The runner reports evaluation, diagnostic and build/runtime durations. Cold historical SDKs can take longer.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `NIX_CHECK_TARGET_SECONDS` | 600 s | Report slow successful suites without failing them |
+| `NIX_CHECK_TIMEOUT` | 1800 s | Stop runaway suites, including evaluation and builds |
+| Native check step / job | 40 / 45 min | Allow setup, downloads, checks and cache saving |
+| Planning and result checks | 5 min | Bound small workflow control jobs |
+| Formatting, lint and documentation | 15 min | Bound tool setup and their checks |
+
+Module caches retain completed work even when a later check fails. Cache restoration prefers the same native architecture and module across source-pin changes. Hosted queue waits are outside the suite timing; downloads and cache export count toward build time.
 The checks evaluate and run built module behavior; they do not boot the complete Lima VM.
 Also run changed documented commands in a disposable VM.
 
@@ -159,6 +167,7 @@ To contribute a module, follow [Add to the catalog](guides/writing-modules.md#ad
 
 A catalog release is an integer tag, such as `v2`, on a commit in `main`.
 The release workflow publishes a GitHub release with the documentation archive and triggers the client rebuilds described in [Use a module](#use-a-module).
-Its configured active path allows one minute for tag validation and planning, seven minutes for parallel checks and documentation preparation, and one minute for mandatory result checks and publication.
-Notification has an additional one-minute budget after publication.
-These limits bound the workflow; hosted queue waits and successful cold-cache runtimes are not established by the limits.
+Release validation uses the same native safeguards and complete runtime coverage.
+Tag validation, planning, result checks, publication and notification each have a five-minute runaway guard.
+Documentation preparation has a fifteen-minute guard. These safeguards are separate from the ten-minute performance target.
+A configured guard does not establish a successful cold-cache runtime.

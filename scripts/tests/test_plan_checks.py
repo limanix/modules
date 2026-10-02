@@ -259,6 +259,47 @@ class PlanChecksTests(unittest.TestCase):
         self.assertEqual(plan["shared_paths"], [])
         self.assertFalse(plan["readme_only"])
 
+    def test_version_heavy_workers_start_first_without_changing_full_coverage(self):
+        for name in ["git", "go", "rust", "nodejs", "zsh"]:
+            self.module(name)
+        for name, versions in [
+            ("go", ["1.24", "1.25", "1.26", "1.27"]),
+            ("nodejs", ["23", "24", "25", "26"]),
+            ("rust", ["1.95", "1.96"]),
+        ]:
+            self.write(
+                f"catalog/{name}/module.toml", f"versions = {json.dumps(versions)}\n"
+            )
+        base = self.commit()
+        result = self.invoke("--all")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        plan = json.loads(result.stdout)
+        self.assertEqual(plan["modules"], ["git", "go", "nodejs", "rust", "zsh"])
+        self.assertEqual(
+            [chunk["modules"] for chunk in plan["chunks"]],
+            ["go", "nodejs", "rust", "git", "zsh"],
+        )
+        self.assertCountEqual(
+            [chunk["modules"] for chunk in plan["chunks"]], plan["modules"]
+        )
+        self.assertTrue(
+            all(
+                chunk["runtime_profile"] == "all" and not chunk["runtime_versions"]
+                for chunk in plan["chunks"]
+            )
+        )
+        self.write("catalog/go/packages.nix")
+        self.write("catalog/git/default.nix", "{ changed = true; }\n")
+        self.commit()
+        changed = self.diff(base)
+        self.assertEqual(changed["modules"], ["git", "go"])
+        self.assertEqual(
+            [chunk["modules"] for chunk in changed["chunks"]], ["go", "git"]
+        )
+        self.assertTrue(
+            all(chunk["runtime_profile"] == "all" for chunk in changed["chunks"])
+        )
+
     def test_invalid_revision_fails_without_json(self):
         self.module("go")
         self.commit()
@@ -539,7 +580,7 @@ class PlanChecksTests(unittest.TestCase):
                 self.commit()
                 chunks = self.diff(base)["chunks"]
                 self.assertEqual(
-                    [chunk["modules"] for chunk in chunks], ["console", "go"]
+                    [chunk["modules"] for chunk in chunks], ["go", "console"]
                 )
                 self.assertTrue(
                     all(

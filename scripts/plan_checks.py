@@ -23,6 +23,7 @@ COMMON_FILES = frozenset(
         "scripts/plan_checks.py",
         "scripts/tests/test_plan_checks.py",
         "scripts/tests/test_run_checks.py",
+        "scripts/tests/test_workflow_budgets.py",
     }
 )
 PALETTE_CONSUMERS = frozenset({"lazygit", "tmux", "yazi", "zsh"})
@@ -259,9 +260,13 @@ def plan(root: Path, paths: list[str] | None) -> dict:
         )
         readme_only = bool(paths) and all(readme_path(path) for path in paths)
     full = full_runtime_modules(root, available, paths)
+    # Submit larger compatibility matrices first, on both native architectures.
+    # Module selection stays canonical; only worker creation order changes.
+    version_counts = {name: len(declared_versions(root, name)) for name in modules}
+    scheduled = sorted(modules, key=lambda name: (-version_counts[name], name))
     chunks = [
         {"id": name, "modules": name, **runtime_selection(root, name, paths, full)}
-        for name in modules
+        for name in scheduled
     ]
     return {
         "modules": modules,

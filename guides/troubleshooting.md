@@ -158,7 +158,10 @@ task --yes ci/common MODE=release
 
 Release mode combines full-catalog evaluation with AstroNvim LSP integration smoke.
 Use `MODE=release-eval` or `MODE=release-smoke` to isolate those stages.
-The runner reports timeout failure when its complete suite exceeds `NIX_CHECK_TIMEOUT`, which defaults to 480 seconds locally.
+The ten-minute goal reports slow successful checks without failing them.
+`NIX_CHECK_TARGET_SECONDS` defaults to 600 seconds; the output includes evaluation, diagnostic and build/runtime timings.
+The separate `NIX_CHECK_TIMEOUT` runaway guard defaults to 1800 seconds locally and in native CI.
+If that guard fires, inspect the last active phase, dependency downloads and cache availability. Preserve full tests when adjusting it for a cold build.
 Both tasks use the container's native Linux architecture and identify it in their output.
 These checks do not boot a complete Lima VM.
 A passing check does not replace testing the module's documented commands in a VM.

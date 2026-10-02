@@ -14,7 +14,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 1
+    timeout-minutes: 5
     outputs:
       chunks: ${{ steps.plan.outputs.chunks }}
     steps:
@@ -42,7 +42,7 @@ jobs:
   quality:
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 7
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -61,8 +61,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
         chunk: ${{ fromJSON(needs.verify.outputs.chunks) }}
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
     uses: ./.github/workflows/nix-tests.yml
     with:
       task: ci/test
@@ -94,7 +94,7 @@ jobs:
     name: Prepare docs
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 7
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -118,7 +118,7 @@ jobs:
     if: ${{ always() && !cancelled() }}
     needs: [test, common, quality, docs]
     runs-on: ubuntu-24.04
-    timeout-minutes: 1
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
@@ -146,7 +146,7 @@ jobs:
     name: Notify client
     needs: release
     runs-on: ubuntu-24.04
-    timeout-minutes: 1
+    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Create token

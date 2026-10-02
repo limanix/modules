@@ -1,12 +1,13 @@
 {
   sources = {
+    # Cached upstream snapshots preserve the advertised versions and source hashes.
     legacy = {
-      rev = "d8e0934a9d1930216faff15fc833705a1e534c9c";
-      sha256 = "sha256-AQntWugziZX1B8MSdNWiBjW4deyAGQeEpHs8ph3Ziig=";
+      rev = "2589c813e138db4ecab0912798c0b65512dba1e8";
+      sha256 = "sha256-bKD2zezDqJBwrPgP5a05areWFTE3wHpEmo+9feEWCAY=";
     };
     previous = {
-      rev = "79dd4ac915e3acaf434b2974af214a7e90df2e50";
-      sha256 = "sha256-X0pBoIkVuoOCkUv0m/wmVbJAXBj43FTE/m1+YqEpeF0=";
+      rev = "e5dba655b6ca52684b242820f633be8186778154";
+      sha256 = "sha256-JdYSPSbipK0Ytwanv0cyB17SppMA7KSZgq/7WJnhYYM=";
     };
     current = {
       rev = "79b35bf0bda5cd110f856aa5b5b2c5ba4460dbf5";
