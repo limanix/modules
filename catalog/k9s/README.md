@@ -92,5 +92,6 @@ The recommendation supplies only `k9s`; explicit version selectors also supply t
 | An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the selected K9s packages; explicit lines provide `k9s-LINE` | `check.nix`, `smoke.nix`: commands |
 | The 0.40 build preserves application and vendor sources and uses its declared compiler pin | `packages.nix`: fingerprint assertion; `tests.nix`: buildSource |
+| The 0.40 upstream tests retain every package and reuse the build cache through matching path settings | `tests.nix`: checkCache; unchanged upstream check phase |
 | The upstream version test executes the rebuilt 0.40 binary | `tests.nix`: rebuiltVersionTest; `smoke.nix`: upstreamVersion in full or explicit 0.40 runtime |
 | The newest explicitly selected line supplies `k9s`; upstream EOL warnings occur once per selected package | `check.nix`, `tests.nix`: coexistence; `checks/integration.nix`: minikubeK9sSelection |

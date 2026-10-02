@@ -23,5 +23,5 @@ pkgs.runCommand "contract-builder-permissions" { } ''
     exit 1
   fi
   test ! -e "$HOME"
-  printf 'builder_uid=%s readonly=enforced home=unwritable\n' "$EUID" > "$out"
+  printf 'readonly=enforced home=unwritable\n' > "$out"
 ''

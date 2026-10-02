@@ -17,7 +17,7 @@ let
   # Its upstream version test must also refer to this rebuilt package.
   k9s =
     if release ? buildSource then
-      original.override {
+      (original.override {
         inherit (builder)
           stdenv
           buildGoModule
@@ -26,7 +26,12 @@ let
           testers
           ;
         inherit k9s;
-      }
+      }).overrideAttrs
+        (previous: {
+          # K9s fixtures use package-relative paths. Matching the build's path
+          # mode lets every upstream test reuse compiled dependencies.
+          checkFlags = (previous.checkFlags or [ ]) ++ [ "-trimpath" ];
+        })
     else
       original;
   fingerprint = package: {
