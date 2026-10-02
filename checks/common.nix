@@ -7,6 +7,7 @@ let
   shared = import ./shared-files.nix;
   interface = import ./interface-tests.nix { inherit nixpkgs system; };
   packageOrder = import ./package-order-tests.nix { inherit nixpkgs system; };
+  builderPermissions = import ./builder-permissions.nix { inherit pkgs; };
   schemaFor =
     modules:
     lib.evalModules {
@@ -221,7 +222,10 @@ assert
   || throw "Common checks require a native Linux runner";
 {
   inherit system evaluation;
-  smoke = [ packageOrder.smoke ];
+  smoke = [
+    packageOrder.smoke
+    builderPermissions
+  ];
   all = builtins.deepSeq evaluation true;
   diagnostics = interface.diagnostics // {
     requiredSmoke = {

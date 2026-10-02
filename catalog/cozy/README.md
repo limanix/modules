@@ -57,24 +57,10 @@ Use `q` to apply the selected directory or `Q` to leave the shell's directory un
 The shell, tmux, editor, Yazi and Lazygit default to Catppuccin Mocha.
 The component pages describe personal configuration and managed overrides.
 
-## API playground
+## Project services
 
-Cozy installs a writable-project template as read-only files under `/etc/limanix/examples/cozy`.
-Copy it into a new directory you want to experiment in:
-
-```console
-mkdir -p /workspace/cozy-notes
-cp -R /etc/limanix/examples/cozy/. /workspace/cozy-notes/
-chmod -R u+w /workspace/cozy-notes
-cd /workspace/cozy-notes
-docker compose up --build -d --wait
-tmux-project .
-```
-
-The template contains a notes API, a Postgres database, saved Posting requests and a Harlequin connection profile.
-Follow the [playground guide](playground/README.md) for the endpoints, database connection and shutdown commands.
-These services start only when you run Compose in the copied project.
-Minikube creates a cluster only when you run `minikube start`; cloud clients require your own authentication.
+Run Compose from your project's directory when you need its containers.
+Minikube creates a cluster when you run `minikube start`; cloud clients require your own authentication.
 Cozy does not provision cloud resources.
 
 Git identity, GitHub authentication and approval of project `.envrc` files remain personal configuration.
@@ -83,17 +69,17 @@ For icons and clipboard integration, configure the host terminal as described on
 ## Versions
 
 Cozy has no version lines.
-Its component list and template belong to the catalog release.
+Its component list and workspace command belong to the catalog release.
 
 ## Configuration and integration
 
 | Boundary | Contract |
 |---|---|
 | Settings | Owned by the imported components; no aggregate-specific public option namespace |
-| Project interface | `tmux-project [directory]`; read-only example at `/etc/limanix/examples/cozy` |
-| Personal state | Component configuration in the guest home; project files and copied playground in your chosen directory |
+| Project interface | `tmux-project [directory]` |
+| Personal state | Component configuration in the guest home; project files in your chosen directory |
 | Integration | Components share public contracts and default Mocha configuration |
-| Services | Docker Engine is enabled; Kubernetes and playground services start only when requested |
+| Services | Docker Engine is enabled; project containers and Kubernetes clusters start when requested |
 
 ## Corner cases
 
@@ -114,5 +100,5 @@ Its component list and template belong to the catalog release.
 | `tmux-project [directory]` dispatches four project windows and reuses the physical-path session | `smoke.nix`: project |
 | Tool windows remain available as shells after a tool exits, fails or is unavailable | `smoke.nix`: project |
 | Project paths are passed literally and sessions can be selected from inside tmux | `smoke.nix`: project |
-| Installs the notes API template; its HTTP operations use a real Postgres database | `check.nix`, `smoke.nix`: playground |
+| Installs development tools without bundled example applications | `tests.nix`: noExamples |
 | Component configuration, themes and language integration remain owned by their modules | Component checks and `checks/integration.nix` |

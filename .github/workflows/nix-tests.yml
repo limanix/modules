@@ -69,7 +69,7 @@ jobs:
           command: >-
             ${{ inputs.task }}
             ${{ inputs.task == 'ci/test' && format('MODULES="{0}" RUNTIME_PROFILE={1} RUNTIME_VERSIONS="{2}"', inputs.modules, inputs.runtime-profile, inputs.runtime-versions) || format('MODE={0}', inputs.mode) }}
-            'CONTAINER_ENVS=XDG_CACHE_HOME=/workspace/.cache NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=2 NIX_CHECK_BATCH_SIZE=1 NIX_CHECK_TIMEOUT=300 NIX_INTEGRATION_GROUP=${{ inputs.integration-group }}'
+            'CONTAINER_ENVS=XDG_CACHE_HOME=/workspace/.cache NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=${{ inputs.task == 'ci/test' && 1 || 2 }} NIX_CHECK_BATCH_SIZE=1 NIX_CHECK_TIMEOUT=300 NIX_INTEGRATION_GROUP=${{ inputs.integration-group }}'
       - name: Restore Nix cache ownership
         if: always()
         run: |

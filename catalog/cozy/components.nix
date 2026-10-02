@@ -9,5 +9,4 @@
   ../posting/default.nix
   ../harlequin/default.nix
   ./workspace.nix
-  ./playground.nix
 ]

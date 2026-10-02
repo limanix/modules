@@ -14,4 +14,3 @@ builtins.all checkComponent (
   builtins.filter (entry: builtins.baseNameOf entry == "default.nix") (import ./components.nix)
 )
 && builtins.any (package: package.name == "tmux-project") args.config.environment.systemPackages
-&& args.config.environment.etc ? "limanix/examples/cozy"

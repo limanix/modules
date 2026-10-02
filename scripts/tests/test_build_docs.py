@@ -25,25 +25,25 @@ class BuildDocsTests(unittest.TestCase):
         self.cozy = self.root / "catalog/cozy"
         self.cozy.mkdir(parents=True)
         (self.cozy / "README.md").write_text(
-            "# Cozy\n[Guide](../../guides/catalog.md)\n[Playground](playground/README.md)\n"
+            "# Cozy\n[Guide](../../guides/catalog.md)\n[Usage](usage/README.md)\n"
         )
 
     def test_nested_guides_are_copied_and_connected(self):
-        playground = self.cozy / "playground"
-        playground.mkdir()
-        (playground / "README.md").write_text(
-            "# Playground\n[Guide](../../../guides/catalog.md)\n"
+        usage = self.cozy / "usage"
+        usage.mkdir()
+        (usage / "README.md").write_text(
+            "# Usage\n[Guide](../../../guides/catalog.md)\n"
         )
-        (playground / "app.py").write_text("raise RuntimeError('not documentation')\n")
+        (usage / "app.py").write_text("raise RuntimeError('not documentation')\n")
         output = MODULE.prepare(self.root, "v8")
         self.assertEqual(
-            (output / "modules/cozy/playground/README.md").read_text(),
-            "# Playground\n[Guide](../../../catalog.md)\n",
+            (output / "modules/cozy/usage/README.md").read_text(),
+            "# Usage\n[Guide](../../../catalog.md)\n",
         )
         main = (output / "modules/cozy/README.md").read_text()
         self.assertIn("[Guide](../../catalog.md)", main)
-        self.assertIn("```{toctree}\n:hidden:\n\nplayground/README", main)
-        self.assertFalse((output / "modules/cozy/playground/app.py").exists())
+        self.assertIn("```{toctree}\n:hidden:\n\nusage/README", main)
+        self.assertFalse((output / "modules/cozy/usage/app.py").exists())
         catalog = (output / "catalog.md").read_text()
         self.assertIn("[Cozy](modules/cozy/README.md)", catalog)
         self.assertIn(

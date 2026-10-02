@@ -174,9 +174,17 @@ realise_smoke() {
   done < "$output/unique-derivations"
   if ((${#derivations[@]})); then
     printf 'Realising %s distinct smoke derivations for %s\n' "${#derivations[@]}" "$label"
-    # Respect the native runner's build-user policy, including single-user images.
-    nix-store --realise \
-      --max-jobs "$build_jobs" --cores "$cores" "${derivations[@]}"
+    local -a build_options=(--max-jobs "$build_jobs" --cores "$cores")
+    if test "$(id -u)" = 0; then
+      local build_users_group
+      build_users_group=$(nix config show build-users-group)
+      if test -z "$build_users_group"; then
+        # The CI image has dedicated builders but disables them by default.
+        # Root controls the store; fixtures and upstream checks must run unprivileged.
+        build_options+=(--option build-users-group nixbld)
+      fi
+    fi
+    nix-store --realise "${build_options[@]}" "${derivations[@]}"
   fi
 }
 

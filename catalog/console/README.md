@@ -51,7 +51,7 @@ Add `lmx:astronvim-6` alongside Console to select the 6.x line explicitly.
 See [AstroNvim versions](../astronvim/README.md#versions) for the scope of that pin.
 
 For containers, add [Docker](../docker/README.md), which includes Lazydocker.
-For the project workspace, HTTP and SQL clients, and a Compose playground, select [Cozy](../cozy/README.md).
+For the project workspace and HTTP and SQL clients, select [Cozy](../cozy/README.md).
 For a local Kubernetes cluster, add [Minikube](../minikube/README.md), which includes K9s.
 Console itself does not enable Docker or create a Kubernetes cluster.
 

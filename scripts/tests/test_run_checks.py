@@ -30,10 +30,14 @@ class RunChecksTests(unittest.TestCase):
         self.environment.pop("NIX_RUNTIME_PROFILE", None)
         self.environment.pop("NIX_RUNTIME_VERSIONS", None)
         self.stub("nproc", "print(4)")
+        self.stub("id", "import os\nprint(os.environ.get('NIX_STUB_UID', '501'))")
         self.stub("nix-instantiate", "print('/nix/store/shared-fixture.drv')")
         self.stub(
             "nix-store",
-            "import sys\nassert 'build-users-group' not in sys.argv\nprint('Built shared fixture')",
+            "import json\nimport os\nimport sys\nfrom pathlib import Path\n"
+            "record = os.environ.get('NIX_STUB_BUILD_RECORD')\n"
+            "if record: Path(record).write_text(json.dumps(sys.argv))\n"
+            "print('Built shared fixture')",
         )
         self.stub(
             "nix",
@@ -43,7 +47,9 @@ import sys
 import time
 arguments = sys.argv[1:]
 time.sleep(float(os.environ.get('NIX_STUB_DELAY', '0')))
-if 'builtins.currentSystem' in arguments:
+if arguments == ['config', 'show', 'build-users-group']:
+    print(os.environ.get('NIX_STUB_BUILD_USERS_GROUP', ''))
+elif 'builtins.currentSystem' in arguments:
     print(os.environ.get('NIX_STUB_SYSTEM', 'aarch64-linux'))
 elif 'diagnostics' in arguments:
     print('expected-error\\towned option')
@@ -92,6 +98,32 @@ os.execvp(arguments[0], arguments)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Passed common pr", result.stdout)
         self.assertIn("Built shared fixture", result.stdout)
+
+    def build_arguments(self, **environment):
+        record = self.root / "build.json"
+        result = self.invoke(
+            "common", "pr", NIX_STUB_BUILD_RECORD=str(record), **environment
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(record.read_text())
+
+    def test_root_single_user_controller_uses_existing_unprivileged_builders(self):
+        arguments = self.build_arguments(NIX_STUB_UID="0")
+        position = arguments.index("--option")
+        self.assertEqual(
+            arguments[position : position + 3],
+            ["--option", "build-users-group", "nixbld"],
+        )
+
+    def test_root_preserves_an_existing_build_user_policy(self):
+        arguments = self.build_arguments(
+            NIX_STUB_UID="0", NIX_STUB_BUILD_USERS_GROUP="custom-builders"
+        )
+        self.assertNotIn("build-users-group", arguments)
+
+    def test_unprivileged_single_user_runner_preserves_its_policy(self):
+        arguments = self.build_arguments(NIX_STUB_UID="501")
+        self.assertNotIn("build-users-group", arguments)
 
     def test_unrelated_evaluation_failure_is_not_accepted(self):
         result = self.invoke("common", "pr", NIX_STUB_DIAGNOSTIC="network unavailable")

@@ -31,7 +31,7 @@ Yazi keeps the selected shell directory, and the terminal applications share Moc
 Docker, local Kubernetes tools, AWS and Google Cloud clients, Posting and Harlequin cover the surrounding project workflow.
 
 Cozy does not authenticate cloud accounts or create a Kubernetes cluster.
-Start with the client's [complete workspace example](https://limanix.dev/categories/client/workspace.html) or read [Cozy](catalog/cozy/README.md) for its components and playground.
+Start with the client's [complete workspace example](https://limanix.dev/categories/client/workspace.html) or read [Cozy](catalog/cozy/README.md) for its components, project windows and configuration.
 The minimal guest retains the platform conventions with `modules = []`.
 
 ## Use a module
