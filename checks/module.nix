@@ -31,7 +31,7 @@ let
   hasPackage =
     configuration: package:
     builtins.any (
-      installed: installed.outPath == package.outPath
+      installed: toString installed == toString package
     ) configuration.config.environment.systemPackages;
   checkResult =
     configuration: selected:
@@ -44,6 +44,10 @@ let
   result =
     configuration:
     assert import ./ownership.nix { inherit (configuration) lib options; };
+    assert import ./imports.nix {
+      inherit catalog;
+      inherit (configuration) graph;
+    };
     configuration.config.system.build.toplevel.drvPath;
   verify =
     label: valid: configuration:
@@ -61,7 +65,34 @@ let
   sameResult =
     original: repeated:
     result original == result repeated && publicValues original == publicValues repeated;
-  packagePriority = package: package.meta.priority or lib.meta.defaultPriority;
+  defaultRecommendation =
+    if variants == [ ] then
+      true
+    else
+      let
+        selected = builtins.head variants;
+        original = versionConfigurations.${selected.version};
+        recommended = evaluate [
+          module.path
+          selected.path
+        ];
+        reversed = evaluate [
+          selected.path
+          module.path
+        ];
+      in
+      verify "explicit line overrides default recommendation in either import order" (
+        checkResult recommended selected
+        && checkResult reversed selected
+        && sameResult original recommended
+        && sameResult original reversed
+      ) original;
+  packagePriority =
+    package:
+    if builtins.isAttrs package then
+      package.meta.priority or lib.meta.defaultPriority
+    else
+      lib.meta.defaultPriority;
   profileFor =
     configuration:
     configuration.config.system.path.overrideAttrs (previous: {
@@ -69,7 +100,8 @@ let
         paths = builtins.filter (
           package:
           !(builtins.any (
-            original: original.outPath == package.outPath && packagePriority original == packagePriority package
+            original:
+            toString original == toString package && packagePriority original == packagePriority package
           ) emptyConfiguration.config.environment.systemPackages)
         ) configuration.config.environment.systemPackages;
       };
@@ -78,22 +110,9 @@ let
     configuration: package:
     builtins.any (
       installed:
-      installed.outPath == package.outPath && packagePriority installed == packagePriority package
+      toString installed == toString package && packagePriority installed == packagePriority package
     ) configuration.config.environment.systemPackages;
-  selectedPackage =
-    configuration: package:
-    let
-      candidates = builtins.filter (
-        candidate: (candidate.pname or null) == (package.pname or null)
-      ) configuration.config.environment.systemPackages;
-      matching = builtins.filter (candidate: candidate.outPath == package.outPath) candidates;
-    in
-    matching != [ ]
-    && builtins.all (
-      candidate:
-      candidate.outPath == package.outPath
-      || builtins.any (winner: packagePriority winner < packagePriority candidate) matching
-    ) candidates;
+  selectedPackage = import ./selected-package.nix { inherit packagePriority; };
   configurationFor =
     selected:
     if selected.version == null || selected.path == module.path then
@@ -119,6 +138,24 @@ let
       }
     ) ([ module ] ++ variants)
   );
+  repeatedEntryPoints = builtins.listToAttrs (
+    map (
+      selected:
+      let
+        original = configurationFor selected;
+        repeated = evaluate [
+          selected.path
+          selected.path
+        ];
+      in
+      {
+        inherit (selected) name;
+        value = verify "${selected.name} with repeated entry point" (
+          checkResult repeated selected && sameResult original repeated
+        ) original;
+      }
+    ) ([ module ] ++ variants)
+  );
   coexistence =
     packageNames:
     let
@@ -134,12 +171,13 @@ let
       ) packageNames
     ) allVersionsConfiguration;
   toolsFor = version: import (module.directory + "/packages.nix") { inherit system version; };
+  defaultVersionEquivalent =
+    module.variants == [ ] || sameResult defaultConfiguration versionConfigurations.${module.version};
   defaultVersionEntryPoint =
     let
       explicit = versionConfigurations.${module.version};
     in
-    verify "default and explicit default entry points" (sameResult defaultConfiguration explicit)
-      explicit;
+    verify "default and explicit default entry points" defaultVersionEquivalent explicit;
   startup =
     configuration:
     lib.replaceStrings
@@ -180,18 +218,21 @@ let
       coexistence
       toolsFor
       defaultVersionEntryPoint
+      defaultVersionEquivalent
+      defaultRecommendation
       startup
       ;
     installed = hasPackage;
     capability = configuration: configuration.config.lmx.capabilities.languageSupport;
     configurations = localTests.configurations or { };
+    runtimeConfigurationsFor = localTests.runtimeConfigurationsFor or (_: context.configurations);
   };
   testFile = module.directory + "/tests.nix";
   localTests = if builtins.pathExists testFile then import testFile context else { };
 in
 context
 // {
-  evaluation = {
+  evaluation = (localTests.evaluation or { }) // {
     default =
       verify "default configuration" (checkResult defaultConfiguration module)
         defaultConfiguration;
@@ -203,7 +244,10 @@ context
         ) versionConfigurations.${variant.version};
       }) variants
     );
-  }
-  // (localTests.evaluation or { });
+    # Composition is a catalog contract, even without module-specific tests.nix.
+    recommendation = defaultRecommendation;
+    repeatImports = repeatedEntryPoints;
+    composition = componentChecks;
+  };
   diagnostics = localTests.diagnostics or { };
 }

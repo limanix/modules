@@ -42,6 +42,23 @@ The module does not configure Neovim's LSP client.
 To use `gopls` from the [Go module](../go/README.md) or `rust-analyzer` from the [Rust module](../rust/README.md), configure [Neovim's LSP client](https://neovim.io/doc/user/lsp/) to start the server.
 [Editor integration](../../guides/catalog.md#editor-integration) describes the options.
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | `programs.neovim.*`, including package, aliases and default editor |
+| Personal state | `~/.config/nvim/`, plus native XDG data, state and cache directories |
+| Integration | Language modules supply servers; plain Neovim needs your LSP configuration |
+| Services and capabilities | No daemon or language-support provider declarations |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| No completion or LSP attachment | This module supplies the editor; select AstroNvim for the catalog setup |
+| Default editor | Set `programs.neovim.defaultEditor = true` when you want to replace the base editor |
+| User configuration | Existing Neovim configuration remains user-owned |
+
 ## Guarantees
 
 | Guarantee | Covered by |

@@ -5,6 +5,8 @@ let
   inherit (pkgs) lib;
   catalog = import ./catalog.nix ../catalog;
   shared = import ./shared-files.nix;
+  interface = import ./interface-tests.nix { inherit nixpkgs system; };
+  packageOrder = import ./package-order-tests.nix { inherit nixpkgs system; };
   schemaFor =
     modules:
     lib.evalModules {
@@ -80,6 +82,15 @@ let
     conflictingWeak
     weak
   ];
+  userSelected = schemaFor [
+    weak
+    strong
+    { lmx.capabilities.languageSupport.tools.example = declaration; }
+  ];
+  forcedSelection = schemaFor [
+    { lmx.capabilities.languageSupport.tools.example = declaration; }
+    { lmx.capabilities.languageSupport.tools.example = lib.mkForce required; }
+  ];
   selected = (capability prioritySelected).tools.example;
   parsers = schemaFor [
     { lmx.capabilities.languageSupport.languages.go.parsers = [ "go" ]; }
@@ -147,6 +158,11 @@ let
     ownership = import ./ownership-tests.nix { inherit nixpkgs system; };
     smokeRequirements = import ./smoke-requirements-tests.nix;
     componentDiscovery = import ./component-imports-tests.nix { inherit lib; };
+    importBoundaries = import ./imports-tests.nix { inherit lib; };
+    smokeSelection = import ./module-smoke-tests.nix { inherit lib pkgs system; };
+    publicInterface = interface.evaluation;
+    packageOrdering = packageOrder.evaluation;
+    packageSelection = import ./selected-package-tests.nix { inherit pkgs lib; };
     emptyCapabilities = verify "public capabilities exist without application modules" (
       (capability empty).tools == { } && (capability empty).languages == { }
     );
@@ -179,6 +195,16 @@ let
       && selected.languages == [ ]
       && builtins.toJSON selected == builtins.toJSON (capability priorityReversed).tools.example
     );
+    userToolSelection = verify "ordinary user definitions override ranked providers" (
+      (capability userSelected).tools.example == declaration
+    );
+    forcedToolSelection = verify "forced tool selection replaces complete user declarations" (
+      (capability forcedSelection).tools.example == required
+      // {
+        args = [ ];
+        languages = [ ];
+      }
+    );
     readOnlyIdentity = verify "user name and home reject another definition" (
       builtins.all rejectsIdentity [
         "name"
@@ -195,8 +221,9 @@ assert
   || throw "Common checks require a native Linux runner";
 {
   inherit system evaluation;
+  smoke = [ packageOrder.smoke ];
   all = builtins.deepSeq evaluation true;
-  diagnostics = {
+  diagnostics = interface.diagnostics // {
     requiredSmoke = {
       expected = "example: custom builds or program configuration require smoke.nix";
       actual = builtins.deepSeq (import ./catalog.nix ./fixtures/smoke-required) true;

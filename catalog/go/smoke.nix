@@ -21,6 +21,7 @@ let
     version = builtins.head lines;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
+  expectedProvider = configurations.providerOverrideExpectedPackage or older.gopls;
   overridden = configurations.providerOverride;
   overriddenProfile = profileFor overridden;
   selected = overridden.config.lmx.capabilities.languageSupport.tools.gopls;
@@ -53,7 +54,7 @@ in
     export HOME="$TMPDIR/home"
     mkdir -p "$HOME"
     test "$(readlink -f ${overriddenProfile}/bin/gopls)" = \
-      "$(readlink -f ${older.gopls}/bin/gopls)"
+      "$(readlink -f ${expectedProvider}/bin/gopls)"
     test "$(readlink -f ${selected.command})" = \
       "$(readlink -f ${overriddenProfile}/bin/gopls)"
     test "$(${overriddenProfile}/bin/gopls version)" = \

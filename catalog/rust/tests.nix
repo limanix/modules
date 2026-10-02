@@ -4,6 +4,7 @@
   reversedVersionsConfiguration,
   defaultConfiguration,
   evaluate,
+  pkgs,
   lib,
   capability,
   toolsFor,
@@ -22,19 +23,36 @@ let
   declaration = (capability allVersionsConfiguration).tools.rust-analyzer;
   reverseDeclaration = (capability reversedVersionsConfiguration).tools.rust-analyzer;
   replacement = (toolsFor (builtins.head variants).version).rust-analyzer;
-  providerOverride = evaluate (
-    (map (variant: variant.path) variants)
-    ++ [
-      {
-        lmx.capabilities.languageSupport.tools.rust-analyzer = {
-          package = replacement;
-          command = "${replacement}/bin/rust-analyzer";
-          args = [ "--version" ];
-          languages = [ "override-language" ];
-        };
-      }
-    ]
-  );
+  providerOverrideFor =
+    paths: package:
+    evaluate (
+      paths
+      ++ [
+        {
+          lmx.capabilities.languageSupport.tools.rust-analyzer = {
+            inherit package;
+            command = "${package}/bin/rust-analyzer";
+            args = [ "--version" ];
+            languages = [ "override-language" ];
+          };
+        }
+      ]
+    );
+  providerOverride = providerOverrideFor (map (variant: variant.path) variants) replacement;
+  runtimeConfigurationsFor =
+    selected:
+    let
+      selectedTools = toolsFor selected.version;
+      forwarded = pkgs.writeShellScriptBin "rust-analyzer" ''
+        exec ${selectedTools.rust-analyzer}/bin/rust-analyzer "$@"
+      '';
+      configuration = providerOverrideFor [ selected.path ] forwarded;
+    in
+    assert configuration.config.lmx.internal.rust.versions == [ selected.version ];
+    {
+      providerOverride = configuration;
+      providerOverrideExpectedPackage = forwarded;
+    };
   actual = (capability providerOverride).tools.rust-analyzer;
   forceOverride = evaluate (
     (map (variant: variant.path) variants)
@@ -49,6 +67,7 @@ let
   );
 in
 {
+  inherit runtimeConfigurationsFor;
   configurations = { inherit providerOverride; };
   evaluation = {
     defaultEntryPoint = defaultVersionEntryPoint;

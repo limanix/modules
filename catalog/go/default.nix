@@ -1,6 +1,9 @@
+{ lib, ... }:
 let
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
 in
 {
-  imports = [ (./versions + "/${metadata.default}.nix") ];
+  imports = [ ./selection.nix ];
+
+  lmx.internal.go.versions = lib.mkDefault [ metadata.default ];
 }

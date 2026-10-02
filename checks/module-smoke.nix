@@ -10,22 +10,44 @@ let
     configurations
     profileFor
     ;
+  runtime = import ./runtime-selection.nix {
+    profile = context.runtimeProfile or "all";
+    versions = context.runtimeVersions or [ ];
+    modules = [ module ];
+  };
   readChecks =
     selected: configuration: includeShared:
     let
-      checks = import module.smoke {
-        inherit (configuration) config pkgs;
-        profile = profileFor configuration;
-        inherit
-          lib
-          includeShared
-          allVersionsConfiguration
-          configurations
-          profileFor
-          ;
-        inherit (selected) version;
-        selector = selected.name;
-      };
+      configurationsFor = context.runtimeConfigurationsFor or (_: configurations);
+      smokeConfigurations =
+        if runtime.profile == "pr" then
+          assert
+            builtins.isFunction configurationsFor
+            || throw "Module smoke: ${module.name}.runtimeConfigurationsFor must be a function";
+          let
+            scoped = configurationsFor selected;
+          in
+          assert
+            builtins.isAttrs scoped
+            || throw "Module smoke: ${selected.name}.runtimeConfigurationsFor must return an attribute set";
+          scoped
+        else
+          configurations;
+      checks = builtins.seq smokeConfigurations (
+        import module.smoke {
+          inherit (configuration) config pkgs;
+          profile = profileFor configuration;
+          inherit
+            lib
+            includeShared
+            allVersionsConfiguration
+            profileFor
+            ;
+          configurations = smokeConfigurations;
+          inherit (selected) version;
+          selector = selected.name;
+        }
+      );
     in
     assert
       builtins.isAttrs checks && checks != { }
@@ -47,25 +69,36 @@ let
       )
     ) (builtins.attrNames checks);
   defaultChecks = readChecks module defaultConfiguration true;
-  versionCommands = builtins.concatMap (
-    selected:
-    derivations selected.name (readChecks selected versionConfigurations.${selected.version} false)
+  commandsFor =
+    variants:
+    builtins.concatMap (
+      selected:
+      derivations selected.name (readChecks selected versionConfigurations.${selected.version} false)
+    ) variants;
+  versionCommands = commandsFor module.variants;
+  requestedVariants = builtins.filter (
+    selected: builtins.elem selected.version runtime.versions
   ) module.variants;
+  currentChecks = builtins.removeAttrs defaultChecks [ "coexistence" ];
 in
-if module.smoke == null then
-  [ ]
-else
-  # Verify equivalence before sharing the default entry point's runtime checks.
-  builtins.seq
-    (if module.variants != [ ] && module.name != "k9s" then context.defaultVersionEntryPoint else true)
-    (
-      if module.variants != [ ] && defaultChecks ? commands then
-        versionCommands
-        ++ derivations module.name (builtins.removeAttrs defaultChecks [ "commands" ])
-        # K9s's default entry point is a recommendation and has no versioned wrapper.
-        ++ lib.optionals (module.name == "k9s") (
-          derivations module.name { inherit (defaultChecks) commands; }
-        )
-      else
-        derivations module.name defaultChecks
+builtins.deepSeq runtime (
+  if module.smoke == null then
+    [ ]
+  else if runtime.profile == "pr" then
+    # Preserve current startup and override corners; historical coexistence belongs to full coverage.
+    assert currentChecks != { } || throw "Module smoke: ${module.name} needs a current runtime check";
+    derivations module.name currentChecks ++ commandsFor requestedVariants
+  else if module.variants != [ ] && defaultChecks ? commands then
+    versionCommands
+    ++ derivations module.name (builtins.removeAttrs defaultChecks [ "commands" ])
+    # Share commands only when full system and public option values agree.
+    # Recommendation-style defaults can intentionally differ from a version.
+    ++ lib.optionals (!context.defaultVersionEquivalent) (
+      derivations module.name { inherit (defaultChecks) commands; }
     )
+  else if module.variants != [ ] then
+    # Modules without a commands check still need each line's startup/build checks.
+    versionCommands ++ derivations module.name defaultChecks
+  else
+    derivations module.name defaultChecks
+)

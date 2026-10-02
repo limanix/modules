@@ -1,0 +1,13 @@
+[
+  ../console/default.nix
+  ../docker/default.nix
+  ../minikube/default.nix
+  ../go/default.nix
+  ../nodejs/default.nix
+  ../python/default.nix
+  ../cloud-tools/default.nix
+  ../posting/default.nix
+  ../harlequin/default.nix
+  ./workspace.nix
+  ./playground.nix
+]

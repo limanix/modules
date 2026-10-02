@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: cozy
+      POSTGRES_USER: cozy
+      POSTGRES_PASSWORD: cozy
+    ports:
+      - "127.0.0.1:15432:5432"
+    volumes:
+      - notes:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cozy -d cozy"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://cozy:cozy@postgres:5432/cozy
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  notes:

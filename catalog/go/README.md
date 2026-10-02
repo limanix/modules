@@ -11,6 +11,9 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
+`lmx:go` recommends the catalog default.
+An explicit `lmx:go-LINE` selection replaces that recommendation, including when Cozy imports the default.
+
 | Selector                | Go      | gopls  | Delve  | Notes       |
 |-------------------------|---------|--------|--------|-------------|
 | `lmx:go`, `lmx:go-1.27` | 1.27.1  | 0.23.0 | 1.27.2 | Default     |
@@ -77,10 +80,28 @@ See [Go toolchains](https://go.dev/doc/toolchain#select) for the selection rules
 The module installs `gopls` for editors that support the Language Server Protocol.
 See [Editor integration](../../guides/catalog.md#editor-integration) and the [gopls editor setup](https://go.dev/gopls/#editors).
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Public capability | `lmx.capabilities.languageSupport.tools.gopls`; Go, gomod and gosum parsers |
+| Personal state | Go module and build caches; project `go.mod` and `go.work` |
+| Integration | Declares the selected server without enabling an editor; AstroNvim consumes it |
+| Services | No daemon |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| Another Go version runs | Inspect `PATH` and `GOTOOLCHAIN`; project directives can download a newer toolchain |
+| cgo library is missing | GCC is included; add the project's required native headers and libraries separately |
+| Several lines selected | The newest line supplies unqualified Go, gopls and Delve; version suffixes apply to Go |
+
 ## Guarantees
 
 | Guarantee | Covered by |
 |---|---|
+| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the selected Go toolchain, Delve and GCC; `go-LINE` uses that line | `check.nix`, `smoke.nix`: commands |
 | The installed Go toolchain builds and tests cgo code with the race detector | `smoke.nix`: commands |
 | Declares Go/gomod/gosum parsers and the selected `gopls` package, command and language under `lmx.capabilities.languageSupport` | `check.nix`, `tests.nix` |

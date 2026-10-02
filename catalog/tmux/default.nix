@@ -4,6 +4,13 @@
   pkgs,
   ...
 }:
+let
+  inherit (builtins.fromTOML (builtins.readFile ../_shared/palette.toml)) mocha;
+  colors = builtins.attrNames mocha;
+  theme = lib.replaceStrings (map (name: "@mocha-${name}@") colors) (map (
+    name: mocha.${name}
+  ) colors) (builtins.readFile ./tmux.conf);
+in
 {
   options.lmx.tmux.navigation.enable = lib.mkOption {
     type = lib.types.bool;
@@ -14,7 +21,7 @@
   config = {
     limanix.session.command = lib.mkDefault (
       pkgs.writeShellScript "limanix-tmux-session" ''
-        limanix_tmux_command=${lib.escapeShellArg "${pkgs.tmux}/bin/tmux"}
+        limanix_tmux_command=${lib.escapeShellArg "${config.programs.tmux.package}/bin/tmux"}
         ${builtins.readFile ./session.sh}
       ''
     );
@@ -24,13 +31,9 @@
       keyMode = lib.mkDefault "vi";
       terminal = lib.mkDefault "tmux-256color";
       escapeTime = lib.mkDefault 10;
-      plugins = with pkgs.tmuxPlugins; [
-        resurrect
-        continuum
-      ];
+      plugins = import ./plugins.nix { inherit pkgs; };
       extraConfigBeforePlugins =
-        builtins.readFile ./tmux.conf
-        + lib.optionalString config.lmx.tmux.navigation.enable (builtins.readFile ./navigation.conf);
+        theme + lib.optionalString config.lmx.tmux.navigation.enable (builtins.readFile ./navigation.conf);
     };
   };
 }

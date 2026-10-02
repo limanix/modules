@@ -271,6 +271,16 @@ To choose which one, raise the priority of the package you want:
 }
 ```
 
+The platform sorts final profile inputs by store path, then package priority for identical paths.
+It preserves duplicates, contextual store paths and user list replacements.
+The pinned NixOS profile keeps `ignoreCollisions = true`.
+
+| Corner case | Result |
+|---|---|
+| Different files at the same profile path and package priority | Canonical store-path order resolves the tie; use explicit `meta.priority`, such as `lib.hiPrio`, when a particular command must win |
+
+Do not rely on module import order or `lib.mkBefore` to select a binary provider.
+
 Catalog modules that support side-by-side versions already set package priorities.
 Their newest selected line supplies the ordinary commands.
 Inside the VM, `readlink -f "$(command -v nc)"` shows which package provides a command.
@@ -445,14 +455,21 @@ For separately pinned packages, load the package for `version` as [Go's check](.
 
 This check verifies the evaluated result only.
 Custom builds and runtime integration require `smoke.nix` under the [smoke requirements](catalog-contract.md#required-checks-for-every-module).
-Every such check must be discovered, built, and executed by blocking catalog CI.
+Every such check must be discovered, built, and executed in its applicable blocking catalog CI profile.
 
 Keep additional module-specific assertions in an optional `tests.nix`, as [tmux's checks](../catalog/tmux/tests.nix) do.
 The runner passes the memoized default, individual-version, and coexisting-version configurations from [checks/module.nix](../checks/module.nix).
 The file can return `evaluation` assertions, `diagnostics` with expected messages and failing expressions, and named `configurations` reused by its smoke checks.
+For smaller PR smoke fixtures, it may also return a `runtimeConfigurationsFor` function.
+The function receives one `selected` catalog record with `name`, `path` and `version`: the default entry or a requested version line.
+It must return an attribute set of named configurations and any private metadata used by `smoke.nix`.
+Only PR smoke calls it and passes that result as `configurations`; full runtime and every compatibility assertion keep the canonical map.
+Without the function, PR smoke uses the canonical map.
+Build scoped fixtures from `selected.path` rather than every historical variant; see [Go's provider fixture](../catalog/go/tests.nix).
 This test context belongs to the repository's checks; it does not change the module arguments supplied by the client.
 The [smoke runner](../checks/module-smoke.nix) discovers the derivations returned by `smoke.nix` and checks their target system before building them.
-It runs each real version's commands and each module-wide coexistence or provider-override scenario once.
+The full runtime profile runs each real version's commands and module-wide coexistence or provider-override scenarios.
+The PR profile keeps current/default startup and provider overrides, skips the named historical `coexistence` check, and adds requested version-line checks.
 Equivalent default entry points share runtime checks after their configuration equivalence is verified.
 K9s retains a separate check for its default recommendation.
 
@@ -532,7 +549,7 @@ Repository checks must meet the [catalog contract](catalog-contract.md#required-
 |---|---|
 | `ci/nixos-fmt` | Nix formatting with nixfmt |
 | `ci/nixos-lint` | Nix code with statix and deadnix |
-| `ci/test` | Selected modules' default and version configurations, local assertions, expected diagnostics, and built smoke checks |
+| `ci/test` | Complete selected-module compatibility evaluation and profile-selected native smoke; full runtime is the local default |
 | `ci/common` | Catalog metadata, shared declarations, ownership, and capability-schema fixtures; `MODE=release` also checks all compatible defaults, intermodule configuration, and AstroNvim LSP runtime |
 
 Select modules by their directory names:
@@ -544,7 +561,35 @@ task --yes ci/test MODULES="go rust"
 Omitting `MODULES` selects every catalog module.
 Each invocation checks the container's native Linux system, reported as `aarch64-linux` or `x86_64-linux`.
 Module evaluation and smoke share the same memoized configurations during `ci/test`.
-Module checks cover their documented version coexistence, composition, supported overrides, and incompatible selections.
+Module checks cover every supported version, repeated entry points, import-order equivalence, supported overrides and expected incompatible selections in every runtime profile.
+Local and release checks use `RUNTIME_PROFILE=all` by default.
+For current runtime checks during development, use:
+
+```console
+task --yes ci/test MODULES=go RUNTIME_PROFILE=pr
+```
+
+To add a specific supported line to that runtime scope:
+
+```console
+task --yes ci/test MODULES=go RUNTIME_PROFILE=pr RUNTIME_VERSIONS="1.26"
+```
+
+| Task argument | Runner environment | Contract |
+|---|---|---|
+| `RUNTIME_PROFILE` | `NIX_RUNTIME_PROFILE` | `all` preserves full runtime; `pr` selects current/default checks and requested lines |
+| `RUNTIME_VERSIONS` | `NIX_RUNTIME_VERSIONS` | Space-separated declared numeric lines; requires `pr` and exactly one selected module |
+
+Unknown or duplicate requested lines fail explicitly.
+The PR planner adds changed declared `versions/<numeric>.nix` lines automatically.
+Private or nested files under `versions/` are source helpers and require full runtime.
+Every other non-document pod change, including metadata, release maps, helpers and smoke tests, requires full runtime for the pod and its transitive consumers.
+Shared contract, interface, Nixpkgs pin or shared runtime changes require full runtime throughout the catalog.
+Workflow-only changes select every pod's current runtime.
+Palette-only changes use current runtime only when every `_shared` reference is a direct palette read by the known unversioned LazyGit, tmux, Yazi and Zsh pods.
+Unknown or computed references and shared Nix data readers require full runtime.
+The named historical `coexistence` runtime check runs in `all`; complete coexistence evaluation still runs in `pr`.
+Local module evaluation is serial by default; read [Validation memory](troubleshooting.md#validation-memory) before running full suites or increasing concurrency.
 `ci/common` uses `MODE=pr` by default and checks the shared contract through small fixtures.
 Release validation runs every module with `ci/test` and the common task in release mode:
 
@@ -552,7 +597,23 @@ Release validation runs every module with `ci/test` and the common task in relea
 task --yes ci/common MODE=release
 ```
 
-Release mode adds the full-catalog configuration checks in [checks/integration.nix](../checks/integration.nix) and the three [AstroNvim LSP runtime scenarios](../catalog/astronvim/integration.nix).
+Release mode adds the full-catalog configuration checks in [checks/integration.nix](../checks/integration.nix) and the [AstroNvim LSP runtime scenarios](../catalog/astronvim/integration.nix).
+Release CI runs `MODE=release-eval` groups and independent `MODE=release-smoke` jobs on both native architectures.
+Local `MODE=release-eval` checks all integration groups by default.
+To repeat a narrower evaluation, pass `INTEGRATION_GROUP`:
+
+```console
+task --yes ci/common MODE=release-eval INTEGRATION_GROUP=versions
+```
+
+| Group | Evaluation coverage |
+|---|---|
+| `base` | Shared contracts, full-catalog defaults, capability consumers and expected integration failures |
+| `compositions` | Cozy with explicit component selectors in both import orders |
+| `versions` | Cozy with explicit tool versions in both import orders |
+
+Release CI requires every group and the runtime smoke; selecting a local group does not replace complete release validation.
+Run `ci/scripts` for change-planner, runner and documentation-builder regression tests.
 Every applicable `smoke.nix` must be discovered, built, and executed by blocking catalog CI using the module's actual packages and generated configuration.
 Catalog evaluation uses the public interface with test account values; client/catalog compatibility checks must evaluate real `Prepare()` output to verify the client's values.
 Reports must distinguish evaluation, build, runtime, and full-VM checks, and identify the architecture verified at each level.
@@ -574,25 +635,27 @@ versions = ["1.24", "1.25", "1.26", "1.27"]
 default = "1.27"
 ```
 
-Its `default.nix` loads that default:
+Its `default.nix` recommends that line through private selection state:
 
 ```{code-block} nix
 :linenos:
 :name: catalog-default-version
 :class: code-example
 
+{ lib, ... }:
 let
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
 in
 {
-  imports = [ (./versions + "/${metadata.default}.nix") ];
+  imports = [ ./selection.nix ];
+  lmx.internal.go.versions = lib.mkDefault [ metadata.default ];
 }
 ```
 
 | Code                                                   | Purpose                                                                |
 |--------------------------------------------------------|------------------------------------------------------------------------|
-| [2](#catalog-default-version.2){.external .code-lines} | Reads `module.toml` and parses its fields into `metadata`              |
-| [4–6](#catalog-default-version.4-6){.external .code-lines} | Imports the concrete version file named by `default`, such as `versions/1.27.nix`, so selecting that same file again is deduplicated |
+| [3](#catalog-default-version.3){.external .code-lines} | Reads `module.toml` and parses its fields into `metadata`              |
+| [5–8](#catalog-default-version.5-8){.external .code-lines} | Imports the private selection module and supplies a weak default recommendation |
 
 Each line's file, such as `versions/1.27.nix`, passes its version to a shared module:
 
@@ -600,14 +663,22 @@ Each line's file, such as `versions/1.27.nix`, passes its version to a shared mo
 import ../module.nix "1.27"
 ```
 
+The Go `module.nix` imports the same private selection module and contributes the explicit line with ordinary priority.
+Explicit choices replace the weak recommendation before packages and capabilities are generated.
+Multiple explicit lines merge, then the implementation ranks the ordinary commands and complete tool declarations consistently.
+This private state is not a user-facing option; selectors are the public version interface.
+Other versioned tool modules use the same recommendation policy; K9s and AstroNvim keep their own documented selection implementations.
+
 The versioned entries share these conventions, which the validator does not require:
 
 | File           | Contents                                                                                                   |
 |----------------|------------------------------------------------------------------------------------------------------------|
 | `releases.nix` | Pinned Nixpkgs revisions and hashes, package attributes, expected versions, and an `endOfLife` value for every line |
 | `packages.nix` | Loads the line's packages and asserts their expected versions                                              |
-| `module.nix`   | Configures packages or services for the selected line                                                      |
+| `module.nix` | Selects a line or configures it directly according to the entry's policy                                                      |
 
+Entries using recommendation selection also keep `selection.nix` and `implementation.nix` inside their own directory.
+The former merges selected lines; the latter owns their packages and services.
 Entries supporting side-by-side versions add package priorities and versioned commands.
 Set `endOfLife` from the upstream project's maintenance policy:
 
@@ -645,14 +716,14 @@ Before releasing the change, verify the catalog in a VM as well.
 
 ### Prepare the documentation
 
-The documentation site consumes a prepared copy of `guides/` and every entry's README:
+The documentation site consumes a prepared copy of `guides/`, every entry's README and its subordinate Markdown guides:
 
 ```console
 task --yes docs/prepare
 ```
 
 The task replaces the ignored `build/docs/` directory with the pages, examples, and navigation.
-Links to Nix source files point at the current commit; add `MODULES_REF=v4` to use a release tag instead.
+Links to referenced Nix source files and the Taskfile point at the current commit; add `MODULES_REF=v4` to use a release tag instead.
 Edit the sources, not `build/docs/`.
 
 This task does not render HTML or check the complete site.

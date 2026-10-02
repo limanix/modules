@@ -29,6 +29,7 @@ in
   programs = {
     zsh = {
       enable = true;
+      shellInit = builtins.readFile ./first-run.zsh;
       enableCompletion = true;
       # Oh My Zsh initializes completion after adding its functions and plugins.
       enableGlobalCompInit = false;
@@ -59,7 +60,7 @@ in
 
     starship = {
       enable = true;
-      settings = {
+      settings = lib.recursiveUpdate (import ./prompt.nix { inherit lib; }) {
         hostname.ssh_only = lib.mkDefault false;
         status.disabled = lib.mkDefault false;
       };

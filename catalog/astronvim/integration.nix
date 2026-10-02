@@ -16,7 +16,13 @@ let
       end), "declared ${name} did not attach")
       local client = vim.lsp.get_clients({ bufnr = 0, name = "${name}" })[1]
       local declarations = vim.json.decode(table.concat(vim.fn.readfile(vim.env.LMX_TOOLS), "\n"))
-      local tool = declarations["${if name == "rust_analyzer" then "rust-analyzer" else name}"]
+      local tool = declarations["${
+        {
+          rust_analyzer = "rust-analyzer";
+          ts_ls = "typescript-language-server";
+        }
+        .${name} or name
+      }"]
       assert(vim.deep_equal(client.config.cmd, vim.list_extend({ tool.command }, tool.args)),
         "LSP command or arguments differ from selected provider")
       local buffer = vim.api.nvim_get_current_buf()
@@ -58,6 +64,12 @@ in
     mkdir src
     printf 'fn main() {}\n' > src/main.rs
     run_nvim src/main.rs -c ${pkgs.lib.escapeShellArg (checkLua (lspCheck "rust_analyzer"))}
+    printf '[project]\nname="example"\nversion="0.1.0"\n' > pyproject.toml
+    printf 'value: int = 1\n' > example.py
+    run_nvim example.py -c ${pkgs.lib.escapeShellArg (checkLua (lspCheck "pyright"))}
+    printf '{"compilerOptions":{"strict":true},"include":["*.ts"]}\n' > tsconfig.json
+    printf 'const value: number = 1;\n' > example.ts
+    run_nvim example.ts -c ${pkgs.lib.escapeShellArg (checkLua (lspCheck "ts_ls"))}
   '';
   thirdParty = checkGo "astronvim-third-party-server" thirdParty;
   userOverride = checkGo "astronvim-user-overridden-server" userOverride;

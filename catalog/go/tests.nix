@@ -4,6 +4,7 @@
   reversedVersionsConfiguration,
   defaultConfiguration,
   evaluate,
+  pkgs,
   lib,
   capability,
   toolsFor,
@@ -22,19 +23,36 @@ let
   declaration = (capability allVersionsConfiguration).tools.gopls;
   reverseDeclaration = (capability reversedVersionsConfiguration).tools.gopls;
   replacement = (toolsFor (builtins.head variants).version).gopls;
-  providerOverride = evaluate (
-    (map (variant: variant.path) variants)
-    ++ [
-      {
-        lmx.capabilities.languageSupport.tools.gopls = {
-          package = replacement;
-          command = "${replacement}/bin/gopls";
-          args = [ "version" ];
-          languages = [ "override-language" ];
-        };
-      }
-    ]
-  );
+  providerOverrideFor =
+    paths: package:
+    evaluate (
+      paths
+      ++ [
+        {
+          lmx.capabilities.languageSupport.tools.gopls = {
+            inherit package;
+            command = "${package}/bin/gopls";
+            args = [ "version" ];
+            languages = [ "override-language" ];
+          };
+        }
+      ]
+    );
+  providerOverride = providerOverrideFor (map (variant: variant.path) variants) replacement;
+  runtimeConfigurationsFor =
+    selected:
+    let
+      selectedTools = toolsFor selected.version;
+      forwarded = pkgs.writeShellScriptBin "gopls" ''
+        exec ${selectedTools.gopls}/bin/gopls "$@"
+      '';
+      configuration = providerOverrideFor [ selected.path ] forwarded;
+    in
+    assert configuration.config.lmx.internal.go.versions == [ selected.version ];
+    {
+      providerOverride = configuration;
+      providerOverrideExpectedPackage = forwarded;
+    };
   actual = (capability providerOverride).tools.gopls;
   forceOverride = evaluate (
     (map (variant: variant.path) variants)
@@ -49,6 +67,7 @@ let
   );
 in
 {
+  inherit runtimeConfigurationsFor;
   configurations = { inherit providerOverride; };
   evaluation = {
     defaultEntryPoint = defaultVersionEntryPoint;

@@ -31,7 +31,7 @@ let
           pkgs.coreutils
           pkgs.gnugrep
           config.programs.git.package
-          pkgs.lazygit
+          config.programs.lazygit.package
         ];
       }
       ''

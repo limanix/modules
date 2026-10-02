@@ -1,10 +1,12 @@
 {
+  config,
   profile,
   profileFor,
   pkgs,
   version,
   allVersionsConfiguration,
   includeShared,
+  configurations,
   ...
 }:
 let
@@ -12,6 +14,20 @@ let
     inherit version;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
+  serverSmoke =
+    name: configuration:
+    let
+      tool = configuration.config.lmx.capabilities.languageSupport.tools.pyright;
+      serverProfile = profileFor configuration;
+    in
+    pkgs.runCommand name { } ''
+      export HOME="$TMPDIR/home"
+      mkdir -p "$HOME"
+      test "$(readlink -f ${serverProfile}/bin/pyright-langserver)" = "$(readlink -f ${tool.command})"
+      timeout 30 ${pkgs.python3}/bin/python ${../../checks/lsp-smoke.py} \
+        ${serverProfile}/bin/pyright-langserver ${pkgs.lib.escapeShellArgs tool.args}
+      touch "$out"
+    '';
 in
 {
   commands =
@@ -33,6 +49,8 @@ in
       '';
 }
 // pkgs.lib.optionalAttrs includeShared {
+  languageServer = serverSmoke "python-declared-language-server" { inherit config; };
+  providerOverride = serverSmoke "python-user-selected-provider" configurations.providerOverride;
   coexistence = import ../../checks/profile-commands.nix {
     inherit pkgs;
     profile = profileFor allVersionsConfiguration;

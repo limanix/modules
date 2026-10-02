@@ -18,6 +18,11 @@ let
         keyMode = "emacs";
         terminal = "screen-256color";
         escapeTime = 25;
+        extraConfig = ''
+          set -g status-style 'bg=black,fg=white'
+          set -g pane-active-border-style 'fg=blue'
+          set -g mode-style 'bg=blue,fg=white'
+        '';
       };
     }
   ];

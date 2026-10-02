@@ -21,6 +21,7 @@ let
     version = builtins.head lines;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
+  expectedProvider = configurations.providerOverrideExpectedPackage or older.rust-analyzer;
   overridden = configurations.providerOverride;
   overriddenProfile = profileFor overridden;
   selected = overridden.config.lmx.capabilities.languageSupport.tools.rust-analyzer;
@@ -54,7 +55,7 @@ in
     export HOME="$TMPDIR/home"
     mkdir -p "$HOME"
     test "$(readlink -f ${overriddenProfile}/bin/rust-analyzer)" = \
-      "$(readlink -f ${older.rust-analyzer}/bin/rust-analyzer)"
+      "$(readlink -f ${expectedProvider}/bin/rust-analyzer)"
     test "$(readlink -f ${selected.command})" = \
       "$(readlink -f ${overriddenProfile}/bin/rust-analyzer)"
     test "$(${overriddenProfile}/bin/rust-analyzer --version)" = \

@@ -17,6 +17,9 @@ let
     {
       programs = {
         starship.settings = {
+          palette = "custom";
+          palettes.custom.blue = "#123456";
+          directory.style = "bold cyan";
           hostname.ssh_only = true;
           status.disabled = true;
         };
@@ -38,6 +41,9 @@ in
     ) shellOverride;
     preferences = verify "prompt and history preferences support ordinary overrides" (
       !defaultConfiguration.config.programs.starship.settings.hostname.ssh_only
+      && defaultConfiguration.config.programs.starship.settings.palette == "catppuccin_mocha"
+      && preferencesOverride.config.programs.starship.settings.palette == "custom"
+      && preferencesOverride.config.programs.starship.settings.directory.style == "bold cyan"
       && !defaultConfiguration.config.programs.starship.settings.status.disabled
       && !defaultConfiguration.config.programs.atuin.settings.auto_sync
       && !defaultConfiguration.config.programs.atuin.settings.update_check

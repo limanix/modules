@@ -9,12 +9,30 @@
 </p>
 
 The NixOS module catalog for [LimaNix](https://github.com/limanix/client).
-Add language toolchains, Docker, Kubernetes tools, and editors to a VM by name without writing Nix.
+Select a complete project workbench or compose its tools individually without writing Nix.
+Each module owns its configuration, integration contract and tests.
 
-[Catalog](guides/catalog.md) |
-[Write a module](guides/writing-modules.md) |
-[Releases](https://github.com/limanix/modules/releases) |
-[Documentation](https://limanix.dev/categories/nixos/index.html)
+[Catalog](guides/catalog.md) | [Write a module](guides/writing-modules.md) | [Releases](https://github.com/limanix/modules/releases) | [Documentation](https://limanix.dev/categories/nixos/index.html)
+
+## Try the workbench
+
+In your existing `limanix.toml`, select Cozy:
+
+```toml
+[nixos]
+modules = ["lmx:cozy"]
+```
+
+Apply it from your Mac with `limanix update --config limanix.toml`.
+Inside the VM, run `tmux-project /workspace` using the mounted project path from your configuration.
+The project opens in four windows: editor, shell, Git and containers.
+The included Go, Python and Node.js servers connect to AstroNvim through the shared language-support contract.
+Yazi keeps the selected shell directory, and the terminal applications share Mocha defaults.
+Docker, local Kubernetes tools, AWS and Google Cloud clients, Posting and Harlequin cover the surrounding project workflow.
+
+Cozy does not authenticate cloud accounts or create a Kubernetes cluster.
+Start with the client's [complete workspace example](https://limanix.dev/categories/client/workspace.html) or read [Cozy](catalog/cozy/README.md) for its components and playground.
+The minimal guest retains the platform conventions with `modules = []`.
 
 ## Use a module
 
@@ -82,46 +100,58 @@ task --yes ci/common
 task --yes ci/common MODE=release
 ```
 
-Each selected module shares prepared configurations between evaluation and smoke in one evaluator and reuses the container's Nix store.
-Version commands run for each supported line; module-wide coexistence and provider overrides run once per module.
-Runtime profiles use the selected module’s package contributions with the NixOS profile builder, without building the unchanged base system packages.
-The runner bounds parallel module batches and realises each distinct smoke derivation once per module.
-Within each CI job, modules run one at a time so their evaluator memory is released between modules.
-`ci/common` runs the minimal PR set: catalog metadata, shared interfaces, small schema fixtures, and expected diagnostics.
-`ci/common MODE=release` also evaluates all compatible defaults and documented module integrations, then runs the three AstroNvim LSP integration scenarios.
+Each module suite shares memoized configurations between evaluation and smoke checks.
+Every runtime profile evaluates all supported versions, repeated entry points and component import orders, comparing complete system and public option values.
+Runtime profiles choose which native smoke checks are built and run without rebuilding unchanged base-system packages.
+
+| Stage | Native runtime coverage |
+|---|---|
+| Declared numeric version-file PR | Current/default startup and corner cases, plus the changed version lines |
+| Other pod source PR | Full runtime for that pod and its transitive consumers |
+| Shared contract, interface, Nixpkgs pin or shared runtime PR | Full runtime throughout the catalog |
+| Workflow-only PR | Current/default runtime for every pod |
+| Palette-only PR | Current/default runtime when every shared reference is a known unversioned pod's direct palette read; otherwise full runtime |
+| Local checks and release | Full runtime coverage by default |
+
+A PR profile keeps complete compatibility evaluation; it changes native build/run selection.
 
 ```mermaid
-flowchart TD
-    pr["PR"] --> readme{"Only README changes?"}
-    readme -->|yes| skip["Skip checks"]
-    readme -->|no| changes["Changed modules; shared code or workflows select all"]
-    changes --> haveModules{"Modules selected?"}
-    haveModules -->|yes| selected["ci/test MODULES: parallel groups of up to 4; native AMD64 + ARM64"]
-    haveModules -->|no| noModules["Skip module suites"]
-    readme -->|no| fast["ci/common MODE=pr: native AMD64 + ARM64"]
-    release["Release"] --> all["Every module: same ci/test jobs on both architectures"]
-    all --> selected
-    release --> deep["ci/common MODE=release: native AMD64 + ARM64"]
-    selected --> evaluation["check.nix + tests.nix: defaults, versions, coexistence, local guarantees and expected errors"]
-    evaluation --> smoke["smoke.nix: build and run actual commands, wrappers and generated configuration"]
-    fast --> fixtures["Metadata + shared interfaces + small schema fixtures + expected errors"]
-    deep --> fixtures
-    deep --> integration["All compatible defaults + documented module combinations"]
-    integration --> lsp["AstroNvim: Go/Rust attachment, third-party LSP, user override"]
+flowchart TB
+    pr["Pull request"] --> plan["Plan changes + test scripts"]
+    plan --> selected["Changed modules + transitive consumers"]
+    selected --> suites["One module per job; native AMD64 and ARM64"]
+    plan --> common["Common schema and contract fixtures"]
+    suites --> gate["Required results"]
+    common --> gate
+    release["Release"] --> all["Every module + source format/lint"]
+    release --> eval["Deep integration evaluation"]
+    release --> runtime["AstroNvim LSP integration smoke"]
+    all --> gate
+    eval --> gate
+    runtime --> gate
 ```
 
-PR checks select changed module directories and run parallel groups of at most four modules on native AMD64 and ARM64 runners.
-Changes to workflows, the shared interface, shared Nix code, the Nixpkgs pin, or the test runner select every module.
-README-only changes do not run tests.
-The minimal common set runs alongside the selected modules.
-Release validation runs all module suites and the deep common set in parallel on both architectures before documentation and publication.
-CI restores source and binary caches separately for each architecture and saves completed builds even when a later check fails.
-A manual `PR flow` run selects every module and prepares the caches.
-The first cache preparation can compile pinned dependencies that are absent from the public Nix cache.
-The binary cache includes the runtime dependencies of locally built results; Nix still checks the derivation paths against the current configuration.
-Set `NIX_CHECK_JOBS` and `NIX_CHECK_BATCH_SIZE` through `CONTAINER_ENVS` to tune evaluator concurrency and memory use.
-These checks do not boot the complete Lima VM.
-Run a changed module's documented commands in a VM as well.
+PR selection includes transitive consumers of changed component entry points.
+Changes to shared runtime assets, shared declarations, the Nixpkgs pin, workflows or the runner select every module.
+README-only changes keep script tests and common contract checks; source formatting, lint and module smoke are skipped.
+The plan reports each module's runtime profile and additional version lines in the job summary.
+Module jobs restore separate native source and binary caches and save completed builds even if a later check fails.
+
+`ci/common MODE=pr` is the small shared-contract suite.
+Use `MODE=release-eval` for all compatible defaults and documented integration evaluation, or `MODE=release-smoke` for the AstroNvim LSP runtime scenarios.
+`MODE=release` combines both for local validation.
+Release CI runs evaluation groups `base`, `compositions` and `versions`, plus independent runtime smoke, alongside every module suite, formatting/lint and documentation preparation.
+Local `MODE=release-eval` runs every integration group unless `INTEGRATION_GROUP` selects one; see [Check the result](guides/writing-modules.md#check-the-result).
+The local runner defaults to one module evaluator at a time; heavy whole-catalog validation needs memory headroom beyond ordinary project development.
+See [Validation memory](guides/troubleshooting.md#validation-memory) for serial execution and Linux-runner sizing.
+Set `NIX_CHECK_JOBS`, `NIX_CHECK_BATCH_SIZE` and `NIX_CHECK_TIMEOUT` through `CONTAINER_ENVS` to tune the local runner.
+
+The required PR path budgets one minute for planning, seven minutes for parallel workers, and one minute for the gate.
+Worker budgets include setup and caches; module suites have a five-minute CI limit and an eight-minute local default.
+An exceeded budget fails the check.
+Queues and cold dependency downloads can add time or prevent a successful run within that budget.
+The checks evaluate and run built module behavior; they do not boot the complete Lima VM.
+Also run changed documented commands in a disposable VM.
 
 To contribute a module, follow [Add to the catalog](guides/writing-modules.md#add-to-the-catalog) and the [contribution guide](https://github.com/limanix/.github/blob/main/CONTRIBUTING.md).
 
@@ -129,3 +159,6 @@ To contribute a module, follow [Add to the catalog](guides/writing-modules.md#ad
 
 A catalog release is an integer tag, such as `v2`, on a commit in `main`.
 The release workflow publishes a GitHub release with the documentation archive and triggers the client rebuilds described in [Use a module](#use-a-module).
+Its configured active path allows one minute for tag validation and planning, seven minutes for parallel checks and documentation preparation, and one minute for mandatory result checks and publication.
+Notification has an additional one-minute budget after publication.
+These limits bound the workflow; hosted queue waits and successful cold-cache runtimes are not established by the limits.

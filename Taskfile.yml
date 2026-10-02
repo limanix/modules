@@ -10,6 +10,13 @@ includes:
     internal: true
 
 tasks:
+  ci/scripts:
+    desc: Test change planning, diagnostics and runner limits
+    cmds:
+      - task: python:_uv/tool
+        vars:
+          CMD: python -B -m unittest discover -s scripts/tests
+
   docs/prepare:
     desc: Build docs for the LimaNix site
     vars:
@@ -44,19 +51,23 @@ tasks:
       - task: nix:deadnix
 
   ci/test:
-    desc: Run native module checks; MODULES selects space-separated module names
+    desc: Run complete native checks; RUNTIME_PROFILE=pr selects current and requested runtime lines
     cmds:
       - task: nix:_nix/tool
         vars:
-          CMD: bash scripts/run_checks.sh modules {{.MODULES | default "" | shellQuote}}
+          CMD: >-
+            {{if or .RUNTIME_PROFILE .RUNTIME_VERSIONS}}env NIX_RUNTIME_PROFILE={{.RUNTIME_PROFILE | default "all" | shellQuote}} NIX_RUNTIME_VERSIONS={{.RUNTIME_VERSIONS | default "" | shellQuote}}{{end}}
+            bash scripts/run_checks.sh modules {{.MODULES | default "" | shellQuote}}
           TASK_CONTEXT:
             ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER --cap-add=SETUID --cap-add=SETGID --cap-add=KILL %s" (.CONTAINER_RUN_ARGS | default "")))'
 
   ci/common:
-    desc: Run common PR checks; MODE=release enables deep integrations
+    desc: Run shared contracts; INTEGRATION_GROUP selects a deep evaluation group
     cmds:
       - task: nix:_nix/tool
         vars:
-          CMD: bash scripts/run_checks.sh common {{.MODE | default "pr" | shellQuote}}
+          CMD: >-
+            {{if .INTEGRATION_GROUP}}env NIX_INTEGRATION_GROUP={{.INTEGRATION_GROUP | shellQuote}}{{end}}
+            bash scripts/run_checks.sh common {{.MODE | default "pr" | shellQuote}}
           TASK_CONTEXT:
             ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER --cap-add=SETUID --cap-add=SETGID --cap-add=KILL %s" (.CONTAINER_RUN_ARGS | default "")))'

@@ -68,5 +68,11 @@ try:
         session = attach(name)
         assert attach(name) == session, ('reattach created another session', name)
     assert not os.path.exists('unwanted'), 'session name executed a command'
+    before = run_tmux('list-sessions', '-F', '#{session_name}')
+    for arguments in [[], [''], ['one', 'two'], ['project.name'], ['project:name']]:
+        result = subprocess.run([provider, *arguments], capture_output=True)
+        assert result.returncode == 64, (arguments, result)
+        assert result.stderr, ('missing session diagnostic', arguments)
+    assert run_tmux('list-sessions', '-F', '#{session_name}') == before
 finally:
     subprocess.run([tmux, 'kill-server'], capture_output=True)

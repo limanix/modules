@@ -2,33 +2,79 @@
 set -euo pipefail
 set -f
 
+arguments=("$@")
 mode=${1:?Specify modules or common}
 shift
-jobs=${NIX_CHECK_JOBS:-2}
+# Full NixOS evaluations can use several GiB; keep local evaluators serial.
+# Increase NIX_CHECK_JOBS only when the runner has enough memory.
+jobs=${NIX_CHECK_JOBS:-1}
 batch_size=${NIX_CHECK_BATCH_SIZE:-4}
+timeout_seconds=${NIX_CHECK_TIMEOUT:-480}
+runtime_profile=${NIX_RUNTIME_PROFILE:-all}
+case "$runtime_profile" in
+  all|pr) ;;
+  *) printf 'Unsupported module runtime profile: %s\n' "$runtime_profile" >&2; exit 2 ;;
+esac
+if test "$mode" != modules && { test "$runtime_profile" != all || test -n "${NIX_RUNTIME_VERSIONS:-}"; }; then
+  printf 'Runtime selections require module checks\n' >&2
+  exit 2
+fi
+runtime_versions=()
+for version in ${NIX_RUNTIME_VERSIONS:-}; do
+  if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)*$ ]] || ((${#version} > 63)); then
+    printf 'Invalid runtime version: %s\n' "$version" >&2
+    exit 2
+  fi
+  runtime_versions+=("$version")
+done
+if test "$runtime_profile" = all && ((${#runtime_versions[@]})); then
+  printf 'Explicit runtime versions require the pr profile\n' >&2
+  exit 2
+fi
 
 case "$mode" in
   modules|common) ;;
   *) printf 'Unsupported check mode: %s\n' "$mode" >&2; exit 2 ;;
 esac
-for value in "$jobs" "$batch_size" "${NIX_BUILD_CORES:-1}"; do
+for value in "$jobs" "$batch_size" "${NIX_BUILD_CORES:-1}" "$timeout_seconds"; do
   if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
-    printf 'Check jobs, batch size, and build cores must be positive integers\n' >&2
+    printf 'Check jobs, batch size, build cores, and timeout must be positive integers\n' >&2
     exit 2
   fi
 done
-profile=pr
+profile='pr'
 if test "$mode" = common; then
   profile=${1:-pr}
   (($# == 0)) || shift
   case "$profile" in
-    pr|release) ;;
+    pr|release|release-eval|release-smoke) ;;
     *) printf 'Unsupported common check mode: %s\n' "$profile" >&2; exit 2 ;;
   esac
   if (($#)); then
-    printf 'Common checks accept only pr or release\n' >&2
+    printf 'Common checks accept one profile: pr, release, release-eval or release-smoke\n' >&2
     exit 2
   fi
+fi
+integration_group=${NIX_INTEGRATION_GROUP:-all}
+case "$integration_group" in
+  all) ;;
+  base|compositions|versions)
+    if test "$mode" != common || { test "$profile" != release && test "$profile" != release-eval; }; then
+      printf 'Integration groups require common release or release-eval\n' >&2
+      exit 2
+    fi
+    ;;
+  *) printf 'Unsupported integration group: %s\n' "$integration_group" >&2; exit 2 ;;
+esac
+# Bound the complete suite, including evaluation, builds and diagnostics.
+# GNU timeout terminates the process group, covering Nix worker descendants.
+if test "${_LIMANIX_CHECK_BOUNDED:-}" != 1; then
+  command -v timeout >/dev/null || {
+    printf 'Module checks require GNU timeout on the Linux runner\n' >&2
+    exit 2
+  }
+  export _LIMANIX_CHECK_BOUNDED=1
+  exec timeout --kill-after=15s "$timeout_seconds" bash "$0" "${arguments[@]}"
 fi
 # Module names follow the catalog grammar; no shell or Nix expressions are accepted.
 requested=()
@@ -41,7 +87,11 @@ for argument in "$@"; do
     requested+=("$name")
   done
 done
-json_modules() {
+if ((${#runtime_versions[@]} && ${#requested[@]} != 1)); then
+  printf 'Explicit runtime versions require exactly one module\n' >&2
+  exit 2
+fi
+json_strings() {
   local separator='' name
   printf '['
   for name in "$@"; do
@@ -87,6 +137,8 @@ esac
 run_diagnostics() {
   local file=$1 output=$2 name expected
   shift 2
+  # Nix owns ${name}; keep shell expansion disabled in this expression.
+  # shellcheck disable=SC2016
   nix eval --raw --impure --file "$file" diagnostics "$@" \
     --apply 'checks: builtins.concatStringsSep "\n" (map
       (name: name + "\t" + checks.${name}.expected) (builtins.attrNames checks)) + "\n"' \
@@ -114,44 +166,62 @@ cores=${NIX_BUILD_CORES:-$(( $(nproc) / jobs ))}
 ((cores > 0)) || cores=1
 build_jobs=$jobs
 realise_smoke() {
-  local output=$1 label=$2
-  local -a derivations
+  local output=$1 label=$2 derivation
+  local -a derivations=()
   sort -u "$output/derivations" > "$output/unique-derivations"
-  mapfile -t derivations < "$output/unique-derivations"
+  while IFS= read -r derivation; do
+    derivations+=("$derivation")
+  done < "$output/unique-derivations"
   if ((${#derivations[@]})); then
     printf 'Realising %s distinct smoke derivations for %s\n' "${#derivations[@]}" "$label"
-    nix-store --realise --option build-users-group nixbld \
+    # Respect the native runner's build-user policy, including single-user images.
+    nix-store --realise \
       --max-jobs "$build_jobs" --cores "$cores" "${derivations[@]}"
   fi
 }
 
 if test "$mode" = common; then
   started=$SECONDS
-  printf 'Checking common %s on %s\n' "$profile" "$system"
-  nix eval --json --show-trace --impure \
-    --option allow-import-from-derivation false \
-    --file checks/common.nix all
-  run_diagnostics checks/common.nix "$temporary"
-  if test "$profile" = release; then
-    nix eval --raw --impure --file checks/integration.nix evaluation \
+  printf 'Checking common %s (%s) on %s\n' "$profile" "$integration_group" "$system"
+  if test "$profile" != release-smoke && { test "$integration_group" = all || test "$integration_group" = base; }; then
+    nix eval --json --show-trace --impure \
+      --option allow-import-from-derivation false \
+      --file checks/common.nix all
+    run_diagnostics checks/common.nix "$temporary"
+    nix-instantiate checks/common.nix --show-trace --attr smoke \
+      --option allow-import-from-derivation false > "$temporary/derivations"
+    realise_smoke "$temporary" "common $profile"
+  fi
+  if test "$profile" = release || test "$profile" = release-eval; then
+    integration_attribute=evaluation
+    if test "$integration_group" != all; then
+      integration_attribute="evaluationGroups.\"$integration_group\""
+    fi
+    nix eval --raw --impure --file checks/integration.nix "$integration_attribute" \
       --apply 'checks: builtins.concatStringsSep "\n" (builtins.attrNames checks) + "\n"' \
       > "$temporary/integration-cases"
     while IFS= read -r case_name; do
       printf 'Checking catalog integration: %s\n' "$case_name"
       nix eval --json --show-trace --impure \
         --option allow-import-from-derivation false \
-        --file checks/integration.nix "evaluation.\"$case_name\"" \
+        --file checks/integration.nix "$integration_attribute.\"$case_name\"" \
         --apply 'value: builtins.deepSeq value true'
     done < "$temporary/integration-cases"
+    if test "$integration_group" = all || test "$integration_group" = base; then
+      run_diagnostics checks/integration.nix "$temporary"
+    fi
+  fi
+  if test "$profile" = release || test "$profile" = release-smoke; then
     nix-instantiate checks/integration.nix --show-trace --attr smoke \
       --option allow-import-from-derivation false > "$temporary/derivations"
     realise_smoke "$temporary" 'common release'
   fi
-  printf 'Passed common %s on %s in %ss\n' "$profile" "$system" "$((SECONDS - started))"
+  printf 'Passed common %s (%s) on %s in %ss\n' "$profile" "$integration_group" "$system" "$((SECONDS - started))"
   exit 0
 fi
 
-selected_json=$(json_modules "${requested[@]}")
+selected_json=$(json_strings "${requested[@]}")
+runtime_arguments=(--argstr runtimeProfile "$runtime_profile" --argstr runtimeVersions "$(json_strings "${runtime_versions[@]}")")
 nix eval --raw --impure --file checks/modules.nix names \
   --argstr modules "$selected_json" \
   --apply 'names: builtins.concatStringsSep "\n" names' > "$temporary/modules"
@@ -168,20 +238,20 @@ run_batch() {
   mkdir "$output"
   for name in "$@"; do
     started=$SECONDS
-    selection=$(json_modules "$name")
-    printf 'Checking %s on %s: %s\n' "$mode" "$system" "$name"
+    selection=$(json_strings "$name")
+    printf 'Checking %s on %s: %s (runtime %s; additional versions: %s)\n' "$mode" "$system" "$name" "$runtime_profile" "${runtime_versions[*]:-none}"
     # Each module shares evaluation and smoke configurations, then releases its evaluator.
     nix-instantiate checks/modules.nix --show-trace --attr all \
       --option allow-import-from-derivation false \
-      --argstr modules "$selection" > "$output/derivations"
-    run_diagnostics checks/modules.nix "$output" --argstr modules "$selection"
+      --argstr modules "$selection" "${runtime_arguments[@]}" > "$output/derivations"
+    run_diagnostics checks/modules.nix "$output" --argstr modules "$selection" "${runtime_arguments[@]}"
     realise_smoke "$output" "$name"
     printf 'Passed %s on %s in %ss\n' "$name" "$system" "$((SECONDS - started))"
   done
 }
 
 # Parallel module batches are bounded independently of the number of selectors.
-# In CI each job receives at most four module names from the change planner.
+# CI isolates each module; local selections are serial unless explicitly overridden.
 started=$SECONDS
 offset=0
 while ((offset < ${#modules[@]} || ${#active_pids[@]})); do

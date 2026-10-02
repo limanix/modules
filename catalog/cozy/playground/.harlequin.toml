@@ -1,0 +1,5 @@
+default_profile = "cozy"
+
+[profiles.cozy]
+adapter = "postgres"
+conn_str = ["postgresql://cozy:cozy@127.0.0.1:15432/cozy"]

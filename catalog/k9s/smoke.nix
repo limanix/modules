@@ -27,6 +27,9 @@ in
     touch "$out"
   '';
 }
+// pkgs.lib.optionalAttrs (version == "0.40") {
+  upstreamVersion = tools.k9s.tests.version;
+}
 // pkgs.lib.optionalAttrs includeShared {
   coexistence = import ../../checks/profile-commands.nix {
     inherit pkgs;

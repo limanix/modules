@@ -16,6 +16,7 @@ A change affecting the client interface, catalog format, or release pairs requir
 | Client/catalog contract | The catalog format, public declarations in `interface.nix` and `catalog/_shared/<area>.nix`, and guest operation protocols |
 | Catalog module | Its packages, services, program configuration, dependencies, and integrations |
 | `_shared/<area>.nix` | Public capability types and declarations; always loaded, with no application activation |
+| `_shared` pure data | Common values, such as the Mocha palette; read only by selected consumers |
 | `_shared/internal/` | Private declarations imported only by catalog modules; no selector or application activation |
 | Aggregate | A component list and its imports; component behavior remains in the component modules |
 
@@ -42,7 +43,8 @@ interface.nix                 Public client/catalog option declarations
 catalog/
 ├── _shared/                  Common declarations; no module selector
 │   ├── <area>.nix            Public capabilities; always loaded by the client
-│   └── internal/             Private declarations; imported by catalog modules
+│   ├── internal/             Private declarations; imported by catalog modules
+│   └── palette.toml          Shared pure data; no activation or selector
 └── <name>/
     ├── default.nix           Selected module entry point
     ├── module.toml           Description and optional version selectors
@@ -64,6 +66,8 @@ All other catalog directories follow the [metadata rules](writing-modules.md#fol
 
 Import a concrete file, such as `../git/default.nix` for a component or `../_shared/internal/selection.nix` for a private declaration.
 Use the same entry point when selecting a component directly and through an aggregate.
+Module graph checks reject cross-component imports of private implementation modules or directory shorthand.
+They inspect evaluated NixOS imports; they do not interpret every lexical `import` expression inside package-building code.
 The client preserves the source tree; Nix resolves the imports.
 
 Third-party modules keep their source imports inside their own directory.
@@ -306,11 +310,20 @@ A module that only selects existing packages can use configuration checks; a mod
 | Custom startup code, wrappers, or program integration | Exercise documented behavior using the built program and generated configuration | Build and runtime |
 | Every published client/catalog pair | Real `Prepare()` output for every selector individually, the empty selection, and supported integration cases | Evaluation |
 
+The shared runner checks repeated entry points for every selector and repeated imported component entry points for every composition.
+It compares the complete system derivation and evaluated public `limanix` and `lmx` values.
+These checks do not require a module to opt in through `tests.nix`.
+
 Store custom build and behavior checks in the module's `smoke.nix`.
 Store additional module-specific configuration assertions and expected diagnostics in an optional `tests.nix`.
 The [module test context](../checks/module.nix) shares memoized configurations between these assertions and the module's smoke checks.
 The `check.nix` arguments remain `config`, `pkgs`, `version`, `userName`, and `hasPackage`.
-CI must discover, build, and execute all applicable checks rather than merely evaluate their derivation paths.
+CI must discover, build, and execute all checks applicable to its runtime profile rather than merely evaluate their derivation paths.
+Complete every-version, repeated-entry-point, import-order and compatibility evaluation remains required in every profile.
+The `all` runtime profile is the local and release default and includes every line and shared coexistence.
+The `pr` runtime profile retains current/default startup and override corners, omits only the named historical `coexistence` runtime check, and adds explicitly requested lines.
+The PR planner requests changed declared `versions/<numeric>.nix` lines; other non-document pod changes select `all` for the pod and its transitive consumers.
+Shared contract, interface, Nixpkgs pin or shared runtime changes select `all` throughout the catalog.
 A data-only derivation is checked by inspecting its built output; it does not need an unrelated program launch.
 A runtime check must exercise the actual generated configuration, not a separate copy of the setup.
 For example, an editor parser guarantee needs a real buffer with active highlighting, not only a package-membership assertion.
@@ -332,7 +345,10 @@ flowchart TB
 The repository's [Taskfile](../Taskfile.yml) exposes module checks as `ci/test` and common checks as `ci/common`.
 `ci/test` accepts space-separated directory names through `MODULES`; omitting it selects all modules.
 `ci/common` uses `MODE=pr` by default to validate catalog metadata and shared interfaces through small fixtures.
-`MODE=release` also evaluates all compatible defaults and documented module combinations, then builds and runs the three AstroNvim LSP integration scenarios.
+`MODE=release-eval` evaluates all compatible defaults and documented module combinations by default.
+`NIX_INTEGRATION_GROUP` can select `base`, `compositions` or `versions` for a narrower local evaluation.
+`MODE=release-smoke` builds and runs the AstroNvim LSP integration scenarios.
+`MODE=release` combines both locally; release CI requires every evaluation group and independent runtime smoke as parallel native jobs.
 Release validation combines every module's checks with `ci/common MODE=release`.
 Each task uses the runner's native Linux system from `builtins.currentSystem`.
 Build and runtime checks must identify the guest architecture they actually verify.

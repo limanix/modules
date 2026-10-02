@@ -28,7 +28,10 @@ in
 {
   evaluation = {
     defaultEntryPoint = defaultVersionEntryPoint;
-    coexistence = coexistence [ "postgres" ];
+    coexistence = coexistence [
+      "postgres"
+      "pgConfig"
+    ];
     serviceIndependence = verify "command selection does not start a database service" (
       !defaultConfiguration.config.services.postgresql.enable
       && !(defaultConfiguration.config.systemd.services ? postgresql)
@@ -40,6 +43,7 @@ in
           withService.config.services.postgresql.enable
           && withService.config.services.postgresql.package.outPath == pkgs.postgresql_18.outPath
           && selectedPackage withService tools.postgres
+          && selectedPackage withService tools.pgConfig
         )
         withService;
   };

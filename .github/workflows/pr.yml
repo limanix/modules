@@ -17,12 +17,23 @@ jobs:
   nix:
     needs: plan
     if: ${{ needs.plan.outputs.readme-only != 'true' }}
-    uses: mr-chelyshkin/actions/.github/workflows/pr-nix.yml@v1
-    permissions:
-      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [ci/nixos-fmt, ci/nixos-lint]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ${{ matrix.task }}
 
   plan:
     runs-on: ubuntu-24.04
+    timeout-minutes: 1
     outputs:
       chunks: ${{ steps.plan.outputs.chunks }}
       has-modules: ${{ steps.plan.outputs.has-modules }}
@@ -47,9 +58,10 @@ jobs:
           printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")" >> "$GITHUB_OUTPUT"
           printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")" >> "$GITHUB_OUTPUT"
           printf 'readme-only=%s\n' "$(jq -r '.readme_only' <<< "$plan")" >> "$GITHUB_OUTPUT"
-      - name: Test module planner
-        if: ${{ steps.plan.outputs.readme-only != 'true' }}
-        run: python3 -B -m unittest discover -s scripts/tests -p 'test_plan_checks.py'
+          printf '### Module runtime scope\n\n| Module | Profile | Additional lines |\n| --- | --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.chunks[] | "| \(.modules) | \(.runtime_profile) | \(.runtime_versions // "") |"' <<< "$plan" >> "$GITHUB_STEP_SUMMARY"
+      - name: Test runner and change planning
+        run: python3 -B -m unittest discover -s scripts/tests
 
   test:
     name: Modules (${{ matrix.runner }}, ${{ matrix.chunk.id }})
@@ -66,11 +78,12 @@ jobs:
       runner: ${{ matrix.runner }}
       modules: ${{ matrix.chunk.modules }}
       cache-id: modules-${{ matrix.chunk.id }}
+      runtime-profile: ${{ matrix.chunk.runtime_profile }}
+      runtime-versions: ${{ matrix.chunk.runtime_versions }}
 
   common:
     name: Common (${{ matrix.runner }})
     needs: plan
-    if: ${{ needs.plan.outputs.readme-only != 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -87,8 +100,8 @@ jobs:
     needs: plan
     if: ${{ needs.plan.outputs.readme-only != 'true' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 7
     continue-on-error: true
-    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -118,6 +131,7 @@ jobs:
     if: always()
     needs: [nix, plan, test, common]
     runs-on: ubuntu-24.04
+    timeout-minutes: 1
     permissions:
       contents: read
     steps:
@@ -125,4 +139,4 @@ jobs:
       - uses: mr-chelyshkin/actions/check-job-results@v1
         with:
           results: ${{ toJSON(needs) }}
-          skipped: ${{ needs.plan.result == 'success' && needs.plan.outputs.readme-only == 'true' && 'nix test common' || (needs.plan.outputs.has-modules == 'false' && 'test' || '') }}
+          skipped: ${{ needs.plan.result == 'success' && needs.plan.outputs.readme-only == 'true' && 'nix test' || (needs.plan.outputs.has-modules == 'false' && 'test' || '') }}

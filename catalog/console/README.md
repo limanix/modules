@@ -44,12 +44,14 @@ Inside AstroNvim, press Space and wait for the key hints.
 
 Language toolchains remain separate selections.
 [Go](../go/README.md) provides `gopls`; [Rust](../rust/README.md) provides `rust-analyzer`.
+[Python](../python/README.md) provides Pyright; [Node.js](../nodejs/README.md) provides the JavaScript/TypeScript language server.
 AstroNvim reads the language modules' NixOS declarations and enables their servers.
 Console recommends the catalog's default AstroNvim line.
 Add `lmx:astronvim-6` alongside Console to select the 6.x line explicitly.
 See [AstroNvim versions](../astronvim/README.md#versions) for the scope of that pin.
 
 For containers, add [Docker](../docker/README.md), which includes Lazydocker.
+For the project workspace, HTTP and SQL clients, and a Compose playground, select [Cozy](../cozy/README.md).
 For a local Kubernetes cluster, add [Minikube](../minikube/README.md), which includes K9s.
 Console itself does not enable Docker or create a Kubernetes cluster.
 
@@ -59,6 +61,7 @@ The catalog release pins the shared configuration and package sources.
 User history, tmux snapshots, editor state and GitHub credentials live in the VM user's home.
 Updating the VM preserves those files.
 The component pages explain supported customization.
+The shell, tmux, AstroNvim, Yazi and Lazygit default to Catppuccin Mocha.
 
 To change the login shell or disable the additional tmux navigation keys, select a custom module alongside Console:
 
@@ -101,6 +104,23 @@ Older clients that copy each module into an isolated directory cannot consume th
 Console has no version lines.
 Its component list belongs to the catalog release; versioned components recommend their catalog defaults.
 Explicit supported selections follow each component's selection policy.
+
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | Owned by the individual components; the aggregate declares no additional public options |
+| Personal state | Guest home: shell history, editor state, tmux snapshots and application configuration |
+| Integration | Imports the seven documented entry points; an explicit supported AstroNvim line replaces its recommendation |
+| Services | Does not enable Docker or create a Kubernetes cluster |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| No language server | Select a language provider; Console does not choose project toolchains |
+| Component selected twice | The shared entry point is imported once; supported public values remain the same |
+| Conflicting component versions | Follow the component's selection policy; aggregate import order does not resolve conflicts |
 
 ## Guarantees
 

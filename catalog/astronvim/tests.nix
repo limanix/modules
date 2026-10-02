@@ -33,7 +33,7 @@ in
     composition = componentChecks;
     dependencies = verify "the editor and Lazygit are installed" (
       installed defaultConfiguration defaultConfiguration.config.programs.neovim.finalPackage
-      && installed defaultConfiguration pkgs.lazygit
+      && installed defaultConfiguration defaultConfiguration.config.programs.lazygit.package
     ) defaultConfiguration;
     defaults = verify "ordinary editor and nix-ld overrides" (
       !defaultsOverride.config.programs.neovim.defaultEditor
@@ -43,6 +43,8 @@ in
     providerIndependence = verify "selection does not install optional language providers" (
       (capability defaultConfiguration).tools == { }
       && (capability defaultConfiguration).languages == { }
+      && !(installed defaultConfiguration pkgs.pyright)
+      && !(installed defaultConfiguration pkgs.typescript-language-server)
       &&
         builtins.all
           (
