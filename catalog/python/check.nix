@@ -14,5 +14,6 @@ let
 in
 hasPackage tools.python
 && hasPackage tools.virtualenv
-&& builtins.elem "python" config.lmx.capabilities.editor.languages.python.parsers
+&& hasPackage config.lmx.capabilities.languageSupport.tools.pyright.package
+&& builtins.elem "python" config.lmx.capabilities.languageSupport.languages.python.parsers
 && (builtins.elem warning config.warnings == (tools.endOfLife == true))

@@ -13,6 +13,9 @@ Add the selectors to your VM's `nixos.modules` list and [apply the change](https
 
 ## Versions
 
+`lmx:minikube` recommends the catalog default.
+An explicit `lmx:minikube-LINE` selection replaces that recommendation, including when Cozy imports the default.
+
 | Selector                            | Minikube | Notes   |
 |-------------------------------------|----------|---------|
 | `lmx:minikube`, `lmx:minikube-1.38` | 1.38.1   | Default |
@@ -79,12 +82,30 @@ minikube-1.38 start --driver=docker --profile=mk138
 
 `minikube` runs the newest selected line.
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | Native Minikube profiles and configuration |
+| Personal state | `~/.minikube/`, kubeconfig and the selected driver's cluster storage |
+| Integration | Recommends K9s; Docker remains a separate component or is supplied by Cozy |
+| Services | No cluster starts from selecting this module |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| Docker driver cannot start | Check Docker Engine, account access and available guest CPU, memory and disk |
+| Cluster components need downloads | The installed command is not a pre-created cluster; first start needs network access |
+| Several Minikube lines | Give each version its own profile and check the active Kubernetes context |
+
 ## Guarantees
 
 | Guarantee | Covered by |
 |---|---|
+| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the pinned Minikube line and its `minikube-LINE` command | `check.nix`, `smoke.nix`: commands |
-| Selected Minikube lines coexist; the newest supplies `minikube` | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
-| Includes a K9s recommendation that explicit K9s version selections can replace | `check.nix`, `checks/default.nix`: minikubeK9sSelection |
-| Does not enable Docker or create a cluster by being selected | `checks/contracts.nix` |
+| Selected Minikube lines coexist; the newest supplies `minikube` | `tests.nix`: coexistence, `smoke.nix`: coexistence |
+| Includes a K9s recommendation that explicit K9s version selections can replace | `check.nix`, `checks/integration.nix`: minikubeK9sSelection |
+| Does not enable Docker or create a cluster by being selected | `tests.nix` |
 | Unknown EOL status emits no EOL warning | `check.nix` |

@@ -11,6 +11,10 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
+`lmx:helm` recommends the catalog default.
+An explicit `lmx:helm-LINE` selection replaces that recommendation.
+Multiple explicit supported lines retain the side-by-side behavior described below.
+
 | Selector                   | Helm   | Notes   |
 |----------------------------|--------|---------|
 | `lmx:helm`, `lmx:helm-4.3` | 4.3.0  | Default |
@@ -53,10 +57,28 @@ helm-4.3 version --short
 
 `helm` runs the newest selected line.
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | Native Helm CLI and environment settings |
+| Personal state | Helm configuration, cache and data directories; guest kubeconfig |
+| Integration | Uses an existing Kubernetes cluster; no cluster or driver is installed |
+| Services and capabilities | No daemon or language-support declarations |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| Cluster access fails | Check the guest kubeconfig, current context and cluster reachability |
+| Different major lines | Use the versioned command required by the chart workflow |
+| Offline chart operation | Repository refresh and remote chart downloads need network access or cached files |
+
 ## Guarantees
 
 | Guarantee | Covered by |
 |---|---|
+| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the pinned Helm line and its `helm-LINE` command | `check.nix`, `smoke.nix`: commands |
-| Selected lines coexist and the newest supplies `helm` | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
+| Selected lines coexist and the newest supplies `helm` | `tests.nix`: coexistence, `smoke.nix`: coexistence |
 | Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

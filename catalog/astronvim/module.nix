@@ -10,22 +10,59 @@ let
     inherit (config.lmx.internal.astronvim) version;
     parsers = lib.unique (
       lib.concatMap (language: language.parsers) (
-        builtins.attrValues config.lmx.capabilities.editor.languages
+        builtins.attrValues config.lmx.capabilities.languageSupport.languages
       )
     );
   };
+  # Lazy identifies require-triggered plugins by their directory basename.
+  # Keep plugin IDs in these paths while retaining immutable Nix package sources.
+  sourceEntries = [
+    {
+      name = "AstroNvim";
+      path = packages.astro;
+    }
+    {
+      name = "catppuccin";
+      path = pkgs.vimPlugins.catppuccin-nvim;
+    }
+  ]
+  ++ lib.mapAttrsToList (repository: package: {
+    name = builtins.baseNameOf repository;
+    path = package;
+  }) packages.plugins
+  ++ lib.optional (!(packages.plugins ? "folke/lazy.nvim")) {
+    name = "lazy.nvim";
+    path = pkgs.vimPlugins.lazy-nvim;
+  };
+  sourceNames = map (entry: entry.name) sourceEntries;
+  pluginSources =
+    assert lib.assertMsg (
+      builtins.length sourceNames == builtins.length (lib.unique sourceNames)
+    ) "AstroNvim plugin IDs must have unique source directories";
+    pkgs.linkFarm "astronvim-plugin-sources" sourceEntries;
   paths = pkgs.writeText "astronvim-plugins.json" (
     builtins.toJSON {
-      astro = toString packages.astro;
-      lazy = toString pkgs.vimPlugins.lazy-nvim;
+      astro = "${pluginSources}/AstroNvim";
+      lazy = "${pluginSources}/lazy.nvim";
       parsers = toString packages.parserDirectory;
+      catppuccin = "${pluginSources}/catppuccin";
       servers = lib.mapAttrs' (
         identity: tool:
-        lib.nameValuePair (if identity == "rust-analyzer" then "rust_analyzer" else identity) {
-          cmd = [ tool.command ] ++ tool.args;
-        }
-      ) config.lmx.capabilities.editor.tools;
-      plugins = lib.mapAttrs (_: toString) packages.plugins;
+        lib.nameValuePair
+          (
+            {
+              rust-analyzer = "rust_analyzer";
+              typescript-language-server = "ts_ls";
+            }
+            .${identity} or identity
+          )
+          {
+            cmd = [ tool.command ] ++ tool.args;
+          }
+      ) config.lmx.capabilities.languageSupport.tools;
+      plugins = lib.mapAttrs (
+        repository: _: "${pluginSources}/${builtins.baseNameOf repository}"
+      ) packages.plugins;
     }
   );
 in

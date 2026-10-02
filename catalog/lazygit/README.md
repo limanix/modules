@@ -26,9 +26,44 @@ lazygit
 The interface lets you inspect changes, stage files, and work with commits and branches.
 Configure your commit identity as described in the [Git module](../git/README.md#use).
 
+## Customize
+
+The managed configuration uses Catppuccin Mocha in `/etc/xdg/lazygit/config.yml`.
+A personal `~/.config/lazygit/config.yml` takes precedence through Lazygit's native XDG lookup.
+Project `.lazygit.yml` and `.git/lazygit.yml` settings retain their native precedence.
+To change managed settings, assign `programs.lazygit.settings` in a custom NixOS module:
+
+```nix
+{ ... }:
+{
+  programs.lazygit.settings.gui.theme.activeBorderColor = [ "cyan" "bold" ];
+}
+```
+
+The package is configurable with `programs.lazygit.package`.
+
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | `programs.lazygit.package` and `programs.lazygit.settings` |
+| Managed configuration | `/etc/xdg/lazygit/config.yml` |
+| Personal configuration | `~/.config/lazygit/config.yml`; project `.lazygit.yml` and `.git/lazygit.yml` |
+| Integration | Imports Git; AstroNvim opens the same Lazygit application |
+| Services and capabilities | No daemon or language-support declarations |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| Directory is not a Git repository | Open the project repository before starting Lazygit |
+| Personal theme wins | Native personal and project configuration precedence remains active |
+| Authentication or identity | Configure Git credentials and commit identity for the guest account |
+
 ## Guarantees
 
 | Guarantee | Covered by |
 |---|---|
 | Installs Lazygit and enables Git | `check.nix` |
-| Selecting Git again preserves the system and public settings | `checks/contracts.nix`: composition |
+| Selecting Git again preserves the system and public settings | `tests.nix`: composition |
+| Mocha is the managed default; ordinary settings and personal XDG configuration override it | `tests.nix`: theme; `smoke.nix`: theme |

@@ -120,15 +120,71 @@ Keep the `while checking … on …` context: it identifies the entry or combina
 | Diagnostic                                                                          | What to check                                                           | Next step                                                                                                                              |
 |-------------------------------------------------------------------------------------|-------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
 | `Module catalog:`                                                                   | The named entry's files, metadata, or selector collision                | Follow the specific message and the [metadata rules](writing-modules.md#follow-the-metadata-rules)                                     |
-| `Module result: … does not match its expected packages or program/service settings` | The entry's `check.nix` returned `false`                                | Compare its expectations with the module's evaluated settings; see [Write the result check](writing-modules.md#write-the-result-check) |
+| `Module result:` | The named module's configuration assertion | Compare `check.nix` or `tests.nix` with the evaluated settings; see [Write the result check](writing-modules.md#write-the-result-check) |
+| `Module smoke:` | The returned checks and their target system | Inspect the module's `smoke.nix` and the reported check |
+| `Common contract:` | A shared declaration or capability-schema assertion | Inspect the named fixture in [checks/common.nix](../checks/common.nix) |
+| `Catalog integration:` | A full-catalog or intermodule assertion | Inspect the named combination in [checks/integration.nix](../checks/integration.nix) |
 | `Catalog base:`                                                                     | The root Nixpkgs input and lock file                                    | Follow the diagnostic and [Update the NixOS base](writing-modules.md#update-the-nixos-base)                                            |
+| `Killed` or exit status `137` | The Linux runner's memory limit and kernel log | Confirm whether the kernel killed an evaluator for memory pressure; see [Validation memory](#validation-memory) |
 | `assertion … failed` in an entry's `packages.nix`                                   | The assertion at the reported line, including expected package versions | Check the [release map and package loader](writing-modules.md#support-multiple-versions) together                                      |
 
-`ci/eval` evaluates configurations and verifies expected diagnostics for invalid selections.
-`ci/smoke` builds and runs the module smoke checks on the container's native Linux architecture.
-`ci/test` runs both tasks; its output identifies the architecture checked at each level.
+Run the tasks in the repository's [Taskfile](../Taskfile.yml) from the repository root.
+Select the modules involved in the failure:
+
+```console
+task --yes ci/test MODULES="go rust"
+```
+
+`ci/test` evaluates every supported line of the selected modules, verifies expected diagnostics and runs profile-selected native smoke.
+Omitting `MODULES` selects every module; local runtime defaults to `all`.
+Module evaluation and smoke instantiation reuse the same configurations.
+The PR runtime profile retains current/default startup and override corners plus requested lines; strong compatibility evaluation remains complete.
+To reproduce current runtime plus one changed line:
+
+```console
+task --yes ci/test MODULES=go RUNTIME_PROFILE=pr RUNTIME_VERSIONS="1.26"
+```
+
+Additional lines must be declared, space-separated numeric versions for exactly one selected module.
+Use `RUNTIME_PROFILE=all` for all historical runtime checks, including the named `coexistence` check.
+The PR planner adds changed declared numeric version lines to current runtime.
+Other non-document pod changes, including metadata and release maps, use full runtime for that pod and its transitive consumers.
+`ci/common` uses `MODE=pr` by default to check metadata and shared interfaces through small fixtures.
+Use release mode to investigate full-catalog and intermodule failures:
+
+```console
+task --yes ci/common MODE=release
+```
+
+Release mode combines full-catalog evaluation with AstroNvim LSP integration smoke.
+Use `MODE=release-eval` or `MODE=release-smoke` to isolate those stages.
+The ten-minute goal reports slow successful checks without failing them.
+`NIX_CHECK_TARGET_SECONDS` defaults to 600 seconds; the output includes evaluation, diagnostic and build/runtime timings.
+The separate `NIX_CHECK_TIMEOUT` runaway guard defaults to 1800 seconds locally and in native CI.
+If that guard fires, inspect the last active phase, dependency downloads and cache availability. Preserve full tests when adjusting it for a cold build.
+Both tasks use the container's native Linux architecture and identify it in their output.
 These checks do not boot a complete Lima VM.
 A passing check does not replace testing the module's documented commands in a VM.
+
+### Validation memory
+
+Full native module evaluation, including historical version lines, can need close to 8 GiB per evaluator.
+Selecting `RUNTIME_PROFILE=pr` reduces native build/run work while retaining the full compatibility evaluation and its memory needs.
+The local runner defaults to `NIX_CHECK_JOBS=1` and evaluates one module at a time.
+Avoid running separate module suites in parallel on an 8 GiB Linux runner.
+Allow about 12 GiB for heavy whole-catalog validation and additional memory when increasing concurrency or building large packages.
+These evaluation and build requirements are separate from the memory used by the installed development tools.
+The 8 GiB [Cozy example](https://limanix.dev/categories/client/workspace.html#create-the-workbench) remains the starting point for ordinary project development.
+
+To repeat one module with explicit serial execution:
+
+```console
+task --yes ci/test MODULES=rust CONTAINER_ENVS="NIX_CHECK_JOBS=1"
+```
+
+Replace `rust` with the failing module.
+Give the Docker or VM Linux runner the memory allocation, rather than relying only on the Mac's total memory.
+Check its kernel log to confirm an out-of-memory kill before treating exit status 137 as a memory diagnosis.
 
 ## Warnings
 

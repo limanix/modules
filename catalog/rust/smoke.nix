@@ -1,8 +1,12 @@
 {
   config,
+  profile,
+  profileFor,
   pkgs,
   version,
-  evaluateStandalone,
+  allVersionsConfiguration,
+  includeShared,
+  configurations,
   ...
 }:
 let
@@ -10,63 +14,29 @@ let
     inherit version;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
-  tool = config.lmx.capabilities.editor.tools.rust-analyzer;
+  tool = config.lmx.capabilities.languageSupport.tools.rust-analyzer;
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
   lines = builtins.sort pkgs.lib.versionOlder metadata.versions;
   older = import ./packages.nix {
     version = builtins.head lines;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
-  # Exercise the user override against every supported version in one profile.
-  overridden = evaluateStandalone (
-    map (line: ./versions + "/${line}.nix") lines
-    ++ [
-      {
-        lmx.capabilities.editor.tools.rust-analyzer = {
-          package = older.rust-analyzer;
-          command = "${older.rust-analyzer}/bin/rust-analyzer";
-          args = [ "--version" ];
-          languages = [ "rust" ];
-        };
-      }
-    ]
-  );
-  selected = overridden.config.lmx.capabilities.editor.tools.rust-analyzer;
+  expectedProvider = configurations.providerOverrideExpectedPackage or older.rust-analyzer;
+  overridden = configurations.providerOverride;
+  overriddenProfile = profileFor overridden;
+  selected = overridden.config.lmx.capabilities.languageSupport.tools.rust-analyzer;
 in
 {
-  providerOverride = pkgs.runCommand "rust-user-selected-provider" { } ''
-    export HOME="$TMPDIR/home"
-    mkdir -p "$HOME"
-    test "$(readlink -f ${overridden.config.system.path}/bin/rust-analyzer)" = \
-      "$(readlink -f ${older.rust-analyzer}/bin/rust-analyzer)"
-    test "$(readlink -f ${selected.command})" = \
-      "$(readlink -f ${overridden.config.system.path}/bin/rust-analyzer)"
-    test "$(${overridden.config.system.path}/bin/rust-analyzer --version)" = \
-      "$(${selected.command} ${pkgs.lib.escapeShellArgs selected.args})"
-    touch "$out"
-  '';
-  coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluateStandalone;
-    directory = ./.;
-    commands = {
-      rustc = "rustc";
-      rustdoc = "rustc";
-      cargo = "cargo";
-      rustfmt = "rustfmt";
-      cargo-clippy = "clippy";
-      rust-analyzer = "rust-analyzer";
-    };
-  };
   commands =
     pkgs.runCommand "rust-${version}-commands-smoke"
       {
-        nativeBuildInputs = [ config.system.path ];
+        nativeBuildInputs = [ profile ];
       }
       ''
         export HOME="$TMPDIR/home"
         mkdir -p "$HOME"
-        test "$(readlink -f ${config.system.path}/bin/rustc-${version})" = "$(readlink -f ${tools.rustc}/bin/rustc)"
-        test "$(readlink -f ${config.system.path}/bin/rust-analyzer)" = "$(readlink -f ${tool.command})"
+        test "$(readlink -f ${profile}/bin/rustc-${version})" = "$(readlink -f ${tools.rustc}/bin/rustc)"
+        test "$(readlink -f ${profile}/bin/rust-analyzer)" = "$(readlink -f ${tool.command})"
         rustc-${version} --version | grep -F '${tools.rustc.version}'
         rustdoc-${version} --version
         rustfmt-${version} --version
@@ -79,4 +49,30 @@ in
         cargo-${version} clippy --offline -- -D warnings
         touch "$out"
       '';
+}
+// pkgs.lib.optionalAttrs includeShared {
+  providerOverride = pkgs.runCommand "rust-user-selected-provider" { } ''
+    export HOME="$TMPDIR/home"
+    mkdir -p "$HOME"
+    test "$(readlink -f ${overriddenProfile}/bin/rust-analyzer)" = \
+      "$(readlink -f ${expectedProvider}/bin/rust-analyzer)"
+    test "$(readlink -f ${selected.command})" = \
+      "$(readlink -f ${overriddenProfile}/bin/rust-analyzer)"
+    test "$(${overriddenProfile}/bin/rust-analyzer --version)" = \
+      "$(${selected.command} ${pkgs.lib.escapeShellArgs selected.args})"
+    touch "$out"
+  '';
+  coexistence = import ../../checks/profile-commands.nix {
+    inherit pkgs;
+    profile = profileFor allVersionsConfiguration;
+    directory = ./.;
+    commands = {
+      rustc = "rustc";
+      rustdoc = "rustc";
+      cargo = "cargo";
+      rustfmt = "rustfmt";
+      cargo-clippy = "clippy";
+      rust-analyzer = "rust-analyzer";
+    };
+  };
 }

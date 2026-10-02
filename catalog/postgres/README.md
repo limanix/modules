@@ -14,6 +14,10 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
+`lmx:postgres` recommends the catalog default.
+An explicit `lmx:postgres-LINE` selection replaces that recommendation.
+Multiple explicit supported lines retain the side-by-side behavior described below.
+
 | Selector                          | PostgreSQL | Notes   |
 |-----------------------------------|------------|---------|
 | `lmx:postgres`, `lmx:postgres-18` | 18.6       | Default |
@@ -22,8 +26,17 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 Upstream support dates are listed in the [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/).
 
-Each line adds commands with a version suffix, including `postgres-18`, `initdb-18`, `pg_ctl-18`, `psql-18`, `pg_dump-18`, and `pg_restore-18`.
+Each line adds commands with a version suffix, including `postgres-18`, `initdb-18`, `pg_ctl-18`, `psql-18`, `pg_dump-18`, `pg_restore-18` and `pg_config-18`.
 Inside the VM, `postgres --version` shows the installed server version.
+Use `pg_config-18` to inspect the matching line's header and library paths:
+
+```console
+pg_config-18 --includedir
+pg_config-18 --libdir
+```
+
+Its build information does not select a compiler or language SDK for your project.
+Select those tools separately.
 
 ## Run manually
 
@@ -179,7 +192,8 @@ limanix modules add postgres-service ./modules/postgres-service
 
 Add `third-party:postgres-service` to `nixos.modules` and [apply the configuration](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 The service module installs its own PostgreSQL package; `lmx:postgres` is only needed if you also want the catalog's versioned commands.
-`services.postgresql.package` selects a package from the base Nixpkgs revision independently of the catalog selector, so its patch version can differ.
+`services.postgresql.package` selects a package from the base Nixpkgs revision independently of the catalog selector.
+Its patch version can differ.
 Change `pkgs.postgresql_18` to `pkgs.postgresql_17` or `pkgs.postgresql_16` to select another service version.
 When catalog lines are also selected, commands without a suffix come from the newest selected catalog line, even if the service uses a different major version.
 For example, `lmx:postgres-16` with the service on 18 provides `psql` from 16; the service still runs PostgreSQL 18.
@@ -288,11 +302,31 @@ Use the same major version to initialize and run a data directory.
 Moving existing data to another major version requires a [PostgreSQL upgrade](https://www.postgresql.org/docs/18/upgrading.html).
 Changing a service's major version changes its default data directory and initializes a new instance if that directory is empty; it does not migrate the old databases.
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | No catalog-specific public options; configure a server through standard `services.postgresql.*` separately |
+| Personal state | Manually initialized data directory, or the directory selected by the enabled NixOS service |
+| Integration | Supplies server and client binaries for manual use without enabling a database service |
+| Services and capabilities | No service or language-support declaration from this module alone |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| No server after selecting the module | Initialize and start one manually or enable the NixOS PostgreSQL service |
+| Switching major versions | Migrate the data directory with PostgreSQL's supported upgrade process; selecting another line does not migrate it |
+| Service package differs from CLI | The service package is configured separately; ordinary catalog commands retain their documented precedence |
+| Building client bindings | Inspect the intended line with `pg_config-LINE`; choose the project compiler or SDK separately |
+
 ## Guarantees
 
 | Guarantee | Covered by |
 |---|---|
+| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the selected PostgreSQL tools and version-suffixed wrappers for all their executables | `check.nix`, `smoke.nix`: commands |
+| Supplies each line's `pg_config-LINE`; the newest selected line supplies ordinary `pg_config` | `check.nix`; `smoke.nix`: commands, coexistence |
 | Links PostgreSQL shared data into the profile | `check.nix`, `smoke.nix`: commands |
-| Selected lines coexist; the newest supplies ordinary commands ahead of a separately enabled service package | `checks/default.nix`: multiVersion, `checks/contracts.nix`, `smoke.nix`: coexistence |
-| Selecting this module alone does not enable a database service or initialize a data directory | `checks/contracts.nix` |
+| Selected lines coexist; the newest supplies ordinary commands ahead of a separately enabled service package | `tests.nix`: coexistence, servicePackagePrecedence; `smoke.nix`: coexistence |
+| Selecting this module alone does not enable a database service or initialize a data directory | `tests.nix` |

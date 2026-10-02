@@ -1,2 +1,13 @@
 args:
-builtins.all (entry: import (builtins.dirOf entry + "/check.nix") args) (import ./components.nix)
+let
+  checkComponent =
+    entry:
+    let
+      directory = builtins.dirOf entry;
+      metadata = builtins.fromTOML (builtins.readFile (directory + "/module.toml"));
+      component = builtins.baseNameOf directory;
+      versions = args.config.lmx.internal.${component}.versions or [ (metadata.default or null) ];
+    in
+    builtins.all (version: import (directory + "/check.nix") (args // { inherit version; })) versions;
+in
+builtins.all checkComponent (import ./components.nix)

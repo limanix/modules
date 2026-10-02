@@ -7,6 +7,7 @@ You can add its tools to a VM by name, without writing Nix.
 | Module                                    | Selector       | Provides                                                |
 |-------------------------------------------|----------------|---------------------------------------------------------|
 | [Console](../catalog/console/README.md) | `lmx:console` | Zsh, tmux, AstroNvim, CLI tools and terminal applications |
+| [Cozy](../catalog/cozy/README.md) | `lmx:cozy` | Project workbench, Console, common languages and LSP, Docker, Minikube, cloud, HTTP and SQL clients |
 | [Zsh](../catalog/zsh/README.md) | `lmx:zsh` | Configured shell, prompt, history, completion and direnv |
 | [tmux](../catalog/tmux/README.md) | `lmx:tmux` | Sessions, panes, clipboard and layout restoration |
 | [AstroNvim](../catalog/astronvim/README.md) | `lmx:astronvim` | Configured Neovim with language-server integration |
@@ -14,6 +15,9 @@ You can add its tools to a VM by name, without writing Nix.
 | [Lazygit](../catalog/lazygit/README.md) | `lmx:lazygit` | Git terminal interface |
 | [GitHub CLI](../catalog/gh/README.md) | `lmx:gh` | GitHub repositories, pull requests and workflow runs |
 | [Yazi](../catalog/yazi/README.md) | `lmx:yazi` | Terminal file manager |
+| [Posting](../catalog/posting/README.md) | `lmx:posting` | Saved HTTP requests in the terminal |
+| [Harlequin](../catalog/harlequin/README.md) | `lmx:harlequin` | SQL terminal interface with the Postgres adapter |
+| [Cloud tools](../catalog/cloud-tools/README.md) | `lmx:cloud-tools` | AWS CLI v2 and Google Cloud CLI |
 | [Lazydocker](../catalog/lazydocker/README.md) | `lmx:lazydocker` | Docker terminal interface; also included by Docker |
 | [Docker](../catalog/docker/README.md)     | `lmx:docker`   | Docker Engine, CLI, and Compose                         |
 | [Git](../catalog/git/README.md)           | `lmx:git`      | Git                                                     |
@@ -22,9 +26,9 @@ You can add its tools to a VM by name, without writing Nix.
 | [K9s](../catalog/k9s/README.md)           | `lmx:k9s`      | Terminal interface for Kubernetes                       |
 | [Minikube](../catalog/minikube/README.md) | `lmx:minikube` | Minikube for local Kubernetes clusters                  |
 | [Neovim](../catalog/neovim/README.md)     | `lmx:neovim`   | Neovim                                                  |
-| [Node.js](../catalog/nodejs/README.md)    | `lmx:nodejs`   | Node.js, npm, and npx                                   |
+| [Node.js](../catalog/nodejs/README.md)    | `lmx:nodejs`   | Node.js, npm, npx and JavaScript/TypeScript LSP |
 | [PostgreSQL](../catalog/postgres/README.md) | `lmx:postgres` | PostgreSQL server and tools for manual use              |
-| [Python](../catalog/python/README.md)     | `lmx:python`   | Python, venv, and virtualenv                            |
+| [Python](../catalog/python/README.md)     | `lmx:python`   | Python, venv, virtualenv and Pyright LSP |
 | [Rust](../catalog/rust/README.md)         | `lmx:rust`     | Rust toolchain, rust-analyzer, GCC, pkg-config, and GDB |
 | [Terraform](../catalog/terraform/README.md) | `lmx:terraform` | Terraform CLI for infrastructure as code                |
 
@@ -33,6 +37,23 @@ The Docker module gives the VM user root-equivalent access through the `docker` 
 Each module page lists its selectors, exact versions, and commands.
 This page describes the catalog in this revision of the repository, and your client may bundle an older one.
 To see the selectors that your client provides, [list the available modules](https://limanix.dev/categories/client/modules.html#list-available-modules).
+
+## Choose a composition
+
+| Project needs | Module selection |
+|---|---|
+| Minimal guest or your own custom setup | `modules = []` |
+| Terminal work with chosen toolchains | `["lmx:console", "lmx:go"]` |
+| Container project | `["lmx:console", "lmx:docker"]` |
+| Common development workbench | `["lmx:cozy"]` |
+| Rust and infrastructure alongside Cozy | `["lmx:cozy", "lmx:rust", "lmx:terraform", "lmx:helm"]` |
+
+Every selection retains the client's platform account, mounts, SSH and public declarations.
+Shared declarations do not activate optional applications.
+Console and Cozy assemble independent modules through the same entry points available to direct selectors.
+Cozy includes Go, Python and Node.js language support; other toolchains remain explicit choices.
+Neither installing cloud clients nor selecting Minikube creates remote resources or a cluster.
+Follow [Project workspace](https://limanix.dev/categories/client/workspace.html) for a complete configuration and the project-window workflow.
 
 ## Versions
 
@@ -52,6 +73,9 @@ Docker, Node.js and AstroNvim lines fix the major version, allowing minor and pa
 PostgreSQL lines also fix the major version, allowing minor updates within that major.
 The other versioned modules fix major and minor, allowing only patch updates within a line.
 A catalog release can also choose another default line.
+For every versioned module, an explicit line replaces the unversioned recommendation.
+This also works through Console or Cozy, without importing the recommended line alongside the chosen one.
+Several explicit compatible lines coexist according to the module's documented policy; Docker and AstroNvim accept one line.
 
 Lines marked as past their upstream end of life stay selectable.
 Selecting one prints a warning when the VM is built, and the build continues:
@@ -83,7 +107,7 @@ An explicit selector overrides the default recommended by Console; see [AstroNvi
 
 ## Editor integration
 
-The Go and Rust modules install language servers: `gopls` and `rust-analyzer`.
+The Go, Rust, Python and Node.js modules install language servers: `gopls`, `rust-analyzer`, Pyright and the JavaScript/TypeScript language server.
 The plain Neovim module does not configure its LSP client.
 [AstroNvim](../catalog/astronvim/README.md), also included in Console, enables the servers declared by selected language modules.
 

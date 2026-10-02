@@ -12,5 +12,6 @@ in
 assert postgres.version == release.version;
 {
   inherit postgres;
+  pgConfig = postgres.pg_config;
   inherit (release) endOfLife;
 }

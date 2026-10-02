@@ -15,68 +15,95 @@ permissions:
 
 jobs:
   nix:
-    uses: mr-chelyshkin/actions/.github/workflows/pr-nix.yml@v1
-    permissions:
-      contents: read
-
-  test:
-    if: ${{ false }}
-    runs-on: ${{ matrix.runner }}
+    needs: plan
+    if: ${{ needs.plan.outputs.readme-only != 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    permissions:
-      contents: read
+        task: [ci/nixos-fmt, ci/nixos-lint]
     steps:
       - uses: actions/checkout@v6
-      - name: Restore Nix sources and local builds
-        id: nix-cache
-        uses: actions/cache/restore@v5
         with:
-          path: |
-            .cache/nix
-            .cache/nix-binary
-          key: nix-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}-${{ github.sha }}-${{ github.run_attempt }}
-          restore-keys: |
-            nix-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}-
-            nix-v2-${{ runner.os }}-${{ runner.arch }}-
-      - name: Prepare Nix cache permissions
+          persist-credentials: false
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ${{ matrix.task }}
+
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      chunks: ${{ steps.plan.outputs.chunks }}
+      has-modules: ${{ steps.plan.outputs.has-modules }}
+      readme-only: ${{ steps.plan.outputs.readme-only }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Plan module checks
+        id: plan
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
-          mkdir -p .cache/nix .cache/nix-binary
-          sudo chown -R 0:0 .cache/nix .cache/nix-binary
-      - name: Run Nix tests
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: >-
-            ci/test ARCH=${{ matrix.arch }}
-            'CONTAINER_ENVS=XDG_CACHE_HOME=/workspace/.cache NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=4 NIX_CHECK_BATCH_SIZE=2'
-      - name: Restore Nix cache ownership
-        if: always()
-        run: |
-          for directory in .cache/nix .cache/nix-binary; do
-            if [ -d "$directory" ]; then
-              sudo chown -R "$(id -u):$(id -g)" "$directory"
-            fi
-          done
-      - name: Save Nix sources and completed builds
-        if: ${{ always() && !cancelled() && steps.nix-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v5
-        with:
-          path: |
-            .cache/nix
-            .cache/nix-binary
-          key: ${{ steps.nix-cache.outputs.cache-primary-key }}
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            plan=$(python3 -B scripts/plan_checks.py --all)
+          else
+            plan=$(python3 -B scripts/plan_checks.py --base "$BASE_SHA" --head "$HEAD_SHA")
+          fi
+          {
+            printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")"
+            printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")"
+            printf 'readme-only=%s\n' "$(jq -r '.readme_only' <<< "$plan")"
+          } >> "$GITHUB_OUTPUT"
+          printf '### Module runtime scope\n\n| Module | Profile | Additional lines |\n| --- | --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.chunks[] | "| \(.modules) | \(.runtime_profile) | \(.runtime_versions // "") |"' <<< "$plan" >> "$GITHUB_STEP_SUMMARY"
+      - name: Test runner and change planning
+        run: python3 -B -m unittest discover -s scripts/tests
+
+  test:
+    name: Modules (${{ matrix.runner }}, ${{ matrix.chunk.id }})
+    needs: plan
+    if: ${{ needs.plan.outputs.has-modules == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        chunk: ${{ fromJSON(needs.plan.outputs.chunks) }}
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    uses: ./.github/workflows/nix-tests.yml
+    with:
+      task: ci/test
+      runner: ${{ matrix.runner }}
+      modules: ${{ matrix.chunk.modules }}
+      cache-id: modules-${{ matrix.chunk.id }}
+      runtime-profile: ${{ matrix.chunk.runtime_profile }}
+      runtime-versions: ${{ matrix.chunk.runtime_versions }}
+
+  common:
+    name: Common (${{ matrix.runner }})
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    uses: ./.github/workflows/nix-tests.yml
+    with:
+      task: ci/common
+      runner: ${{ matrix.runner }}
+      mode: pr
+      cache-id: common-pr
 
   pkgs:
     name: Check Nixpkgs updates
+    needs: plan
+    if: ${{ needs.plan.outputs.readme-only != 'true' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     continue-on-error: true
-    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -104,8 +131,9 @@ jobs:
 
   gate:
     if: always()
-    needs: [nix]
+    needs: [nix, plan, test, common]
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
@@ -113,3 +141,4 @@ jobs:
       - uses: mr-chelyshkin/actions/check-job-results@v1
         with:
           results: ${{ toJSON(needs) }}
+          skipped: ${{ needs.plan.result == 'success' && needs.plan.outputs.readme-only == 'true' && 'nix test' || (needs.plan.outputs.has-modules == 'false' && 'test' || '') }}

@@ -1,4 +1,9 @@
+{ lib, ... }:
 let
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
 in
-import (./versions + "/${metadata.default}.nix")
+{
+  imports = [ ./selection.nix ];
+
+  lmx.internal.docker.versions = lib.mkDefault [ metadata.default ];
+}

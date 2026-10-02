@@ -16,6 +16,15 @@ return function(paths)
   end
   vim.list_extend(specs, {
     {
+      "catppuccin/nvim",
+      name = "catppuccin",
+      dir = paths.catppuccin,
+      lazy = false,
+      priority = 1000,
+      opts = { flavour = "mocha" },
+    },
+    { "AstroNvim/astroui", opts = { colorscheme = "catppuccin-mocha" } },
+    {
       "AstroNvim/astrocore",
       opts = function(_, opts)
         opts.treesitter.auto_install = false

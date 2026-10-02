@@ -8,6 +8,8 @@ config.limanix.user.shell == pkgs.zsh
 && config.users.users.${config.limanix.user.name}.shell == config.limanix.user.shell
 && config.programs.zsh.enable
 && config.programs.zsh.enableCompletion
+&& !config.programs.zsh.enableGlobalCompInit
+&& config.programs.zsh.ohMyZsh.enable
 && config.programs.zsh.autosuggestions.enable
 && config.programs.zsh.syntaxHighlighting.enable
 && config.programs.fzf.keybindings
@@ -23,4 +25,5 @@ config.limanix.user.shell == pkgs.zsh
   pkgs.carapace
   pkgs.fzf
   pkgs.zsh-fzf-tab
+  config.programs.zsh.ohMyZsh.package
 ]

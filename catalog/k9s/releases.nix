@@ -18,6 +18,7 @@
     # Upstream maintenance status for these lines has not been confirmed.
     "0.40" = {
       source = "legacy";
+      buildSource = "previous";
       package = "k9s";
       version = "0.40.10";
       endOfLife = null;

@@ -11,6 +11,9 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
+`lmx:docker` recommends the catalog default.
+An explicit `lmx:docker-LINE` selection replaces that recommendation, including when Cozy imports the default.
+
 | Selector                      | Docker Engine and CLI | Notes       |
 |-------------------------------|-----------------------|-------------|
 | `lmx:docker`, `lmx:docker-29` | 29.8.0                | Default     |
@@ -71,12 +74,31 @@ A container started with `--network host` uses the VM's network directly.
 `network.ports` applies to it as to any other service in the VM.
 For details, see Docker's guides to [port publishing](https://docs.docker.com/engine/network/port-publishing/) and [firewall rules](https://docs.docker.com/engine/network/firewall-iptables/).
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | Standard `virtualisation.docker.*` options |
+| State | Engine images, containers and volumes under `/var/lib/docker` on the guest disk |
+| Integration | Imports Lazydocker and adds the development account to the Docker group |
+| Services | `docker.service` and the NixOS Docker socket configuration |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| Two Docker lines | Choose one service package; version lines share the same engine state |
+| Unexpected reachable port | Docker manages published-port firewall rules; check the bind address in `docker run` or Compose |
+| VM deletion | Guest-disk Docker volumes are deleted with that disk |
+| Permission changes | Reconnect after the applied account groups change |
+
 ## Guarantees
 
 | Guarantee | Covered by |
 |---|---|
+| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Enables the selected Docker Engine service and installs its CLI, Compose plugin, and Lazydocker | `check.nix`, `smoke.nix`: commands |
 | Adds the configured development account to the Docker group | `check.nix` |
-| Only one Docker line may configure the service; conflicting lines report the package conflict | `checks/negative.nix`: dockerVersionConflict |
-| Selecting Lazydocker again preserves the system and public settings | `checks/contracts.nix`: composition |
+| Only one Docker line may configure the service; conflicting lines report the package conflict | `tests.nix`: versionConflict |
+| Selecting Lazydocker again preserves the system and public settings | `tests.nix`: composition |
 | Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

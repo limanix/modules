@@ -1,8 +1,10 @@
 {
-  config,
+  profile,
+  profileFor,
   pkgs,
   version,
-  evaluateStandalone,
+  allVersionsConfiguration,
+  includeShared,
   ...
 }:
 let
@@ -12,18 +14,21 @@ let
   };
 in
 {
+  commands = pkgs.runCommand "terraform-${version}-commands-smoke" { } ''
+    export HOME="$TMPDIR/home"
+    mkdir -p "$HOME"
+    test "$(readlink -f ${profile}/bin/terraform-${version})" = "$(readlink -f ${tools.terraform}/bin/terraform)"
+    ${profile}/bin/terraform-${version} version | grep -F '${tools.terraform.version}'
+    touch "$out"
+  '';
+}
+// pkgs.lib.optionalAttrs includeShared {
   coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluateStandalone;
+    inherit pkgs;
+    profile = profileFor allVersionsConfiguration;
     directory = ./.;
     commands = {
       terraform = "terraform";
     };
   };
-  commands = pkgs.runCommand "terraform-${version}-commands-smoke" { } ''
-    export HOME="$TMPDIR/home"
-    mkdir -p "$HOME"
-    test "$(readlink -f ${config.system.path}/bin/terraform-${version})" = "$(readlink -f ${tools.terraform}/bin/terraform)"
-    ${config.system.path}/bin/terraform-${version} version | grep -F '${tools.terraform.version}'
-    touch "$out"
-  '';
 }

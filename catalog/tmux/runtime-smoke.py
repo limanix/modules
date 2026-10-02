@@ -94,7 +94,11 @@ def wait_input(client, path, expected):
         raise AssertionError(("forwarded keys", path.read_bytes(), expected)) from error
 
 
-def shared_settings(client, key_mode="vi", terminal="tmux-256color", escape_time="10"):
+def shared_settings(
+    client, key_mode="vi", terminal="tmux-256color", escape_time="10",
+    status_style="bg=#181825,fg=#cdd6f4", pane_border="fg=#cba6f7",
+    mode_style="bg=#cba6f7,fg=#1e1e2e",
+):
     assert client.text("show-options", "-gv", "mouse") == "on"
     assert client.text("show-options", "-sv", "set-clipboard") == "on"
     assert client.text("show-options", "-gv", "mode-keys") == key_mode
@@ -105,6 +109,13 @@ def shared_settings(client, key_mode="vi", terminal="tmux-256color", escape_time
     assert "copy-selection-and-cancel" in client.text("list-keys", "-T", "copy-mode-vi", "y")
     assert client.text("show-options", "-gv", "@continuum-save-interval") == "15"
     assert client.text("show-options", "-gv", "@continuum-restore") == "on"
+    for option, expected in [
+        ("status-style", status_style),
+        ("pane-active-border-style", pane_border),
+        ("mode-style", mode_style),
+    ]:
+        actual = client.text("show-options", "-gv", option)
+        assert set(actual.split(",")) == set(expected.split(",")), (option, actual, expected)
     client.wait(lambda: b"save.sh" in client.run("list-keys", "-T", "prefix", "C-s", check=False).stdout)
     assert "restore.sh" in client.text("list-keys", "-T", "prefix", "C-r")
     assert "continuum_save.sh" in client.text("show-options", "-gv", "status-right")
@@ -224,6 +235,9 @@ finally:
 
 client = Client("overridden", os.environ["LMX_TMUX_OVERRIDDEN"], "preferences", root)
 try:
-    shared_settings(client, "emacs", "screen-256color", "25")
+    shared_settings(
+        client, "emacs", "screen-256color", "25",
+        "bg=black,fg=white", "fg=blue", "bg=blue,fg=white",
+    )
 finally:
     client.close()

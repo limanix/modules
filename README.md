@@ -9,12 +9,30 @@
 </p>
 
 The NixOS module catalog for [LimaNix](https://github.com/limanix/client).
-Add language toolchains, Docker, Kubernetes tools, and editors to a VM by name without writing Nix.
+Select a complete project workbench or compose its tools individually without writing Nix.
+Each module owns its configuration, integration contract and tests.
 
-[Catalog](guides/catalog.md) |
-[Write a module](guides/writing-modules.md) |
-[Releases](https://github.com/limanix/modules/releases) |
-[Documentation](https://limanix.dev/categories/nixos/index.html)
+[Catalog](guides/catalog.md) | [Write a module](guides/writing-modules.md) | [Releases](https://github.com/limanix/modules/releases) | [Documentation](https://limanix.dev/categories/nixos/index.html)
+
+## Try the workbench
+
+In your existing `limanix.toml`, select Cozy:
+
+```toml
+[nixos]
+modules = ["lmx:cozy"]
+```
+
+Apply it from your Mac with `limanix update --config limanix.toml`.
+Inside the VM, run `tmux-project /workspace` using the mounted project path from your configuration.
+The project opens in four windows: editor, shell, Git and containers.
+The included Go, Python and Node.js servers connect to AstroNvim through the shared language-support contract.
+Yazi keeps the selected shell directory, and the terminal applications share Mocha defaults.
+Docker, local Kubernetes tools, AWS and Google Cloud clients, Posting and Harlequin cover the surrounding project workflow.
+
+Cozy does not authenticate cloud accounts or create a Kubernetes cluster.
+Start with the client's [complete workspace example](https://limanix.dev/categories/client/workspace.html) or read [Cozy](catalog/cozy/README.md) for its components, project windows and configuration.
+The minimal guest retains the platform conventions with `modules = []`.
 
 ## Use a module
 
@@ -55,8 +73,8 @@ The guides and every module README are also published on the [documentation site
 
 | Path                      | Contents                                                                                       |
 |---------------------------|------------------------------------------------------------------------------------------------|
-| `catalog/NAME/`           | One module: `default.nix`, `module.toml`, `check.nix`, `README.md`, and optional version lines |
-| `checks/`                 | Catalog validation, NixOS evaluation, and build/runtime checks run by `ci/test`                 |
+| `catalog/NAME/`           | One module: entry point, metadata, README, configuration checks, and applicable local and smoke tests |
+| `checks/`                 | Shared module runner, minimal common checks, and complete catalog integration checks                 |
 | `flake.nix`, `flake.lock` | The NixOS release and the base Nixpkgs revision                                                |
 | `guides/`                 | The guides listed above                                                                        |
 | `scripts/`                | Documentation preparation, the check runner, and the Nixpkgs update summary                    |
@@ -68,23 +86,80 @@ Nix runs in a container; you do not need a local Nix installation.
 
 ```console
 task --yes ci/nixos-fmt ci/nixos-lint ci/test
+task --yes ci/common MODE=release
 ```
 
 See [Taskfile.yml](Taskfile.yml) for the full task list.
 
-`ci/test` evaluates both guest architectures and builds and runs every applicable module smoke check for the container's native Linux architecture.
-Use `ci/eval ARCH=arm64` or `ci/eval ARCH=amd64` to evaluate one architecture.
-`ci/smoke ARCH=arm64` or `ci/smoke ARCH=amd64` requires a matching native Linux container; it rejects a different architecture.
-CI runs the complete checks on native ARM64 and AMD64 runners.
-`ci/test` keeps evaluation and smoke in one container and reuses its Nix store.
-The runner evaluates checks in bounded parallel batches and builds each distinct smoke derivation once.
-CI restores source and binary caches separately for each architecture and saves completed builds even when a later check fails.
-Run `PR flow` manually on `main` to prepare a base cache accessible to other branches; a cache saved by a pull request is scoped to that pull request.
-The first cache preparation can compile pinned dependencies that are absent from the public Nix cache.
-The binary cache includes the runtime dependencies of locally built results; Nix still checks the derivation paths against the current configuration.
-Set `NIX_CHECK_JOBS` and `NIX_CHECK_BATCH_SIZE` through `CONTAINER_ENVS` to tune evaluator concurrency and memory use.
-These checks do not boot the complete Lima VM.
-Run a changed module's documented commands in a VM as well.
+`ci/test` runs all module suites on the container's native Linux architecture.
+Pass space-separated module directory names to select a subset:
+
+```console
+task --yes ci/test MODULES="go rust"
+task --yes ci/common
+task --yes ci/common MODE=release
+```
+
+Each module suite shares memoized configurations between evaluation and smoke checks.
+Every runtime profile evaluates all supported versions, repeated entry points and component import orders, comparing complete system and public option values.
+Runtime profiles choose which native smoke checks are built and run without rebuilding unchanged base-system packages.
+
+| Stage | Native runtime coverage |
+|---|---|
+| Declared numeric version-file PR | Current/default startup and corner cases, plus the changed version lines |
+| Other pod source PR | Full runtime for that pod and its transitive consumers |
+| Shared contract, interface, Nixpkgs pin or shared runtime PR | Full runtime throughout the catalog |
+| Workflow-only PR | Current/default runtime for every pod |
+| Palette-only PR | Current/default runtime when every shared reference is a known unversioned pod's direct palette read; otherwise full runtime |
+| Local checks and release | Full runtime coverage by default |
+
+A PR profile keeps complete compatibility evaluation; it changes native build/run selection.
+
+```mermaid
+flowchart TB
+    pr["Pull request"] --> plan["Plan changes + test scripts"]
+    plan --> selected["Changed modules + transitive consumers"]
+    selected --> suites["One module per job; native AMD64 and ARM64"]
+    plan --> common["Common schema and contract fixtures"]
+    suites --> gate["Required results"]
+    common --> gate
+    release["Release"] --> all["Every module + source format/lint"]
+    release --> eval["Deep integration evaluation"]
+    release --> runtime["AstroNvim LSP integration smoke"]
+    all --> gate
+    eval --> gate
+    runtime --> gate
+```
+
+PR selection includes transitive consumers of changed component entry points.
+Changes to shared runtime assets, shared declarations, the Nixpkgs pin, workflows or the runner select every module.
+README-only changes keep script tests and common contract checks; source formatting, lint and module smoke are skipped.
+The plan reports each module's runtime profile and additional version lines in the job summary.
+Module jobs restore separate native source and binary caches and save completed builds even if a later check fails.
+
+`ci/common MODE=pr` is the small shared-contract suite.
+Use `MODE=release-eval` for all compatible defaults and documented integration evaluation, or `MODE=release-smoke` for the AstroNvim LSP runtime scenarios.
+`MODE=release` combines both for local validation.
+Release CI runs evaluation groups `base`, `compositions` and `versions`, plus independent runtime smoke, alongside every module suite, formatting/lint and documentation preparation.
+Local `MODE=release-eval` runs every integration group unless `INTEGRATION_GROUP` selects one; see [Check the result](guides/writing-modules.md#check-the-result).
+The local runner defaults to one module evaluator at a time; heavy whole-catalog validation needs memory headroom beyond ordinary project development.
+See [Validation memory](guides/troubleshooting.md#validation-memory) for serial execution and Linux-runner sizing.
+Set `NIX_CHECK_JOBS`, `NIX_CHECK_BATCH_SIZE` and `NIX_CHECK_TIMEOUT` through `CONTAINER_ENVS` to tune the local runner.
+
+PR checks aim to finish within ten minutes. This is a performance target; a successful slower check remains successful.
+The runner reports evaluation, diagnostic and build/runtime durations. Cold historical SDKs can take longer.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `NIX_CHECK_TARGET_SECONDS` | 600 s | Report slow successful suites without failing them |
+| `NIX_CHECK_TIMEOUT` | 1800 s | Stop runaway suites, including evaluation and builds |
+| Native check step / job | 40 / 45 min | Allow setup, downloads, checks and cache saving |
+| Planning and result checks | 5 min | Bound small workflow control jobs |
+| Formatting, lint and documentation | 15 min | Bound tool setup and their checks |
+
+Module caches retain completed work even when a later check fails. Cache restoration prefers the same native architecture and module across source-pin changes. Hosted queue waits are outside the suite timing; downloads and cache export count toward build time.
+The checks evaluate and run built module behavior; they do not boot the complete Lima VM.
+Also run changed documented commands in a disposable VM.
 
 To contribute a module, follow [Add to the catalog](guides/writing-modules.md#add-to-the-catalog) and the [contribution guide](https://github.com/limanix/.github/blob/main/CONTRIBUTING.md).
 
@@ -92,3 +167,7 @@ To contribute a module, follow [Add to the catalog](guides/writing-modules.md#ad
 
 A catalog release is an integer tag, such as `v2`, on a commit in `main`.
 The release workflow publishes a GitHub release with the documentation archive and triggers the client rebuilds described in [Use a module](#use-a-module).
+Release validation uses the same native safeguards and complete runtime coverage.
+Tag validation, planning, result checks, publication and notification each have a five-minute runaway guard.
+Documentation preparation has a fifteen-minute guard. These safeguards are separate from the ten-minute performance target.
+A configured guard does not establish a successful cold-cache runtime.

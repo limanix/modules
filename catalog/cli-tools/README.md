@@ -57,11 +57,28 @@ Inside a Git repository, `git diff` and `git log -p` use delta when Git opens a 
 Interactive staging uses delta's color-only filter.
 The settings are written to the VM's system Git configuration; a repository or user Git configuration can override them.
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | Standard `programs.git.config` controls the default delta pager and interactive filter |
+| Personal state | Git settings in `~/.gitconfig`; tealdeer pages in the user cache |
+| Integration | Imports Git; tools remain usable without Console or an editor |
+| Services and capabilities | No daemon or language-support declarations |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| Missing tldr pages | Run `tldr --update` once with network access |
+| Pager behaves differently | Check repository and user Git settings, which can override system defaults |
+| System monitor | `btop` displays the guest workload; it does not monitor all Mac processes |
+
 ## Guarantees
 
 | Guarantee | Covered by |
 |---|---|
 | Installs every command listed in Use and enables Git | `check.nix` |
 | Generated Git settings select delta for paging and interactive diff filtering | `check.nix`, `smoke.nix`: gitConfig |
-| Users may replace the pager/filter defaults through NixOS settings or personal Git configuration | `checks/contracts.nix`, `smoke.nix`: gitConfig |
-| Selecting Git again preserves the system and public settings | `checks/contracts.nix`: composition |
+| Users may replace the pager/filter defaults through NixOS settings or personal Git configuration | `tests.nix`, `smoke.nix`: gitConfig |
+| Selecting Git again preserves the system and public settings | `tests.nix`: composition |

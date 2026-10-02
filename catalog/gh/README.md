@@ -27,6 +27,23 @@ gh auth status
 Then, inside a repository, `gh pr list` lists its pull requests and `gh issue list` lists its issues.
 For commands that use local Git, select [Git](../git/README.md) as well.
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Settings | Native GitHub CLI configuration; run `gh config` for preferences |
+| Personal state | Normally `~/.config/gh/`, respecting GitHub CLI environment overrides |
+| Integration | Select Git for commands that use a local repository |
+| Services and capabilities | No daemon or language-support declarations |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| Authentication | Run `gh auth status` in the guest; the module does not copy host credentials |
+| Account selection | Check the active account and hostname before commands that modify GitHub |
+| Missing Git | The standalone module installs `gh`; Console also supplies Git |
+
 ## Guarantees
 
 | Guarantee | Covered by |

@@ -27,10 +27,10 @@ let
     };
 in
 {
-  options.lmx.capabilities.editor = {
+  options.lmx.capabilities.languageSupport = {
     tools = lib.mkOption {
       default = { };
-      description = "Editor tools keyed by consumer-independent executable identity.";
+      description = "Language tools keyed by consumer-independent executable identity.";
       type = lib.types.attrsOf (
         toolDeclaration (
           lib.types.submodule {

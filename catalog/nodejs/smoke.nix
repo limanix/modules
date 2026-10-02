@@ -1,8 +1,12 @@
 {
   config,
+  profile,
+  profileFor,
   pkgs,
   version,
-  evaluateStandalone,
+  allVersionsConfiguration,
+  includeShared,
+  configurations,
   ...
 }:
 let
@@ -10,26 +14,31 @@ let
     inherit version;
     inherit (pkgs.stdenv.hostPlatform) system;
   };
+  serverSmoke =
+    name: configuration:
+    let
+      tool = configuration.config.lmx.capabilities.languageSupport.tools.typescript-language-server;
+      serverProfile = profileFor configuration;
+    in
+    pkgs.runCommand name { } ''
+      export HOME="$TMPDIR/home"
+      mkdir -p "$HOME"
+      test "$(readlink -f ${serverProfile}/bin/typescript-language-server)" = "$(readlink -f ${tool.command})"
+      timeout 30 ${pkgs.python3}/bin/python ${../../checks/lsp-smoke.py} \
+        ${serverProfile}/bin/typescript-language-server ${pkgs.lib.escapeShellArgs tool.args}
+      touch "$out"
+    '';
 in
 {
-  coexistence = import ../../checks/profile-commands.nix {
-    inherit pkgs evaluateStandalone;
-    directory = ./.;
-    commands = {
-      node = "nodejs";
-      npm = "nodejs";
-      npx = "nodejs";
-    };
-  };
   commands =
     pkgs.runCommand "nodejs-${version}-commands-smoke"
       {
-        nativeBuildInputs = [ config.system.path ];
+        nativeBuildInputs = [ profile ];
       }
       ''
         export HOME="$TMPDIR/home"
         mkdir -p "$HOME"
-        test "$(readlink -f ${config.system.path}/bin/node-${version})" = "$(readlink -f ${tools.nodejs}/bin/node)"
+        test "$(readlink -f ${profile}/bin/node-${version})" = "$(readlink -f ${tools.nodejs}/bin/node)"
         node-${version} -e 'if (process.version !== "v${tools.nodejs.version}") process.exit(1)'
         npm-${version} --version
         npx-${version} --version
@@ -39,4 +48,18 @@ in
         npx-${version} --offline -c 'node check.js'
         touch "$out"
       '';
+}
+// pkgs.lib.optionalAttrs includeShared {
+  languageServer = serverSmoke "nodejs-declared-language-server" { inherit config; };
+  providerOverride = serverSmoke "nodejs-user-selected-provider" configurations.providerOverride;
+  coexistence = import ../../checks/profile-commands.nix {
+    inherit pkgs;
+    profile = profileFor allVersionsConfiguration;
+    directory = ./.;
+    commands = {
+      node = "nodejs";
+      npm = "nodejs";
+      npx = "nodejs";
+    };
+  };
 }

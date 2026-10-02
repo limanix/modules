@@ -17,10 +17,10 @@ builtins.all hasPackage [
   tools.cargo
   tools.rustfmt
   tools.clippy
-  config.lmx.capabilities.editor.tools.rust-analyzer.package
+  config.lmx.capabilities.languageSupport.tools.rust-analyzer.package
   pkgs.gcc
   pkgs.pkg-config
   pkgs.gdb
 ]
-&& builtins.elem "rust" config.lmx.capabilities.editor.languages.rust.parsers
+&& builtins.elem "rust" config.lmx.capabilities.languageSupport.languages.rust.parsers
 && (builtins.elem warning config.warnings == (tools.endOfLife == true))

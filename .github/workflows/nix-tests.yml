@@ -1,0 +1,90 @@
+name: Native Nix tests
+
+on:
+  workflow_call:
+    inputs:
+      task:
+        description: Taskfile check task to run
+        type: string
+        required: true
+      runner:
+        description: Native Linux runner
+        type: string
+        required: true
+      modules:
+        description: Space-separated module names for ci/test
+        type: string
+        default: ''
+      mode:
+        description: Shared check depth for ci/common
+        type: string
+        default: pr
+      integration-group:
+        description: Integration evaluation group; all keeps the local complete profile
+        type: string
+        default: all
+      runtime-profile:
+        description: Module runtime scope; all retains every line, pr selects current and requested lines
+        type: string
+        default: all
+      runtime-versions:
+        description: Additional space-separated module version lines for the pr runtime scope
+        type: string
+        default: ''
+      cache-id:
+        description: Module chunk or check suite identifier
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ inputs.cache-id }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - name: Restore Nix sources and local builds
+        id: nix-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            .cache/nix
+            .cache/nix-binary
+          # Keep the suite before the pin hash: an unrelated pin update must not
+          # replace this module's completed closures with another module's cache.
+          # V2 scope prefixes are ambiguous for hyphenated names; migrate cold.
+          key: nix-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-id }}--${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}-${{ github.sha }}-${{ github.run_attempt }}
+          restore-keys: |
+            nix-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-id }}--${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}-
+            nix-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-id }}--
+      - name: Prepare Nix cache permissions
+        run: |
+          mkdir -p .cache/nix .cache/nix-binary
+          sudo chown -R 0:0 .cache/nix .cache/nix-binary
+      - name: Run Nix checks
+        timeout-minutes: 40
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: >-
+            ${{ inputs.task }}
+            ${{ inputs.task == 'ci/test' && format('MODULES="{0}" RUNTIME_PROFILE={1} RUNTIME_VERSIONS="{2}"', inputs.modules, inputs.runtime-profile, inputs.runtime-versions) || format('MODE={0}', inputs.mode) }}
+            'CONTAINER_ENVS=XDG_CACHE_HOME=/workspace/.cache NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=${{ inputs.task == 'ci/test' && 1 || 2 }} NIX_CHECK_BATCH_SIZE=1 NIX_CHECK_TIMEOUT=1800 NIX_CHECK_TARGET_SECONDS=600 NIX_INTEGRATION_GROUP=${{ inputs.integration-group }}'
+      - name: Restore Nix cache ownership
+        if: always()
+        run: |
+          for directory in .cache/nix .cache/nix-binary; do
+            if [ -d "$directory" ]; then
+              sudo chown -R "$(id -u):$(id -g)" "$directory"
+            fi
+          done
+      - name: Save Nix sources and completed builds
+        if: ${{ always() && !cancelled() && steps.nix-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            .cache/nix
+            .cache/nix-binary
+          key: ${{ steps.nix-cache.outputs.cache-primary-key }}

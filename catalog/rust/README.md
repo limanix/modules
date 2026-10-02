@@ -11,6 +11,9 @@ Add the selector to your VM's `nixos.modules` list and [apply the change](https:
 
 ## Versions
 
+`lmx:rust` recommends the catalog default.
+An explicit `lmx:rust-LINE` selection replaces that recommendation, including when Cozy imports the default.
+
 | Selector                    | Rust   | rust-analyzer | Notes       |
 |-----------------------------|--------|---------------|-------------|
 | `lmx:rust`, `lmx:rust-1.98` | 1.98.1 | 2026-08-03    | Default     |
@@ -66,13 +69,31 @@ Commands without a version come from the newest selected line.
 The module installs `rust-analyzer` for editors that support the Language Server Protocol.
 See [Editor integration](../../guides/catalog.md#editor-integration) and the [rust-analyzer editor setup](https://rust-analyzer.github.io/book/installation.html).
 
+## Configuration and integration
+
+| Boundary | Contract |
+|---|---|
+| Public capability | `lmx.capabilities.languageSupport.tools.rust-analyzer`; Rust parser |
+| Personal state | Cargo cache and project build output |
+| Integration | Declares the selected analyzer without enabling an editor; versioned Cargo selects its matching toolchain |
+| Services | No daemon |
+
+## Corner cases
+
+| Case | Behavior or next step |
+|---|---|
+| Native dependency fails | GCC and pkg-config are present; provide the required library and its search path |
+| Project toolchain differs | Inspect project environments and PATH before relying on an unqualified command |
+| Several lines selected | Use versioned Cargo to keep its compiler, formatter and Clippy together |
+
 ## Guarantees
 
 | Guarantee | Covered by |
 |---|---|
+| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the selected Rust toolchain, GCC, pkg-config and GDB; supplies the documented versioned commands | `check.nix`, `smoke.nix`: commands |
 | Versioned Cargo runs build, test, fmt and clippy with its matching toolchain | `smoke.nix`: commands |
-| Declares the Rust parser and consumer-independent `rust-analyzer` tool with its package and command | `check.nix`, `checks/contracts.nix` |
-| The newest selected line supplies ordinary commands; a user tool declaration overrides the complete analyzer declaration and installed package | `checks/contracts.nix`, `smoke.nix`: coexistence, providerOverride |
-| Installing Rust does not activate an editor | `checks/contracts.nix` |
+| Declares the Rust parser and consumer-independent `rust-analyzer` tool with its package and command | `check.nix`, `tests.nix` |
+| The newest selected line supplies ordinary commands; a user tool declaration overrides the complete analyzer declaration and installed package | `tests.nix`, `smoke.nix`: coexistence, providerOverride |
+| Installing Rust does not activate an editor | `tests.nix` |
 | Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |

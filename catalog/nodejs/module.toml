@@ -1,4 +1,4 @@
-description = "Node.js runtime and npm package manager."
+description = "Node.js runtime, npm package manager, and TypeScript/JavaScript language server."
 
 versions = ["23", "24", "25", "26"]
 default = "26"

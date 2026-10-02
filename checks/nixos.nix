@@ -12,6 +12,30 @@ import (nixpkgs + "/nixos/lib/eval-config.nix") {
   modules = [
     ../interface.nix
     (
+      { lib, ... }:
+      let
+        priority =
+          package:
+          if builtins.isAttrs package then
+            package.meta.priority or lib.meta.defaultPriority
+          else
+            lib.meta.defaultPriority;
+      in
+      {
+        # Match the platform base: profile inputs do not depend on import order.
+        # Contextual strings and __toString objects are valid package values.
+        options.environment.systemPackages = lib.mkOption {
+          apply = lib.sort (
+            left: right:
+            if toString left == toString right then
+              priority left < priority right
+            else
+              toString left < toString right
+          );
+        };
+      }
+    )
+    (
       { config, ... }:
       {
         limanix.user = {
