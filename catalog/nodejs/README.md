@@ -81,8 +81,11 @@ npm-24 run build
 ```
 
 The versioned `npm` and `npx` commands put their Node.js version first on
-`PATH`. Scripts they run use that version. `node`, `npm`, and `npx` come from
-the newest selected line.
+`PATH`. Their scripts use that interpreter by default. npm also
+[adds project-local executables](https://docs.npmjs.com/cli/v11/commands/npm-run/#description)
+to the script's `PATH`; a local `node` command or an explicit interpreter path
+can select another version. `node`, `npm`, and `npx` come from the newest
+selected line.
 
 ## Configuration and integration
 
@@ -107,7 +110,7 @@ the newest selected line.
 | -- | -- |
 | An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs each selected Node.js line with npm, npx and their versioned commands | `check.nix`, `smoke.nix`: commands |
-| Versioned npm and npx scripts run the matching Node.js interpreter | `smoke.nix`: commands |
+| Versioned npm and npx scripts use the matching Node.js interpreter by default | `smoke.nix`: commands |
 | Selected lines coexist and the newest supplies unqualified commands | `tests.nix`: coexistence, `smoke.nix`: coexistence |
 | Declares JavaScript/TypeScript/TSX parsers and the TypeScript language server package, command, arguments, and languages without enabling an editor | `check.nix`, `tests.nix`: providerSelection |
 | A user tool declaration overrides the complete server declaration and installed package | `tests.nix`: userOverride, forceOverride; `smoke.nix`: providerOverride |

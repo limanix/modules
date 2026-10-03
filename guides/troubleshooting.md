@@ -174,9 +174,9 @@ task --yes ci/test MODULES=go RUNTIME_PROFILE=pr RUNTIME_VERSIONS="1.26"
 Additional lines must be declared, space-separated numeric versions for exactly
 one selected module. Use `RUNTIME_PROFILE=all` for all historical runtime
 checks, including the named `coexistence` check. The PR planner adds changed
-declared numeric version lines to current runtime. Other non-document pod
-changes, including metadata and release maps, use full runtime for that pod and
-its transitive consumers. `ci/common` uses `MODE=pr` by default to check
+declared numeric version lines to current runtime. Other non-document module
+changes, including metadata and release maps, use full runtime for that module
+and its transitive consumers. `ci/common` uses `MODE=pr` by default to check
 metadata and shared interfaces through small fixtures. Use release mode to
 investigate full-catalog and intermodule failures:
 

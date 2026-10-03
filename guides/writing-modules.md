@@ -37,6 +37,13 @@ Save this as `modules/dev-tools/default.nix`:
 The module adds `jq` and `ripgrep` to the VM. Download:
 {download}`default.nix <examples/dev-tools/default.nix>`.
 
+On your Mac, follow the client's
+[Import a module](https://limanix.dev/categories/client/modules.html#import-a-module)
+guide to register `modules/dev-tools/` as `dev-tools`, then select
+`third-party:dev-tools` in `limanix.toml` and create or update the VM. After
+editing the source, replace the imported copy and update the VM as described in
+[Replace an imported module](https://limanix.dev/categories/client/modules.html#replace-an-imported-module).
+
 ### Read the module
 
 The file describes the desired configuration, not a sequence of installation
@@ -613,9 +620,8 @@ task --yes ci/test
 Check Markdown with `task --yes ci/markdown-fmt`, or apply the same style with
 `task --yes markdown/fix`. These commands cover `README.md`, `catalog`,
 `guides`, and `checks/fixtures`; generated documentation and caches are outside
-this scope. Mdformat wraps prose at 80 characters and aligns table cells to
-their column widths. The PR gate includes this check, including README-only
-changes.
+this scope. Mdformat wraps prose at 80 characters and keeps table spacing
+compact. The PR gate includes this check, including README-only changes.
 
 Repository checks must meet the
 [catalog contract](catalog-contract.md#required-checks-for-every-module):
@@ -660,16 +666,17 @@ task --yes ci/test MODULES=go RUNTIME_PROFILE=pr RUNTIME_VERSIONS="1.26"
 Unknown or duplicate requested lines fail explicitly. The PR planner adds
 changed declared `versions/<numeric>.nix` lines automatically. Private or nested
 files under `versions/` are source helpers and require full runtime. Every other
-non-document pod change, including metadata, release maps, helpers and smoke
-tests, requires full runtime for the pod and its transitive consumers. Shared
-contract, interface, Nixpkgs pin or shared runtime changes require full runtime
-throughout the catalog. Workflow-only changes select every pod's current
-runtime. Palette-only changes use current runtime only when every `_shared`
-reference is a direct palette read by the known unversioned LazyGit, tmux, Yazi
-and Zsh pods. Unknown or computed references and shared Nix data readers require
-full runtime. The named historical `coexistence` runtime check runs in `all`;
-complete coexistence evaluation still runs in `pr`. Local module evaluation is
-serial by default; read
+non-document module change, including metadata, release maps, helpers and smoke
+tests, requires full runtime for the module and its transitive consumers.
+Changes to `interface.nix`, `flake.nix`, `flake.lock`, or non-document files
+under `checks/` or `catalog/_shared/` require full runtime throughout the
+catalog, apart from the palette-only case below. Workflow-only changes select
+every module's current runtime. Palette-only changes use current runtime only
+when every `_shared` reference is a direct palette read by the known unversioned
+LazyGit, tmux, Yazi and Zsh modules. Unknown or computed references and shared
+Nix data readers require full runtime. The named historical `coexistence`
+runtime check runs in `all`; complete coexistence evaluation still runs in `pr`.
+Local module evaluation is serial by default; read
 [Validation memory](troubleshooting.md#validation-memory) before running full
 suites or increasing concurrency. `ci/common` uses `MODE=pr` by default and
 checks the shared contract through small fixtures. Release validation runs every
@@ -785,12 +792,12 @@ side-by-side versions add package priorities and versioned commands. Set
 | `false` | The line is supported under the upstream policy | No |
 | `null` | The line's support status has not been confirmed | No |
 
-Export the value from `packages.nix` with `inherit (release) endOfLife;`. In
-`module.nix`, use `lib.optional (tools.endOfLife == true)` for the warning so an
-unknown status is accepted. Mark EOL lines and unknown statuses in the README,
-and cite the upstream policy used to determine support. Review the value when
-maintaining the catalog; the build does not update it automatically. Keep the
-[release map](../catalog/go/releases.nix),
+Export the value from `packages.nix` with `inherit (release) endOfLife;`. In the
+module's implementation, use `lib.optional (tools.endOfLife == true)` for the
+warning so an unknown status is accepted. Mark EOL lines and unknown statuses in
+the README, and cite the upstream policy used to determine support. Review the
+value when maintaining the catalog; the build does not update it automatically.
+Keep the [release map](../catalog/go/releases.nix),
 [package loader](../catalog/go/packages.nix), metadata, and README consistent
 when updating a tool. Test each version line's documented commands in addition
 to the catalog checks.

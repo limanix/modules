@@ -67,8 +67,11 @@ cargo-1.95 build
 cargo-1.95 clippy
 ```
 
-`cargo-1.95` puts the whole Rust 1.95 toolchain first on `PATH`. Its subcommands
-and build scripts use that version, including `cargo fmt` and `cargo clippy`.
+`cargo-1.95` puts the whole Rust 1.95 toolchain first on `PATH`.
+`cargo-1.95 fmt` and `cargo-1.95 clippy` use the matching tools by default.
+Cargo's
+[environment overrides](https://doc.rust-lang.org/cargo/reference/environment-variables.html),
+such as `RUSTC`, `RUSTDOC`, and `RUSTFMT`, can select different executables.
 Commands without a version come from the newest selected line.
 
 ## Editor support
@@ -92,7 +95,7 @@ and the
 | Case | Behavior or next step |
 | -- | -- |
 | Native dependency fails | GCC and pkg-config are present; provide the required library and its search path |
-| Project toolchain differs | Inspect project environments and PATH before relying on an unqualified command |
+| Project toolchain differs | Inspect Cargo's compiler and formatter overrides and PATH; versioned Cargo preserves those overrides |
 | Several lines selected | Use versioned Cargo to keep its compiler, formatter and Clippy together |
 
 ## Guarantees
@@ -101,7 +104,7 @@ and the
 | -- | -- |
 | An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the selected Rust toolchain, GCC, pkg-config and GDB; supplies the documented versioned commands | `check.nix`, `smoke.nix`: commands |
-| Versioned Cargo runs build, test, fmt and clippy with its matching toolchain | `smoke.nix`: commands |
+| Versioned Cargo runs build, test, fmt and clippy with its matching toolchain by default | `smoke.nix`: commands |
 | Declares the Rust parser and consumer-independent `rust-analyzer` tool with its package and command | `check.nix`, `tests.nix` |
 | The newest selected line supplies ordinary commands; a user tool declaration overrides the complete analyzer declaration and installed package | `tests.nix`, `smoke.nix`: coexistence, providerOverride |
 | Installing Rust does not activate an editor | `tests.nix` |

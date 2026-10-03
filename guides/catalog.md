@@ -35,7 +35,7 @@ name, without writing Nix.
 The Docker module gives the VM user root-equivalent access through the `docker`
 group.
 
-Each module page lists its selectors, exact versions, and commands. This page
+Each module page lists its selectors, version policy, and commands. This page
 describes the catalog in this revision of the repository, and your client may
 bundle an older one. To see the selectors that your client provides,
 [list the available modules](https://limanix.dev/categories/client/modules.html#list-available-modules).
@@ -61,8 +61,8 @@ complete configuration and the project-window workflow.
 
 ## Versions
 
-Most of the modules offer several version lines. Select a line by adding its
-version to the selector:
+Some modules offer several version lines. Select a line by adding its version to
+the selector:
 
 | Selector | Installs |
 | -- | -- |

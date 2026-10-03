@@ -383,16 +383,19 @@ runtime profile rather than merely evaluate their derivation paths. Complete
 every-version, repeated-entry-point, import-order and compatibility evaluation
 remains required in every profile. The `all` runtime profile is the local and
 release default and includes every line and shared coexistence. The `pr` runtime
-profile retains current/default startup and override corners, omits only the
-named historical `coexistence` runtime check, and adds explicitly requested
-lines. The PR planner requests changed declared `versions/<numeric>.nix` lines;
-other non-document pod changes select `all` for the pod and its transitive
-consumers. Shared contract, interface, Nixpkgs pin or shared runtime changes
-select `all` throughout the catalog. A data-only derivation is checked by
-inspecting its built output; it does not need an unrelated program launch. A
-runtime check must exercise the actual generated configuration, not a separate
-copy of the setup. For example, an editor parser guarantee needs a real buffer
-with active highlighting, not only a package-membership assertion.
+profile retains current/default startup and override corners and adds explicitly
+requested lines. It omits unrequested version-line runtime checks and the named
+historical `coexistence` runtime check. The PR planner requests changed declared
+`versions/<numeric>.nix` lines; other non-document module changes select `all`
+for the module and its transitive consumers. Changes to `interface.nix`,
+`flake.nix`, `flake.lock`, or non-document files under `checks/` or
+`catalog/_shared/` select `all` throughout the catalog, with the
+[palette-only exception](writing-modules.md#check-the-result). A data-only
+derivation is checked by inspecting its built output; it does not need an
+unrelated program launch. A runtime check must exercise the actual generated
+configuration, not a separate copy of the setup. For example, an editor parser
+guarantee needs a real buffer with active highlighting, not only a
+package-membership assertion.
 
 ```mermaid
 flowchart TB

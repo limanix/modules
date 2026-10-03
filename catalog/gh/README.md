@@ -26,9 +26,12 @@ gh auth login
 gh auth status
 ```
 
-Then, inside a repository, `gh pr list` lists its pull requests and
-`gh issue list` lists its issues. For commands that use local Git, select
-[Git](../git/README.md) as well.
+Select [Git](../git/README.md) as well to use a local repository. Inside that
+repository, `gh pr list` lists its pull requests and `gh issue list` lists its
+issues. GitHub CLI identifies the repository through its Git remotes. To list
+another repository without a local checkout, pass `--repo OWNER/REPO` to either
+command. See the
+[GitHub CLI reference](https://cli.github.com/manual/gh_pr_list).
 
 ## Configuration and integration
 
