@@ -1,19 +1,22 @@
 # Lazygit
 
-Installs Lazygit, a terminal interface for Git, and enables the [Git module](../git/README.md).
+Installs Lazygit, a terminal interface for Git, and enables the
+[Git module](../git/README.md).
 
 ```toml
 [nixos]
 modules = ["lmx:lazygit"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and
+[apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Versions
 
-Lazygit comes from the catalog's [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
-This module has no version lines.
-Inside the VM, `lazygit --version` shows the installed version.
+Lazygit comes from the catalog's
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
+This module has no version lines. Inside the VM, `lazygit --version` shows the
+installed version.
 
 ## Use
 
@@ -23,15 +26,17 @@ Inside the VM, open a Git repository and run:
 lazygit
 ```
 
-The interface lets you inspect changes, stage files, and work with commits and branches.
-Configure your commit identity as described in the [Git module](../git/README.md#use).
+The interface lets you inspect changes, stage files, and work with commits and
+branches. Configure your commit identity as described in the
+[Git module](../git/README.md#use).
 
 ## Customize
 
-The managed configuration uses Catppuccin Mocha in `/etc/xdg/lazygit/config.yml`.
-A personal `~/.config/lazygit/config.yml` takes precedence through Lazygit's native XDG lookup.
-Project `.lazygit.yml` and `.git/lazygit.yml` settings retain their native precedence.
-To change managed settings, assign `programs.lazygit.settings` in a custom NixOS module:
+The managed configuration uses Catppuccin Mocha in
+`/etc/xdg/lazygit/config.yml`. A personal `~/.config/lazygit/config.yml` takes
+precedence through Lazygit's native XDG lookup. Project `.lazygit.yml` and
+`.git/lazygit.yml` settings retain their native precedence. To change managed
+settings, assign `programs.lazygit.settings` in a custom NixOS module:
 
 ```nix
 { ... }:
@@ -45,7 +50,7 @@ The package is configurable with `programs.lazygit.package`.
 ## Configuration and integration
 
 | Boundary | Contract |
-|---|---|
+| -- | -- |
 | Settings | `programs.lazygit.package` and `programs.lazygit.settings` |
 | Managed configuration | `/etc/xdg/lazygit/config.yml` |
 | Personal configuration | `~/.config/lazygit/config.yml`; project `.lazygit.yml` and `.git/lazygit.yml` |
@@ -55,7 +60,7 @@ The package is configurable with `programs.lazygit.package`.
 ## Corner cases
 
 | Case | Behavior or next step |
-|---|---|
+| -- | -- |
 | Directory is not a Git repository | Open the project repository before starting Lazygit |
 | Personal theme wins | Native personal and project configuration precedence remains active |
 | Authentication or identity | Configure Git credentials and commit identity for the guest account |
@@ -63,7 +68,7 @@ The package is configurable with `programs.lazygit.package`.
 ## Guarantees
 
 | Guarantee | Covered by |
-|---|---|
+| -- | -- |
 | Installs Lazygit and enables Git | `check.nix` |
 | Selecting Git again preserves the system and public settings | `tests.nix`: composition |
 | Mocha is the managed default; ordinary settings and personal XDG configuration override it | `tests.nix`: theme; `smoke.nix`: theme |
