@@ -7,24 +7,28 @@ Installs the Terraform CLI for infrastructure as code.
 modules = ["lmx:terraform"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and
+[apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Versions
 
-`lmx:terraform` recommends the catalog default.
-An explicit `lmx:terraform-LINE` selection replaces that recommendation.
-Multiple explicit supported lines retain the side-by-side behavior described below.
+`lmx:terraform` recommends the catalog default. An explicit `lmx:terraform-LINE`
+selection replaces that recommendation. Multiple explicit supported lines retain
+the side-by-side behavior described below.
 
-| Selector                              | Terraform | Notes   |
-|---------------------------------------|-----------|---------|
-| `lmx:terraform`, `lmx:terraform-1.16` | 1.16.4    | Default |
-| `lmx:terraform-1.15`                  | 1.15.9    |         |
-| `lmx:terraform-1.14`                  | 1.14.9    |         |
+| Selector | Terraform | Notes |
+| -- | -- | -- |
+| `lmx:terraform`, `lmx:terraform-1.16` | 1.16.4 | Default |
+| `lmx:terraform-1.15` | 1.15.9 |  |
+| `lmx:terraform-1.14` | 1.14.9 |  |
 
-Upstream maintenance status for these Terraform CLI lines has not been confirmed.
-The catalog records their [EOL status](../../guides/catalog.md#versions) as unknown and does not emit an EOL warning for them.
+Upstream maintenance status for these Terraform CLI lines has not been
+confirmed. The catalog records their
+[EOL status](../../guides/catalog.md#versions) as unknown and does not emit an
+EOL warning for them.
 
-Terraform uses the [Business Source License 1.1](https://github.com/hashicorp/terraform/blob/v1.16.4/LICENSE).
+Terraform uses the
+[Business Source License 1.1](https://github.com/hashicorp/terraform/blob/v1.16.4/LICENSE).
 The module permits this package in its pinned Nixpkgs import.
 
 ## Use
@@ -56,7 +60,7 @@ terraform-1.16 version
 ## Configuration and integration
 
 | Boundary | Contract |
-|---|---|
+| -- | -- |
 | Settings | Project HCL, backend configuration and native Terraform environment variables |
 | Personal state | Project `.terraform/`, provider lock file and the chosen local or remote state backend |
 | Integration | Cloud credentials and provider plugins are configured by the project |
@@ -65,7 +69,7 @@ terraform-1.16 version
 ## Corner cases
 
 | Case | Behavior or next step |
-|---|---|
+| -- | -- |
 | Provider is missing | Run `terraform init` for the project; the module installs the CLI, not every provider |
 | Wrong account or backend | Inspect the selected credentials, workspace and backend before plan or apply |
 | Several versions | Use versioned commands with a state and provider configuration compatible with that line |
@@ -73,7 +77,7 @@ terraform-1.16 version
 ## Guarantees
 
 | Guarantee | Covered by |
-|---|---|
+| -- | -- |
 | An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the pinned Terraform line and its `terraform-LINE` command | `check.nix`, `smoke.nix`: commands |
 | Selected lines coexist and the newest supplies `terraform` | `tests.nix`: coexistence, `smoke.nix`: coexistence |

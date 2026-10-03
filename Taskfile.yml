@@ -3,13 +3,34 @@ version: '3.53.1'
 
 includes:
   nix:
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/nix/Taskfile.yml
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.5/taskfiles/nix/Taskfile.yml
     internal: true
   python:
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/python/Taskfile.yml
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.5/taskfiles/python/Taskfile.yml
+    internal: true
+  markdown:
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.5/taskfiles/markdown/Taskfile.yml
     internal: true
 
+vars:
+  markdown_paths: README.md catalog guides checks/fixtures
+
 tasks:
+  ci/markdown-fmt:
+    desc: Check source Markdown formatting without modifying files
+    cmds:
+      - task: markdown:fmt
+        vars:
+          FMT_PATHS: '{{.markdown_paths}}'
+          TASK_CONTEXT:
+            ref: 'merge (dict) (dict "CONTAINER_MOUNT_MODE" "ro") (.TASK_CONTEXT | default .)'
+
+  markdown/fix:
+    desc: Format source Markdown with the same settings used in CI
+    cmds:
+      - task: markdown:fmt/fix
+        vars:
+          FMT_PATHS: '{{.markdown_paths}}'
   ci/scripts:
     desc: Test change planning, diagnostics and runner limits
     cmds:

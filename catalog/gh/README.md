@@ -7,13 +7,15 @@ Installs `gh`, the GitHub command-line client.
 modules = ["lmx:gh"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and
+[apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Versions
 
-GitHub CLI comes from the catalog's [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
-This module has no version lines.
-Inside the VM, `gh --version` shows the installed version.
+GitHub CLI comes from the catalog's
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
+This module has no version lines. Inside the VM, `gh --version` shows the
+installed version.
 
 ## Use
 
@@ -24,13 +26,14 @@ gh auth login
 gh auth status
 ```
 
-Then, inside a repository, `gh pr list` lists its pull requests and `gh issue list` lists its issues.
-For commands that use local Git, select [Git](../git/README.md) as well.
+Then, inside a repository, `gh pr list` lists its pull requests and
+`gh issue list` lists its issues. For commands that use local Git, select
+[Git](../git/README.md) as well.
 
 ## Configuration and integration
 
 | Boundary | Contract |
-|---|---|
+| -- | -- |
 | Settings | Native GitHub CLI configuration; run `gh config` for preferences |
 | Personal state | Normally `~/.config/gh/`, respecting GitHub CLI environment overrides |
 | Integration | Select Git for commands that use a local repository |
@@ -39,7 +42,7 @@ For commands that use local Git, select [Git](../git/README.md) as well.
 ## Corner cases
 
 | Case | Behavior or next step |
-|---|---|
+| -- | -- |
 | Authentication | Run `gh auth status` in the guest; the module does not copy host credentials |
 | Account selection | Check the active account and hostname before commands that modify GitHub |
 | Missing Git | The standalone module installs `gh`; Console also supplies Git |
@@ -47,5 +50,5 @@ For commands that use local Git, select [Git](../git/README.md) as well.
 ## Guarantees
 
 | Guarantee | Covered by |
-|---|---|
+| -- | -- |
 | Installs the base Nixpkgs GitHub CLI package providing `gh` | `check.nix` |

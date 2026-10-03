@@ -7,36 +7,42 @@ Installs Helm, a package manager for Kubernetes.
 modules = ["lmx:helm"]
 ```
 
-Add the selector to your VM's `nixos.modules` list and [apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
+Add the selector to your VM's `nixos.modules` list and
+[apply the change](https://limanix.dev/categories/client/virtual-machines.html#apply-a-configuration-change).
 
 ## Versions
 
-`lmx:helm` recommends the catalog default.
-An explicit `lmx:helm-LINE` selection replaces that recommendation.
-Multiple explicit supported lines retain the side-by-side behavior described below.
+`lmx:helm` recommends the catalog default. An explicit `lmx:helm-LINE` selection
+replaces that recommendation. Multiple explicit supported lines retain the
+side-by-side behavior described below.
 
-| Selector                   | Helm   | Notes   |
-|----------------------------|--------|---------|
-| `lmx:helm`, `lmx:helm-4.3` | 4.3.0  | Default |
-| `lmx:helm-4.2`             | 4.2.4  | End of life |
-| `lmx:helm-3.20`            | 3.20.2 | End of life |
+| Selector | Helm | Notes |
+| -- | -- | -- |
+| `lmx:helm`, `lmx:helm-4.3` | 4.3.0 | Default |
+| `lmx:helm-4.2` | 4.2.4 | End of life |
+| `lmx:helm-3.20` | 3.20.2 | End of life |
 
-The catalog derives these EOL marks from Helm's [version support policy](https://helm.sh/docs/topics/version_skew/#supported-versions), also documented for [Helm 3](https://helm.sh/docs/v3/topics/version_skew/#supported-versions).
-As of September 30, 2026, the maintained minor lines are 3.22 and 4.3.
-Selecting an end-of-life line prints a warning when the VM is built.
+The catalog derives these EOL marks from Helm's
+[version support policy](https://helm.sh/docs/topics/version_skew/#supported-versions),
+also documented for
+[Helm 3](https://helm.sh/docs/v3/topics/version_skew/#supported-versions). As of
+September 30, 2026, the maintained minor lines are 3.22 and 4.3. Selecting an
+end-of-life line prints a warning when the VM is built.
 
 Inside the VM, `helm version --short` shows the installed version.
 
 ## Use
 
-To manage releases in a cluster, Helm needs a kubeconfig and access to that Kubernetes cluster from inside the VM.
-List releases across namespaces, passing the kubeconfig's path inside the VM:
+To manage releases in a cluster, Helm needs a kubeconfig and access to that
+Kubernetes cluster from inside the VM. List releases across namespaces, passing
+the kubeconfig's path inside the VM:
 
 ```console
 helm list --all-namespaces --kubeconfig /path/to/kubeconfig
 ```
 
-See the [Helm command reference](https://helm.sh/docs/helm/) for chart and release commands.
+See the [Helm command reference](https://helm.sh/docs/helm/) for chart and
+release commands.
 
 ## Several versions
 
@@ -60,7 +66,7 @@ helm-4.3 version --short
 ## Configuration and integration
 
 | Boundary | Contract |
-|---|---|
+| -- | -- |
 | Settings | Native Helm CLI and environment settings |
 | Personal state | Helm configuration, cache and data directories; guest kubeconfig |
 | Integration | Uses an existing Kubernetes cluster; no cluster or driver is installed |
@@ -69,7 +75,7 @@ helm-4.3 version --short
 ## Corner cases
 
 | Case | Behavior or next step |
-|---|---|
+| -- | -- |
 | Cluster access fails | Check the guest kubeconfig, current context and cluster reachability |
 | Different major lines | Use the versioned command required by the chart workflow |
 | Offline chart operation | Repository refresh and remote chart downloads need network access or cached files |
@@ -77,7 +83,7 @@ helm-4.3 version --short
 ## Guarantees
 
 | Guarantee | Covered by |
-|---|---|
+| -- | -- |
 | An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
 | Installs the pinned Helm line and its `helm-LINE` command | `check.nix`, `smoke.nix`: commands |
 | Selected lines coexist and the newest supplies `helm` | `tests.nix`: coexistence, `smoke.nix`: coexistence |
