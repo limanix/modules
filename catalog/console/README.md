@@ -84,7 +84,7 @@ Atuin starts with synchronization disabled. Direnv requires `direnv allow`
 before loading a project's `.envrc`. Git identity and GitHub authentication
 remain user configuration.
 
-Tmux saves snapshots every 15 minutes while its server is running. Before
+Tmux saves snapshots every 15 minutes while its status line is active. Before
 `limanix update`, use `Ctrl-b Ctrl-s` to save the current layout. After the VM
 restarts, launch `tmux` to restore the saved session. Restoration starts
 supported programs again; it does not resume interrupted builds or recover

@@ -7,7 +7,7 @@ activates applications by being present in the catalog.
 | File or directory | Role | Loaded by |
 | -- | -- | -- |
 | `languageSupport.nix` | Public provider/consumer schema | Client in every generated guest |
-| `internal/` | Private coordination declarations | Catalog modules that need them |
+| `internal/` (optional) | Private coordination declarations | Catalog modules that need them |
 | `palette.toml` | Catppuccin Mocha color values | Terminal modules that use the palette |
 
 ## Public language support capabilities

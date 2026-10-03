@@ -27,15 +27,19 @@ git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-Git saves these settings in `~/.gitconfig` in the VM user's home directory. To
-use another identity in one repository, run the same commands with `--local`
+Git normally writes these settings to `~/.gitconfig` in the VM user's home
+directory. If that file is absent and an XDG Git configuration already exists,
+Git writes there instead: `$XDG_CONFIG_HOME/git/config`, or
+`~/.config/git/config` when `XDG_CONFIG_HOME` is unset. See the
+[Git configuration reference](https://git-scm.com/docs/git-config#Documentation/git-config.txt---global).
+To use another identity in one repository, run the same commands with `--local`
 instead of `--global` inside that repository.
 
 ## Configuration and integration
 
 | Boundary | Contract |
 | -- | -- |
-| Settings | `programs.git.*`; personal identity and preferences in `~/.gitconfig` |
+| Settings | `programs.git.*`; personal identity and preferences in global Git configuration |
 | Integration | Imported by CLI tools and Lazygit; repeated entry-point imports configure Git once |
 | Services and capabilities | No daemon or language-support declarations |
 
