@@ -103,7 +103,8 @@ bash scripts/run_checks.sh module check dev-tools
 bash scripts/run_checks.sh common check
 ```
 
-A module's activation check needs native Linux and an accessible `/dev/kvm`:
+A manual activation check needs native Linux and `/dev/kvm` access for the Nix
+build user:
 
 ```console
 task --yes ci/test/modules MODE=vm MODULES=dev-tools CONTAINER_RUN_ARGS=--device=/dev/kvm
@@ -172,8 +173,13 @@ the reason for unavailable KVM.
 ## Other automation
 
 `build_docs.py` prepares source Markdown for the documentation site. The release
-flow runs the same `check` cycle for every module and the common suite, then the
-modules' VM tests.
+flow runs lint, documentation preparation and the same `check` cycle for every
+module and the common suite on x86 and ARM. Publication requires these jobs to
+succeed.
+
+PR and release workflows do not run VM tests. Activation checks remain available
+for manual execution on native Linux with KVM; their results are separate from
+the automated release gate.
 
 `nixpkgs/update` is an explicit local command and changes only the base revision
 in `flake.lock`. Additional revisions belong to the modules that declare them in

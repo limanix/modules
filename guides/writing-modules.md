@@ -747,9 +747,10 @@ task --yes nixpkgs/update
 
 To change the release, update `inputs.nixpkgs.url` first. Review the lock
 change, update [Concepts](concepts.md#nixos-version-and-package-pins), and
-validate module/shared eval and run stages. Perform the required activation
-tests before release. Module-local additional pins remain separate from this
-base update.
+validate module/shared eval and run stages. Run declared activation tests
+manually on native Linux with KVM when available; record unavailable checks as
+not run. PR and release workflows do not run them. Module-local additional pins
+remain separate from this base update.
 
 ### Prepare the documentation
 
