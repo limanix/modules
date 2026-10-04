@@ -280,8 +280,8 @@ extend this permission set. Reading a dependency's public `builds` does not
 schedule its `eval` or `run`. Permission does not include transitive derivation
 inputs. Any other uncached build fails before execution and is reported. A cache
 hit does not prove a fresh run; report reuse separately. No native fixture uses
-personal host state or provisions external services. VM builds use their own
-timeout, without the native runtime dry-run.
+personal host state or provisions external services. VM builds skip the native
+runtime dry-run.
 
 ## Cost and reports
 
@@ -295,10 +295,10 @@ Reuse one default fixture, one per needed line and one for each different
 scenario. Fixture counts guide cost; they are not hard limits on correctness.
 Each README promise and relevant regression determines the required coverage.
 
-Targets are not measured guarantees. Reports identify architecture, actual
+The PR flow targets ten minutes on its critical path. Targets are measured, not
+enforced: checks run without time limits. Reports identify architecture, actual
 duration, cache state, builds and VM status. Unknown cache state stays unknown.
-A timeout or cancellation is failed or incomplete evidence. A job cap does not
-prove the critical path of the complete workflow meets its target.
+A cancelled or interrupted run is incomplete evidence.
 
 Changed modules include consumers of their public imports. Changes to `_shared`,
 `interface.nix` or `flake.lock` affect every module. Platform `eval` and `run`

@@ -617,8 +617,8 @@ task --yes ci/test/modules MODULES=dev-tools
 
 `ci/test/modules` runs `eval`, then `run`. Omitting `MODULES` selects all
 catalog modules. Names select whole modules, not private recipes or test
-policies. Each selected module has a separate deadline covering both stages. CI
-uses one module per job on each native architecture. The module's public export
+policies. Each selected module runs both stages in its own evaluator. CI uses
+one module per job on each native architecture. The module's public export
 defines its checks; there is no runtime profile that drops old lines.
 
 | Command                                       | Coverage                                                           |
@@ -648,14 +648,15 @@ task --yes ci/test/modules MODE=vm MODULES=dev-tools CONTAINER_RUN_ARGS=--device
 ```
 
 This example applies only if the module exports `vm.activation`. Native checks
-in a container do not establish activation. Missing required features, timeouts
-and skipped checks must be reported separately; they do not become passes.
+in a container do not establish activation. Missing required features,
+interrupted runs and skipped checks must be reported separately; they do not
+become passes.
 
 The targets are two minutes for evaluation, five minutes for warm native
 execution and fifteen minutes for release VM checks per module. Record actual
 duration and architecture. Separate downloads, newly executed checks and reused
 cache outputs when that evidence is available; keep unknown cache state unknown.
-Timeout caps do not prove these targets or the workflow's full critical path.
+Targets are measured, not enforced: the runner sets no time limits.
 
 Follow [Catalog checks](troubleshooting.md#catalog-checks) when a stage fails.
 Manual use in a VM complements the automated checks.

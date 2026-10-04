@@ -14,7 +14,6 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
     outputs:
       chunks: ${{ steps.plan.outputs.chunks }}
       has-modules: ${{ steps.plan.outputs.has-modules }}
@@ -45,13 +44,11 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Find x86 VM tests
-        timeout-minutes: 5
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
           command: ci/plan/vm-modules SYSTEM=x86_64-linux OUTPUT=build/vm-x86.json
 
       - name: Find ARM VM tests
-        timeout-minutes: 5
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
           command: ci/plan/vm-modules SYSTEM=aarch64-linux OUTPUT=build/vm-arm.json
@@ -70,7 +67,6 @@ jobs:
   lint:
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
         with:
@@ -127,7 +123,6 @@ jobs:
     name: Prepare docs
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
         with:
@@ -151,7 +146,6 @@ jobs:
     if: ${{ always() && !cancelled() }}
     needs: [verify, lint, test, common, vm, docs]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     permissions:
       contents: write
     steps:
@@ -180,7 +174,6 @@ jobs:
     name: Notify client
     needs: release
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Create token

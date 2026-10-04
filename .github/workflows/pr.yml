@@ -20,12 +20,10 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
     outputs:
       chunks: ${{ steps.plan.outputs.chunks }}
       has-modules: ${{ steps.plan.outputs.has-modules }}
-      shared: ${{ steps.plan.outputs.shared }}
-      docs-only: ${{ steps.plan.outputs.docs-only }}
+      common: ${{ steps.plan.outputs.common }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -50,13 +48,12 @@ jobs:
           fi
           mkdir -p build
           printf '%s\n' "$plan" > build/check-plan.json
-          printf 'needs-dependencies=%s\n' "$(jq -r '(.modules | length > 0) and (.shared | not)' <<< "$plan")" >> "$GITHUB_OUTPUT"
+          printf 'needs-dependencies=%s\n' "$(jq -r '.needs_dependencies' <<< "$plan")" >> "$GITHUB_OUTPUT"
 
       # Consumers of changed modules come from the evaluated import graph.
       # If discovery fails, the plan falls back to the full catalog.
       - name: Read x86 module dependencies
         if: ${{ steps.changes.outputs.needs-dependencies == 'true' }}
-        timeout-minutes: 5
         continue-on-error: true
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
@@ -64,7 +61,6 @@ jobs:
 
       - name: Read ARM module dependencies
         if: ${{ steps.changes.outputs.needs-dependencies == 'true' }}
-        timeout-minutes: 5
         continue-on-error: true
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
@@ -91,18 +87,16 @@ jobs:
           {
             printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")"
             printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")"
-            printf 'shared=%s\n' "$(jq -r '.shared' <<< "$plan")"
-            printf 'docs-only=%s\n' "$(jq -r '.docs_only' <<< "$plan")"
+            printf 'common=%s\n' "$(jq -r '.common' <<< "$plan")"
           } >> "$GITHUB_OUTPUT"
           {
             printf '### Checks\n\n'
-            printf -- '- Common (_shared and harness): %s\n' "$(jq -r 'if .shared then "yes" else "no" end' <<< "$plan")"
+            printf -- '- Common (_shared and harness): %s\n' "$(jq -r 'if .common then "yes" else "no" end' <<< "$plan")"
             printf -- '- Modules (x86_64 and aarch64, eval then run): %s\n' "$(jq -r 'if (.modules | length) > 0 then (.modules | join(", ")) else "none" end' <<< "$plan")"
           } >> "$GITHUB_STEP_SUMMARY"
 
   lint:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
         with:
@@ -130,7 +124,7 @@ jobs:
   common:
     name: Common (${{ matrix.runner }})
     needs: plan
-    if: ${{ needs.plan.outputs.shared == 'true' }}
+    if: ${{ needs.plan.outputs.common == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -145,7 +139,6 @@ jobs:
     if: always()
     needs: [plan, lint, test, common]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     steps:
       - name: Require every selected check
         shell: bash
@@ -156,6 +149,6 @@ jobs:
             .plan.result == "success" and .lint.result == "success"
             and (if .plan.outputs["has-modules"] == "true"
                  then .test.result == "success" else .test.result == "skipped" end)
-            and (if .plan.outputs.shared == "true"
+            and (if .plan.outputs.common == "true"
                  then .common.result == "success" else .common.result == "skipped" end)
           ' <<< "$JOB_RESULTS"

@@ -165,10 +165,9 @@ task --yes ci/test/modules MODE=run MODULES=dev-tools
 Replace `dev-tools` with an existing module. `MODULES` contains space-separated
 directory names; omitting it selects the catalog. The public module export
 contains its line and feature checks. There is no legacy `RUNTIME_PROFILE`
-selection or public `check.nix`/`smoke.nix` invocation. Each selected module has
-its own deadline for `eval` and `run` together. An explicit stage uses that
-module's deadline on its own. Repeat one failing module when diagnosing a
-timeout; increasing the batch does not give that module more time.
+selection or public `check.nix`/`smoke.nix` invocation. The runner sets no time
+limits. When a check hangs, repeat that one module and stop it by hand; an
+interrupted run is incomplete evidence.
 
 For shared and platform checks:
 
@@ -178,7 +177,7 @@ task --yes ci/test/common SUITE=shared MODE=eval
 task --yes ci/test/common SUITE=platform MODE=run
 ```
 
-`ci/test/common` shares one deadline across shared and platform `eval`/`run`.
+`ci/test/common` runs shared, then platform, each with `eval` and then `run`.
 The same CLI on native Linux is
 `bash scripts/run_checks.sh SUITE MODE [module names]`; use `module check` or
 `common check` for the combined checks. A release activation check uses
@@ -203,10 +202,11 @@ must be resolved before the runtime check can run. Adding an artifact to
 Permissions from dependencies come from default and individual-line public
 imports; an import made only inside a test fixture does not extend them.
 
-The PR flow restores fetcher state and a per-module, per-architecture binary
-cache. Only successful pushes to `main` save new archives. A PR cache miss can
-therefore remain until a main run publishes the result. The fetcher archive is
-best effort and does not guarantee that all source payloads are available.
+The PR flow restores one cache per target and architecture with fetcher state
+and local builds. Only successful runs on `main` save new archives, pruned to
+the paths that run needed. A PR cache miss can therefore remain until a main run
+publishes the result. The fetcher archive is best effort and does not guarantee
+that all source payloads are available.
 
 Check local logs and configured cache availability before repeating expensive
 work. Preserve the failed attempt. A changed cache condition or a fixed fixture
@@ -216,8 +216,8 @@ can justify a bounded retry; an unchanged long run provides little new evidence.
 
 Report actual duration, architecture, cache state and the last completed stage.
 Separate newly executed checks from reused results when known. If cache state or
-download time is not known, label it unknown. A timeout is failed or incomplete
-evidence; the cap itself does not prove a speed target.
+download time is not known, label it unknown. A cancelled or interrupted run is
+incomplete evidence.
 
 Evaluation memory depends on the module and selected fixtures. Reduce concurrent
 evaluators while diagnosing pressure; give the Linux runner the memory rather
@@ -226,8 +226,8 @@ kernel log. A skipped historical line or missing VM run is a coverage gap, not a
 successful optimization.
 
 Targets per module are two minutes for evaluation, five minutes for warm native
-execution and fifteen minutes for release VM tests. The complete workflow's
-critical path must be measured separately. See
+execution and fifteen minutes for release VM tests; the PR flow targets ten
+minutes. Targets are measured, not enforced. See
 [Repository automation](automation.md) for stage selection and reporting.
 
 ### Contract and fixture errors

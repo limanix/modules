@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Post-build hook: export the outputs Nix has just built locally.
+# A binary cache must hold every reference of its paths, so the copy includes
+# the runtime closure; paths already in the cache are skipped.
 # Optional exports never change a successful build's result.
 set -uf
 
@@ -16,23 +19,6 @@ for path in "${outputs[@]}"; do
   case "$path" in /*) ;; *) skip 'output path must be absolute' ;; esac
 done
 mkdir -p "$cache" || skip 'cache directory is not writable'
-mkdir "$cache/.export-lock" 2>/dev/null || skip 'another export is active'
-trap 'rmdir "$cache/.export-lock" 2>/dev/null || true' EXIT
-
-# Reserve the closure's uncompressed size within a fixed 256 MiB archive limit.
-maximum=268435456
-sizes=$(timeout --kill-after=5s 30 nix path-info --recursive --size "${outputs[@]}") ||
-  skip 'could not read closure sizes'
-closure=0
-while read -r path size extra; do
-  [[ "$size" =~ ^[0-9]+$ && ${#size} -lt 19 && -z "$extra" ]] || skip 'invalid closure size'
-  closure=$((closure + size))
-  ((closure <= maximum)) || skip 'closure exceeds 256 MiB'
-done <<< "$sizes"
-usage=$(du -sb "$cache") || skip 'could not read cache size'
-read -r stored _ <<< "$usage"
-[[ "$stored" =~ ^[0-9]+$ && ${#stored} -lt 19 ]] || skip 'invalid cache size'
-((stored + closure <= maximum)) || skip 'cache would exceed 256 MiB'
 
 # Encode URL delimiters; quoted shell arguments preserve literal cache paths.
 uri=${cache//%/%25}
@@ -41,6 +27,7 @@ uri=${uri//\#/%23}
 uri=${uri//\?/%3F}
 uri=${uri//\&/%26}
 uri=${uri//+/%2B}
+# Nix waits for the hook, so a stuck copy must not hold the build.
 timeout --kill-after=5s 120 nix copy \
   --to "file://$uri?compression=zstd&compression-level=1" "${outputs[@]}" ||
   skip 'nix copy failed or timed out'

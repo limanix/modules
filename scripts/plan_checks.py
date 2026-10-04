@@ -12,7 +12,19 @@ import sys
 from pathlib import Path
 
 MODULE_NAME = re.compile(r"[a-z][a-z0-9-]{0,62}")
-DOCUMENTATION_FILES = frozenset({"LICENSE", "scripts/build_docs.py"})
+# Inputs of every module evaluation: the full catalog and the common suite run.
+EVALUATION_FILES = frozenset(
+    {
+        "flake.nix",
+        "flake.lock",
+        "interface.nix",
+        "scripts/run_checks.sh",
+        ".github/workflows/nix-tests.yml",
+    }
+)
+EVALUATION_DIRECTORIES = ("catalog/_shared/", "checks/")
+# Task plumbing shared by every native job: the common suite runs.
+COMMON_FILES = frozenset({"Taskfile.yml", ".taskrc.yml"})
 
 
 def git(*arguments: str, root: Path | None = None) -> bytes:
@@ -21,7 +33,6 @@ def git(*arguments: str, root: Path | None = None) -> bytes:
         cwd=root,
         capture_output=True,
         check=False,
-        timeout=30,
     )
     if result.returncode:
         message = result.stderr.decode(errors="replace").strip()
@@ -51,16 +62,12 @@ def catalog_names(root: Path) -> set[str]:
 
 
 def documentation_path(path: str, status: str) -> bool:
-    """Skip known documentation, not Markdown used as a private runtime fixture."""
+    """Skip README edits inside checked directories; other Markdown is a fixture."""
     parts = path.split("/")
-    if path in DOCUMENTATION_FILES or parts[0] in {"docs", "guides"}:
-        return True
-    if len(parts) == 1 and Path(path).suffix.lower() in {".md", ".rst"}:
-        return True
     if len(parts) == 3 and parts[0] == "catalog" and parts[2] == "README.md":
         # Adding, removing or changing the file type can break module structure.
         return status == "M"
-    return path in {"checks/README.md", "scripts/README.md"}
+    return path == "checks/README.md"
 
 
 def validate_dependencies(value: object, names: set[str]) -> dict[str, set[str]]:
@@ -105,44 +112,44 @@ def changed_paths(root: Path, base: str, head: str) -> dict[str, str]:
 
 
 def plan(root: Path, paths: dict[str, str] | None, dependencies: object = None) -> dict:
+    """Select modules and the common suite; other repository files need only lint."""
     names = catalog_names(root)
     graph = None if dependencies is None else validate_dependencies(dependencies, names)
-    shared_paths = []
-    if paths is None:
+    changed: set[str] = set()
+    evaluation = paths is None
+    common = paths is None
+    for path, status in (paths or {}).items():
+        if documentation_path(path, status):
+            continue
+        parts = path.split("/")
+        if parts[0] == "catalog" and len(parts) >= 3 and parts[1] != "_shared":
+            changed.add(parts[1])
+        elif (
+            parts[0] == "catalog"
+            or path in EVALUATION_FILES
+            or path.startswith(EVALUATION_DIRECTORIES)
+        ):
+            evaluation = True
+        elif path in COMMON_FILES:
+            common = True
+    if evaluation:
         selected = names
-        shared = True
-        docs_only = False
+        common = True
+    elif changed and (graph is None or not changed <= names):
+        # Unknown graph or removed modules: keep consumers covered without reading code.
+        selected = names
     else:
-        source_paths = [
-            path
-            for path, status in paths.items()
-            if not documentation_path(path, status)
-        ]
-        changed = set()
-        for path in source_paths:
-            parts = path.split("/")
-            if len(parts) >= 3 and parts[0] == "catalog" and parts[1] != "_shared":
-                changed.add(parts[1])
-            else:
-                # Shared/platform/harness/unknown repository source affects all pods.
-                shared_paths.append(path)
-        shared_paths = sorted(set(shared_paths))
-        shared = bool(shared_paths)
-        if shared or (changed and (graph is None or not changed <= names)):
-            # Missing graph or removed pods: preserve consumers without inspecting code.
-            selected = names
-        elif changed:
-            selected = dependents(graph, changed)
-        else:
-            selected = set()
-        docs_only = bool(paths) and not source_paths
+        selected = dependents(graph, changed) if changed else set()
     modules = sorted(selected)
     return {
         "modules": modules,
         "chunks": [{"id": name, "modules": name} for name in modules],
-        "shared": shared,
-        "docs_only": docs_only,
-        "shared_paths": shared_paths,
+        "common": common,
+        # A graph narrows the selection only for changed, still existing modules.
+        "needs_dependencies": bool(changed)
+        and not evaluation
+        and graph is None
+        and changed <= names,
     }
 
 
@@ -151,7 +158,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Select every current module and shared checks",
+        help="Select every current module and the common suite",
     )
     parser.add_argument("--base", help="Base Git commit or revision")
     parser.add_argument("--head", help="Head Git commit or revision")
@@ -178,7 +185,7 @@ def main(argv: list[str] | None = None) -> int:
             if not isinstance(dependencies, dict):
                 raise ValueError("dependency file must contain a JSON object")
         result = plan(root, paths, dependencies)
-    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+    except (OSError, ValueError) as error:
         print(f"plan-checks: {error}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
