@@ -184,9 +184,8 @@ suite accepts only `check`. The same CLI on native Linux is
 `common check` for the combined checks. A manual activation check uses
 `module vm` and needs KVM. With Task on that native Linux host, pass
 `CONTAINER_RUN_ARGS=--device=/dev/kvm`; the device must exist and be accessible
-to the Nix build user.
-Native execution does not establish activation. Platform `eval`/`run` check the
-generic harness and base.
+to the Nix build user. Native execution does not establish activation. Platform
+`eval`/`run` check the generic harness and base.
 
 ### Build and cache failures
 
