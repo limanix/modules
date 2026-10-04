@@ -115,7 +115,8 @@ let
   );
   pluginBuilds = builtins.listToAttrs (
     map (plugin: {
-      name = "plugin-${builtins.unsafeDiscardStringContext (lib.removeSuffix ".drv" (builtins.baseNameOf plugin.drvPath))}-${metadata.default}";
+      # Package names can contain characters outside the public export grammar.
+      name = "plugin${builtins.hashString "sha256" (builtins.unsafeDiscardStringContext plugin.drvPath)}-${metadata.default}";
       value = plugin;
     }) pluginPackages
   );

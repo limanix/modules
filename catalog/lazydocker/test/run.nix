@@ -8,9 +8,11 @@
       ''
         export HOME="$TMPDIR/home"
         mkdir -p "$HOME"
-        lazydocker --version
-        lazydocker --help > help.txt
-        test -s help.txt
+        lazydocker --version > version.txt 2>&1
+        grep -Fx 'Version: ${pkgs.lazydocker.version}' version.txt
+        lazydocker --help > help.txt 2>&1
+        grep -F 'lazydocker - ' help.txt
+        grep -F -- '--help' help.txt
         touch "$out"
       '';
 }
