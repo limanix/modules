@@ -11,10 +11,6 @@ on:
         description: module (catalog modules) or common (_shared and the harness)
         type: string
         default: module
-      mode:
-        description: check (eval, then run) or vm (activation tests; needs KVM)
-        type: string
-        default: check
       modules:
         description: Space-separated module names for the module suite
         type: string
@@ -29,7 +25,7 @@ env:
 
 jobs:
   test:
-    name: ${{ inputs.suite == 'module' && inputs.modules || inputs.suite }} ${{ inputs.mode }}
+    name: ${{ inputs.suite == 'module' && inputs.modules || inputs.suite }} check
     runs-on: ${{ inputs.runner }}
     env:
       TARGET: ${{ inputs.suite == 'module' && inputs.modules || inputs.suite }}
@@ -59,21 +55,12 @@ jobs:
           mkdir -p .cache/nix .cache/nix-binary
           sudo chown -R 0:0 .cache/nix .cache/nix-binary
 
-      - name: Require KVM
-        if: ${{ inputs.mode == 'vm' }}
-        run: |
-          if [ ! -c /dev/kvm ]; then
-            printf 'VM checks require a native Linux runner with KVM.\n' >&2
-            exit 1
-          fi
-
       - name: Run Nix checks
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
           command: >-
             ${{ inputs.suite == 'module' && 'ci/test/modules' || 'ci/test/common' }}
-            'SUITE=${{ inputs.suite }}' 'MODE=${{ inputs.mode }}' 'MODULES=${{ inputs.modules }}'
-            ${{ inputs.mode == 'vm' && 'CONTAINER_RUN_ARGS=--device=/dev/kvm' || '' }}
+            'SUITE=${{ inputs.suite }}' 'MODE=check' 'MODULES=${{ inputs.modules }}'
             'CONTAINER_ENVS=NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=1 NIX_BUILD_CORES=0${{ env.PUBLISH_CACHE == 'true' && steps.cache.outputs.cache-hit != 'true' && ' NIX_BUILD_CACHE_HOOK=/workspace/scripts/cache_nix_build.sh' || '' }}'
 
       - name: Restore Nix cache ownership

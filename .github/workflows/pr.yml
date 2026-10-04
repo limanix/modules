@@ -118,7 +118,6 @@ jobs:
     with:
       runner: ${{ matrix.runner }}
       suite: module
-      mode: check
       modules: ${{ matrix.chunk.modules }}
 
   common:
@@ -133,7 +132,6 @@ jobs:
     with:
       runner: ${{ matrix.runner }}
       suite: common
-      mode: check
 
   gate:
     if: always()

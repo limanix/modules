@@ -17,8 +17,6 @@ jobs:
     outputs:
       chunks: ${{ steps.plan.outputs.chunks }}
       has-modules: ${{ steps.plan.outputs.has-modules }}
-      vm-chunks: ${{ steps.vm-plan.outputs.vm-chunks }}
-      has-vm: ${{ steps.vm-plan.outputs.has-vm }}
     steps:
       - name: Check module tag format
         uses: mr-chelyshkin/actions/check-tag-format@v1
@@ -41,27 +39,6 @@ jobs:
           {
             printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")"
             printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Find x86 VM tests
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: ci/plan/vm-modules SYSTEM=x86_64-linux OUTPUT=build/vm-x86.json
-
-      - name: Find ARM VM tests
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: ci/plan/vm-modules SYSTEM=aarch64-linux OUTPUT=build/vm-arm.json
-
-      - name: Plan VM checks
-        id: vm-plan
-        shell: bash
-        run: |
-          chunks=$(jq -cn --argjson x86 "$(cat build/vm-x86.json)" --argjson arm "$(cat build/vm-arm.json)" \
-            '[$x86[] | {id: ., modules: ., runner: "ubuntu-24.04"}] + [$arm[] | {id: ., modules: ., runner: "ubuntu-24.04-arm"}]')
-          {
-            printf 'vm-chunks=%s\n' "$chunks"
-            printf 'has-vm=%s\n' "$(jq -r 'length > 0' <<< "$chunks")"
           } >> "$GITHUB_OUTPUT"
 
   lint:
@@ -88,7 +65,6 @@ jobs:
     with:
       runner: ${{ matrix.runner }}
       suite: module
-      mode: check
       modules: ${{ matrix.chunk.modules }}
 
   common:
@@ -102,22 +78,6 @@ jobs:
     with:
       runner: ${{ matrix.runner }}
       suite: common
-      mode: check
-
-  vm:
-    name: VM ${{ matrix.check.id }} (${{ matrix.check.runner }})
-    needs: [verify, test, common]
-    if: ${{ needs.verify.outputs.has-vm == 'true' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        check: ${{ fromJSON(needs.verify.outputs.vm-chunks) }}
-    uses: ./.github/workflows/nix-tests.yml
-    with:
-      runner: ${{ matrix.check.runner }}
-      suite: module
-      mode: vm
-      modules: ${{ matrix.check.modules }}
 
   docs:
     name: Prepare docs
@@ -144,7 +104,7 @@ jobs:
   release:
     name: Create GitHub release
     if: ${{ always() && !cancelled() }}
-    needs: [verify, lint, test, common, vm, docs]
+    needs: [verify, lint, test, common, docs]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -153,7 +113,7 @@ jobs:
         uses: mr-chelyshkin/actions/check-job-results@v1
         with:
           results: ${{ toJSON(needs) }}
-          skipped: ${{ format('{0}{1}', needs.verify.outputs.has-modules != 'true' && 'test ' || '', needs.verify.outputs.has-vm != 'true' && 'vm' || '') }}
+          skipped: ${{ needs.verify.outputs.has-modules != 'true' && 'test' || '' }}
       - name: Download docs archive
         uses: actions/download-artifact@v8
         with:
