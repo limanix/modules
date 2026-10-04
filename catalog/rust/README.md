@@ -16,12 +16,12 @@ Add the selector to your VM's `nixos.modules` list and
 `lmx:rust` recommends the catalog default. An explicit `lmx:rust-LINE` selection
 replaces that recommendation, including when Cozy imports the default.
 
-| Selector                    | Rust   | rust-analyzer | Notes       |
-| --------------------------- | ------ | ------------- | ----------- |
-| `lmx:rust`, `lmx:rust-1.98` | 1.98.1 | 2026-08-03    | Default     |
-| `lmx:rust-1.97`             | 1.97.1 | 2026-08-03    | End of life |
-| `lmx:rust-1.96`             | 1.96.1 | 2026-06-15    | End of life |
-| `lmx:rust-1.95`             | 1.95.0 | 2026-04-27    | End of life |
+| Selector | Rust | rust-analyzer | Notes |
+| -- | -- | -- | -- |
+| `lmx:rust`, `lmx:rust-1.98` | 1.98.1 | 2026-08-03 | Default |
+| `lmx:rust-1.97` | 1.97.1 | 2026-08-03 | End of life |
+| `lmx:rust-1.96` | 1.96.1 | 2026-06-15 | End of life |
+| `lmx:rust-1.95` | 1.95.0 | 2026-04-27 | End of life |
 
 rustc, Cargo, rustfmt, and Clippy come from the same Rust release. GCC,
 pkg-config, and GDB come from the
@@ -83,27 +83,27 @@ and the
 
 ## Configuration and integration
 
-| Boundary          | Contract                                                                                                  |
-| ----------------- | --------------------------------------------------------------------------------------------------------- |
-| Public capability | `lmx.capabilities.languageSupport.tools.rust-analyzer`; Rust parser                                       |
-| Personal state    | Cargo cache and project build output                                                                      |
-| Integration       | Declares the selected analyzer without enabling an editor; versioned Cargo selects its matching toolchain |
-| Services          | No daemon                                                                                                 |
+| Boundary | Contract |
+| -- | -- |
+| Public capability | `lmx.capabilities.languageSupport.tools.rust-analyzer`; Rust parser |
+| Personal state | Cargo cache and project build output |
+| Integration | Declares the selected analyzer without enabling an editor; versioned Cargo selects its matching toolchain |
+| Services | No daemon |
 
 ## Corner cases
 
-| Case                      | Behavior or next step                                                                                |
-| ------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Native dependency fails   | GCC and pkg-config are present; provide the required library and its search path                     |
+| Case | Behavior or next step |
+| -- | -- |
+| Native dependency fails | GCC and pkg-config are present; provide the required library and its search path |
 | Project toolchain differs | Inspect Cargo's compiler and formatter overrides and PATH; versioned Cargo preserves those overrides |
-| Several lines selected    | Use versioned Cargo to keep its compiler, formatter and Clippy together                              |
+| Several lines selected | Use versioned Cargo to keep its compiler, formatter and Clippy together |
 
 ## Guarantees
 
-| Guarantee                                                                                  | Checked by                                                                         |
-| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| The toolchain, native build tools, parser and end-of-life warnings match the selected line | `eval.line-1.95`, `eval.line-1.96`, `eval.line-1.97`, `eval.line-1.98`             |
-| Explicit lines coexist; ordinary commands and the provider select the newest line          | `eval.allLines`, `run.allLines`                                                    |
-| The selected user-supplied provider is installed and runs from the system profile          | `eval.userOverride`, `run.userOverride`                                            |
-| Each versioned Cargo builds and tests offline, then runs fmt and Clippy                    | `run.commands-1.95`, `run.commands-1.96`, `run.commands-1.97`, `run.commands-1.98` |
-| Installing this module does not enable an editor                                           | `eval.allLines`                                                                    |
+| Guarantee | Checked by |
+| -- | -- |
+| The toolchain, native build tools, parser and end-of-life warnings match the selected line | `eval.line-1.95`, `eval.line-1.96`, `eval.line-1.97`, `eval.line-1.98` |
+| Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
+| The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
+| Each versioned Cargo builds and tests offline, then runs fmt and Clippy | `run.commands-1.95`, `run.commands-1.96`, `run.commands-1.97`, `run.commands-1.98` |
+| Installing this module does not enable an editor | `eval.allLines` |

@@ -10,11 +10,11 @@ is optional.
 [Concepts](concepts.md) explains the NixOS configuration model. This guide
 introduces the Nix syntax through examples.
 
-| Your task                        | Start here                                                                              |
-| -------------------------------- | --------------------------------------------------------------------------------------- |
-| Write a custom module            | [Create a module](#create-a-module)                                                     |
+| Your task | Start here |
+| -- | -- |
+| Write a custom module | [Create a module](#create-a-module) |
 | Add or maintain a catalog module | [Catalog contract](catalog-contract.md), then [Add to the catalog](#add-to-the-catalog) |
-| Understand required tests        | [Required checks](catalog-contract.md#required-checks-for-every-module)                 |
+| Understand required tests | [Required checks](catalog-contract.md#required-checks-for-every-module) |
 
 Keep module-owned packages, settings and tests in the module directory. Use
 public entry points and capabilities when connecting modules; the
@@ -56,10 +56,10 @@ The file describes the desired configuration, not a sequence of installation
 commands. Its assignment sets `environment.systemPackages`, the NixOS option
 that lists packages to install for all users.
 
-| Code                                                       | Meaning                                                                                                                                |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| [1](#custom-module-dev-tools.1){.external .code-lines}     | A function that receives `pkgs` from NixOS; `...` accepts the other arguments it does not use                                          |
-| [2–7](#custom-module-dev-tools.2-7){.external .code-lines} | The function returns a set of settings, enclosed in braces                                                                             |
+| Code | Meaning |
+| -- | -- |
+| [1](#custom-module-dev-tools.1){.external .code-lines} | A function that receives `pkgs` from NixOS; `...` accepts the other arguments it does not use |
+| [2–7](#custom-module-dev-tools.2-7){.external .code-lines} | The function returns a set of settings, enclosed in braces |
 | [3–6](#custom-module-dev-tools.3-6){.external .code-lines} | Assigns a list of packages to the option; list entries are separated with spaces, not commas, and the assignment ends with a semicolon |
 
 `pkgs` is the package set supplied to the module. `pkgs.jq` selects the `jq`
@@ -70,10 +70,10 @@ command.
 
 To adapt the module, look up the software or setting you need:
 
-| Search                                              | Use it for                                           |
-| --------------------------------------------------- | ---------------------------------------------------- |
+| Search | Use it for |
+| -- | -- |
 | [NixOS packages](https://search.nixos.org/packages) | Package attributes, such as `jq` to use as `pkgs.jq` |
-| [NixOS options](https://search.nixos.org/options)   | Option names, types, defaults, and examples          |
+| [NixOS options](https://search.nixos.org/options) | Option names, types, defaults, and examples |
 
 In both searches, select the NixOS release that the catalog pins;
 [NixOS version and package pins](concepts.md#nixos-version-and-package-pins)
@@ -100,11 +100,11 @@ the default editor:
 }
 ```
 
-| Code                                                    | Meaning                                                                     |
-| ------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [2–5](#custom-module-neovim.2-5){.external .code-lines} | Groups Neovim's settings in a nested set                                    |
-| [3](#custom-module-neovim.3){.external .code-lines}     | Enables Neovim with the Boolean value `true`; Boolean values have no quotes |
-| [4](#custom-module-neovim.4){.external .code-lines}     | Makes Neovim the default editor                                             |
+| Code | Meaning |
+| -- | -- |
+| [2–5](#custom-module-neovim.2-5){.external .code-lines} | Groups Neovim's settings in a nested set |
+| [3](#custom-module-neovim.3){.external .code-lines} | Enables Neovim with the Boolean value `true`; Boolean values have no quotes |
+| [4](#custom-module-neovim.4){.external .code-lines} | Makes Neovim the default editor |
 
 ### Arguments and nested settings
 
@@ -130,11 +130,11 @@ through `config` instead of hard-coding values such as the user name `dev`:
 }
 ```
 
-| Option               | Type              | Value                                               |
-| -------------------- | ----------------- | --------------------------------------------------- |
-| `limanix.user.name`  | string, read-only | Guest account name supplied by the client           |
-| `limanix.user.home`  | string, read-only | Guest home directory supplied by the client         |
-| `limanix.user.shell` | shell package     | Login shell; Bash by default, or Zsh with `lmx:zsh` |
+| Option | Type | Value |
+| -- | -- | -- |
+| `limanix.user.name` | string, read-only | Guest account name supplied by the client |
+| `limanix.user.home` | string, read-only | Guest home directory supplied by the client |
+| `limanix.user.shell` | shell package | Login shell; Bash by default, or Zsh with `lmx:zsh` |
 
 The platform supplies `name` and `home` once. Modules read them; they do not
 redeclare the account identity. For a module-owned VM test, select its account
@@ -142,11 +142,12 @@ through the
 [fixture parameters](catalog-contract.md#shared-helpers-and-vm-tests).
 
 These three options are declared in the shared `interface.nix` at the catalog
-repository root. The client supplies the account identity and applies the
-selected shell to the account. Modules that use these options depend on this
-interface rather than the client's internal VM data layout. Their names, types
-and meanings form the public contract; changing that contract requires a
-compatibility decision.
+repository root, together with the
+[session options](catalog-contract.md#option-classes-and-availability). The
+client supplies the account identity and applies the selected shell to the
+account. Modules that use these options depend on this interface rather than the
+client's internal VM data layout. Their names, types and meanings form the
+public contract; changing that contract requires a compatibility decision.
 
 Select another login shell in a custom module:
 
@@ -173,18 +174,18 @@ diagnostic does not restore their values. Catalog checks do not supply these
 arguments or the temporary diagnostics. Remove these arguments from the module's
 function signature and replace their uses as follows:
 
-| Previous reference  | Replacement                                                  |
-| ------------------- | ------------------------------------------------------------ |
-| `runtime.name`      | `config.networking.hostName`, the final hostname             |
-| `runtime.arch`      | `pkgs.stdenv.hostPlatform`, the guest platform attribute set |
-| `runtime.user.name` | `config.limanix.user.name`                                   |
-| `runtime.user.home` | `config.limanix.user.home`                                   |
-| `runtime.user.uid`  | `config.users.users.${config.limanix.user.name}.uid`         |
-| `runtime.ports.tcp` | `config.networking.firewall.allowedTCPPorts`                 |
-| `runtime.ports.udp` | `config.networking.firewall.allowedUDPPorts`                 |
-| `runtime.user.sudo` | No public replacement                                        |
-| `runtime.modules`   | Private client data; no replacement                          |
-| `inputs`            | Private root-flake inputs; no replacement                    |
+| Previous reference | Replacement |
+| -- | -- |
+| `runtime.name` | `config.networking.hostName`, the final hostname |
+| `runtime.arch` | `pkgs.stdenv.hostPlatform`, the guest platform attribute set |
+| `runtime.user.name` | `config.limanix.user.name` |
+| `runtime.user.home` | `config.limanix.user.home` |
+| `runtime.user.uid` | `config.users.users.${config.limanix.user.name}.uid` |
+| `runtime.ports.tcp` | `config.networking.firewall.allowedTCPPorts` |
+| `runtime.ports.udp` | `config.networking.firewall.allowedUDPPorts` |
+| `runtime.user.sudo` | No public replacement |
+| `runtime.modules` | Private client data; no replacement |
+| `inputs` | Private root-flake inputs; no replacement |
 
 `pkgs.stdenv.hostPlatform` is an attribute set, not the previous `"arm64"` or
 `"amd64"` string. Its `system` field is `"aarch64-linux"` or `"x86_64-linux"`
@@ -194,8 +195,8 @@ the firewall port lists can contain ports added by services as well as those
 configured through the client.
 
 Standard NixOS arguments such as `config`, `lib`, `pkgs` and `modulesPath`
-remain available. The generated root flake imports Lima itself; module code does
-not receive the root flake's `inputs` set.
+remain available. The generated root flake imports the nixos-lima module itself;
+module code does not receive the root flake's `inputs` set.
 
 ### Enable a service
 
@@ -222,11 +223,11 @@ and a database user named after the VM's user:
 }
 ```
 
-| Code                                                          | Purpose                                                                            |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [1](#custom-module-postgresql.1){.external .code-lines}       | Receives the [public account settings](#read-vm-user-settings) through `config`    |
-| [4](#custom-module-postgresql.4){.external .code-lines}       | Enables the PostgreSQL service                                                     |
-| [5](#custom-module-postgresql.5){.external .code-lines}       | Creates a database named after the VM's user                                       |
+| Code | Purpose |
+| -- | -- |
+| [1](#custom-module-postgresql.1){.external .code-lines} | Receives the [public account settings](#read-vm-user-settings) through `config` |
+| [4](#custom-module-postgresql.4){.external .code-lines} | Enables the PostgreSQL service |
+| [5](#custom-module-postgresql.5){.external .code-lines} | Creates a database named after the VM's user |
 | [6–11](#custom-module-postgresql.6-11){.external .code-lines} | Creates a database user with the same name and makes it the owner of that database |
 
 With this configuration applied, the matching guest user can connect to the
@@ -280,12 +281,12 @@ it evaluates a file and returns its value.
 
 NixOS merges your module with the rest of the system configuration:
 
-| Definitions in different modules                               | Result                                                                                   |
-| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Lists, such as `environment.systemPackages`                    | Combined                                                                                 |
-| Two different values for a string option, at the same priority | Evaluation fails with a `conflicting definition values` error                            |
-| A value wrapped in `lib.mkDefault`, and an ordinary value      | The ordinary value wins                                                                  |
-| A value wrapped in `lib.mkForce`                               | Replaces definitions with weaker priority, including ordinary values and `lib.mkDefault` |
+| Definitions in different modules | Result |
+| -- | -- |
+| Lists, such as `environment.systemPackages` | Combined |
+| Two different values for a string option, at the same priority | Evaluation fails with a `conflicting definition values` error |
+| A value wrapped in `lib.mkDefault`, and an ordinary value | The ordinary value wins |
+| A value wrapped in `lib.mkForce` | Replaces definitions with weaker priority, including ordinary values and `lib.mkDefault` |
 
 Use `lib.mkDefault` for a value that other modules may replace:
 
@@ -338,11 +339,11 @@ keeps those dependencies under `/nix/store` instead of the conventional `/usr`
 and `/lib` layout. Use the examples below for the problem you encounter; a
 module does not need all of them.
 
-| What fails                    | Typical message                                                                                             | See                                                                                |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Building a dependency         | `gcc: command not found`, `fatal error: zlib.h: No such file or directory`, or `No package 'openssl' found` | [Build tools and libraries](#build-tools-and-libraries)                            |
-| Starting a downloaded program | `Could not start dynamically linked executable`                                                             | [Downloaded programs](#downloaded-programs)                                        |
-| Loading a native extension    | `libstdc++.so.6: cannot open shared object file`                                                            | [Native extensions in Python and Node.js](#native-extensions-in-python-and-nodejs) |
+| What fails | Typical message | See |
+| -- | -- | -- |
+| Building a dependency | `gcc: command not found`, `fatal error: zlib.h: No such file or directory`, or `No package 'openssl' found` | [Build tools and libraries](#build-tools-and-libraries) |
+| Starting a downloaded program | `Could not start dynamically linked executable` | [Downloaded programs](#downloaded-programs) |
+| Loading a native extension | `libstdc++.so.6: cannot open shared object file` | [Native extensions in Python and Node.js](#native-extensions-in-python-and-nodejs) |
 
 ### Build tools and libraries
 
@@ -378,12 +379,12 @@ in
 }
 ```
 
-| Code                                                                   | Purpose                                                                           |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [8](#native-dependencies-build-tools.8){.external .code-lines}         | Selects each library's development output, containing its headers and `.pc` files |
-| [12–13](#native-dependencies-build-tools.12-13){.external .code-lines} | Provide GCC and make for builds that require them                                 |
-| [14](#native-dependencies-build-tools.14){.external .code-lines}       | Adds pkg-config, which reports a library's compiler and linker flags              |
-| [18–21](#native-dependencies-build-tools.18-21){.external .code-lines} | Points pkg-config to those `.pc` files                                            |
+| Code | Purpose |
+| -- | -- |
+| [8](#native-dependencies-build-tools.8){.external .code-lines} | Selects each library's development output, containing its headers and `.pc` files |
+| [12–13](#native-dependencies-build-tools.12-13){.external .code-lines} | Provide GCC and make for builds that require them |
+| [14](#native-dependencies-build-tools.14){.external .code-lines} | Adds pkg-config, which reports a library's compiler and linker flags |
+| [18–21](#native-dependencies-build-tools.18-21){.external .code-lines} | Points pkg-config to those `.pc` files |
 
 `let … in` names values used by the returned settings, and `with pkgs;` lets the
 library list omit the `pkgs.` prefix. The `++` operator joins lists. Replace
@@ -398,11 +399,23 @@ With the module applied, check inside the VM that pkg-config finds a library:
 pkg-config --cflags --libs openssl
 ```
 
-The command prints compiler and linker flags with paths under `/nix/store`. For
-a library without `.pc` files, pass its include and library directories as its
-build instructions describe. The Nix toolchain records runtime paths for
-libraries passed to the linker; libraries loaded later can still need a search
-path, as described below.
+The command prints compiler and linker flags with paths under `/nix/store`.
+Build systems that query pkg-config use these flags automatically. The compiler
+itself does not search the system profile for headers or libraries, so a build
+that includes `zlib.h` without asking pkg-config still fails with
+`No such file or directory`. Point the compiler to the library for that command
+only:
+
+```console
+CPATH="$(pkg-config --variable=includedir zlib)" LIBRARY_PATH="$(pkg-config --variable=libdir zlib)" pip install .
+```
+
+Replace `zlib` with the missing library and `pip install .` with the failing
+command. Both variables accept several directories separated by `:`. For a
+library without `.pc` files, use its include and library directories under
+`/nix/store` the same way. The Nix toolchain records runtime paths for libraries
+passed to the linker; libraries loaded later can still need a search path, as
+described below.
 
 ### Downloaded programs
 
@@ -454,7 +467,7 @@ explains this distinction.
 - Use a Nixpkgs package when the tool can use an installed program instead of
   downloading its own binary.
 - Use
-  [`python3.withPackages`](https://nixos.org/manual/nixpkgs/stable/#python.withPackages)
+  [`python3.withPackages`](https://nixos.org/manual/nixpkgs/stable/#python.withpackages-function)
   for a Nixpkgs interpreter with its Python dependencies; this is separate from
   pip virtual environments.
 - Run the tool in a supported Linux distribution's container with the
@@ -466,14 +479,14 @@ A custom module can remain private to its project. To contribute it to the
 catalog, place the [minimal example](#create-a-module) in `catalog/dev-tools/`
 and add its public metadata, tests and README. Keep this order:
 
-| Step                  | Result                                                                 |
-| --------------------- | ---------------------------------------------------------------------- |
-| Define the promise    | A user action and expected result for the README                       |
-| Write the entry point | Self-contained implementation behind `default.nix`                     |
-| Add metadata          | Discovery through `module.toml`                                        |
-| Export checks         | Public `test.nix`, private fixtures under `test/`                      |
-| Write the page        | Selectors, settings, corner cases and exact guarantee keys             |
-| Validate              | Selected `eval` and `run`; `vm.activation` when activation is promised |
+| Step | Result |
+| -- | -- |
+| Define the promise | A user action and expected result for the README |
+| Write the entry point | Self-contained implementation behind `default.nix` |
+| Add metadata | Discovery through `module.toml` |
+| Export checks | Public `test.nix`, private fixtures under `test/` |
+| Write the page | Selectors, settings, corner cases and exact guarantee keys |
+| Validate | Selected `eval` and `run`; `vm.activation` when activation is promised |
 
 ```text
 catalog/dev-tools/
@@ -534,13 +547,13 @@ The fixture uses the evaluated system profile and temporary state. Merely
 printing its derivation path does not run it. The harness calls only
 `test.nix { evalSystem, pkgs, lib }`; it does not discover private check files.
 
-| Export   | Use it for                                                   |
-| -------- | ------------------------------------------------------------ |
-| `eval`   | Configuration properties; every value must be Boolean `true` |
-| `fails`  | Expected refusal with `modules` and a diagnostic `message`   |
-| `run`    | Native command, wrapper, patch or integration behavior       |
-| `builds` | Exact artifact build permissions; not test evidence          |
-| `vm`     | Real activation through `pkgs.testers.runNixOSTest`          |
+| Export | Use it for |
+| -- | -- |
+| `eval` | Configuration properties; every value must be Boolean `true` |
+| `fails` | Expected refusal with `modules` and a diagnostic `message` |
+| `run` | Native command, wrapper, patch or integration behavior |
+| `builds` | Exact artifact build permissions; not test evidence |
+| `vm` | Real activation through `pkgs.testers.runNixOSTest` |
 
 Choose the cheapest level that proves the promise. A configured value uses
 `eval`; reading that value in a real application needs `run`; login, boot and
@@ -559,16 +572,17 @@ not extend the public three-argument invocation with extra context.
 
 ### Follow the metadata rules
 
-| Item            | Rule                                                               |
-| --------------- | ------------------------------------------------------------------ |
-| Directory name  | Up to 63 characters; `[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*`            |
-| Reserved names  | `_shared`, `internal`, `capabilities`, `pins`                      |
-| Public files    | `default.nix`, `module.toml`, `test.nix`, `README.md`              |
-| Metadata keys   | Only `description`, `versions`, `default`                          |
-| `description`   | Nonempty string                                                    |
-| `versions`      | Optional unique numeric dotted strings, at most 63 characters each |
-| `default`       | A member of nonempty `versions`; absent for an unversioned entry   |
-| Version entries | `versions/<line>.nix` for every declared line                      |
+| Item | Rule |
+| -- | -- |
+| Directory name | Up to 63 characters; `[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*` |
+| Reserved names | `_shared`, `internal`, `capabilities`, `pins` |
+| Public files | `default.nix`, `module.toml`, `test.nix`, `README.md` |
+| Metadata keys | Only `description`, `versions`, `default` |
+| `description` | Nonempty string |
+| `versions` | Optional unique numeric dotted strings, at most 63 characters each |
+| `default` | A member of nonempty `versions`; absent for an unversioned entry |
+| Version entries | `versions/<line>.nix` for every declared line |
+| `README.md` | Contains a `## Guarantees` heading |
 
 Each name segment begins with a letter. `dev-tools` is valid; `tools-2`,
 `my_module` and `v3.14` as a version line are invalid. This makes the numeric
@@ -581,14 +595,14 @@ layer knows no application names or private release pins.
 
 ### Write the entry's page
 
-| Part                          | Content                                                        |
-| ----------------------------- | -------------------------------------------------------------- |
-| Summary and selector          | What the user gets and how to select it                        |
-| Versions                      | Selectors, exact package versions, default and support status  |
-| Use                           | First commands and their expected result                       |
+| Part | Content |
+| -- | -- |
+| Summary and selector | What the user gets and how to select it |
+| Versions | Selectors, exact package versions, default and support status |
+| Use | First commands and their expected result |
 | Configuration and integration | Public options, dependencies, capabilities, files and services |
-| Corner cases                  | Limitations, conflicting choices and persistent data           |
-| Guarantees                    | Observable promises linked to exact public tests               |
+| Corner cases | Limitations, conflicting choices and persistent data |
+| Guarantees | Observable promises linked to exact public tests |
 
 For the example:
 
@@ -596,7 +610,7 @@ For the example:
 ## Guarantees
 
 | Guarantee | Checked by |
-| --- | --- |
+| -- | -- |
 | Installs jq and ripgrep | `eval.packages` |
 | The selected system-profile commands process local input | `run.commands` |
 ```
@@ -619,18 +633,18 @@ task --yes ci/test/modules MODULES=dev-tools
 catalog modules. Names select whole modules, not private recipes or test
 policies. Each selected module runs both stages in its own evaluator. CI uses
 one module per job on each native architecture. The module's public export
-defines its checks; there is no runtime profile that drops old lines.
+defines its checks, including those of every declared line.
 
-| Command                                       | Coverage                                                           |
-| --------------------------------------------- | ------------------------------------------------------------------ |
-| `ci/lint`                                     | Nixfmt, Statix, Deadnix and source Markdown formatting             |
-| `ci/test/modules MODULES=dev-tools`           | All evaluation and native checks for the selected module           |
+| Command | Coverage |
+| -- | -- |
+| `ci/lint` | Nixfmt, Statix, Deadnix and source Markdown formatting |
+| `ci/test/modules MODULES=dev-tools` | All evaluation and native checks for the selected module |
 | `ci/test/modules MODE=eval MODULES=dev-tools` | Public structure, entry points, recommendation, `eval` and `fails` |
-| `ci/test/modules MODE=run MODULES=dev-tools`  | Declared native checks and local-build dry-run                     |
-| `ci/test/modules MODE=vm MODULES=dev-tools`   | Declared activation checks on native Linux with KVM                |
-| `ci/test/common`                              | Shared and platform evaluation and native checks together          |
-| `ci/test/common SUITE=shared MODE=eval`       | Shared infrastructure assertions and diagnostics                   |
-| `ci/test/common SUITE=platform MODE=run`      | Native builder-permission regression                               |
+| `ci/test/modules MODE=run MODULES=dev-tools` | Declared native checks and local-build dry-run |
+| `ci/test/modules MODE=vm MODULES=dev-tools` | Declared activation checks on native Linux with KVM |
+| `ci/test/common` | Shared and platform evaluation and native checks together |
+| `ci/test/common SUITE=shared MODE=eval` | Shared infrastructure assertions and diagnostics |
+| `ci/test/common SUITE=platform MODE=run` | Native builder-permission regression |
 
 The same runner can be used directly on native Linux:
 
@@ -652,11 +666,9 @@ in a container do not establish activation. Missing required features,
 interrupted runs and skipped checks must be reported separately; they do not
 become passes.
 
-The targets are two minutes for evaluation, five minutes for warm native
-execution and fifteen minutes for release VM checks per module. Record actual
-duration and architecture. Separate downloads, newly executed checks and reused
-cache outputs when that evidence is available; keep unknown cache state unknown.
-Targets are measured, not enforced: the runner sets no time limits.
+Each stage has a duration target per module; see
+[Cost and reports](catalog-contract.md#cost-and-reports) for the targets and
+what a report records.
 
 Follow [Catalog checks](troubleshooting.md#catalog-checks) when a stage fails.
 Manual use in a VM complements the automated checks.
@@ -673,11 +685,11 @@ versions = ["1", "2"]
 default = "2"
 ```
 
-| Entry               | Required behavior                                |
-| ------------------- | ------------------------------------------------ |
-| `default.nix`       | Only recommends line 2 with `lib.mkDefault`      |
-| `versions/1.nix`    | Explicitly selects line 1                        |
-| `versions/2.nix`    | Explicitly selects line 2                        |
+| Entry | Required behavior |
+| -- | -- |
+| `default.nix` | Only recommends line 2 with `lib.mkDefault` |
+| `versions/1.nix` | Explicitly selects line 1 |
+| `versions/2.nix` | Explicitly selects line 2 |
 | Both explicit lines | Documented coexistence or a meaningful assertion |
 
 Private selection options belong to `lmx.internal.<name>`. Generate packages
@@ -690,13 +702,13 @@ NixOS assertions and `mkIf`.
 The harness already checks the default recommendation in both import orders. The
 module owns line behavior, command aliases, capability ranking and conflicts:
 
-| Public key                         | Meaning                                                 |
-| ---------------------------------- | ------------------------------------------------------- |
-| `eval.line-1`, `eval.line-2`       | Each line's own configuration                           |
-| `eval.allLines`                    | Supported coexistence and own package/provider priority |
-| `fails.twoLines`                   | Unsupported combination with its specific diagnostic    |
-| `run.commands-1`, `run.commands-2` | Actual commands for each line                           |
-| `run.allLines`                     | Ordinary command resolution for supported coexistence   |
+| Public key | Meaning |
+| -- | -- |
+| `eval.line-1`, `eval.line-2` | Each line's own configuration |
+| `eval.allLines` | Supported coexistence and own package/provider priority |
+| `fails.twoLines` | Unsupported combination with its specific diagnostic |
+| `run.commands-1`, `run.commands-2` | Actual commands for each line |
+| `run.allLines` | Ordinary command resolution for supported coexistence |
 
 Use [the lazy line helper](../catalog/_shared/test/lines.nix) to create these
 per-line fixtures. It does not choose coexistence policy or expose private
@@ -712,11 +724,11 @@ declare `lmx.pins.<revision> = <hash>` in the module and consume
 package set in a module-private package helper. Keep release maps and package
 helpers module-local; neither naming convention is public ABI.
 
-| Support status | README and warning                                     |
-| -------------- | ------------------------------------------------------ |
-| End of life    | Cite the upstream policy and emit the module's warning |
-| Supported      | Record the policy used; no EOL warning                 |
-| Unconfirmed    | Say unknown; do not invent support dates               |
+| Support status | README and warning |
+| -- | -- |
+| End of life | Cite the upstream policy and emit the module's warning |
+| Supported | Record the policy used; no EOL warning |
+| Unconfirmed | Say unknown; do not invent support dates |
 
 Check support status during maintenance. Selecting a line does not update that
 status automatically. A catalog release announces default changes and line

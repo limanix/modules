@@ -43,7 +43,7 @@ tasks:
   ci/test/common:
     desc: >-
       Test the shared layer (_shared/test.nix) and the harness (checks/).
-      SUITE=common (both; default), shared or platform; MODE=check (default), eval or run
+      SUITE=common (both; default), shared or platform; MODE=check (default), eval or run (eval and run need SUITE=shared or platform)
     cmds:
       - task: _nix/check
         vars:

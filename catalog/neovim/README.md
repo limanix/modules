@@ -51,28 +51,28 @@ options.
 
 ## Configuration and integration
 
-| Boundary                  | Contract                                                                   |
-| ------------------------- | -------------------------------------------------------------------------- |
-| Settings                  | `programs.neovim.*`, including package, aliases and default editor         |
-| Personal state            | `~/.config/nvim/`, plus native XDG data, state and cache directories       |
-| Integration               | Language modules supply servers; plain Neovim needs your LSP configuration |
-| Services and capabilities | No daemon or language-support provider declarations                        |
+| Boundary | Contract |
+| -- | -- |
+| Settings | `programs.neovim.*`, including package, aliases and default editor |
+| Personal state | `~/.config/nvim/`, plus native XDG data, state and cache directories |
+| Integration | Language modules supply servers; plain Neovim needs your LSP configuration |
+| Services and capabilities | No daemon or language-support provider declarations |
 
 ## Corner cases
 
-| Case                            | Behavior or next step                                                               |
-| ------------------------------- | ----------------------------------------------------------------------------------- |
-| No completion or LSP attachment | This module supplies the editor; select AstroNvim for the catalog setup             |
-| Default editor                  | Set `programs.neovim.defaultEditor = true` when you want to replace the base editor |
-| User configuration              | Existing Neovim configuration remains user-owned                                    |
+| Case | Behavior or next step |
+| -- | -- |
+| No completion or LSP attachment | This module supplies the editor; select AstroNvim for the catalog setup |
+| Default editor | Set `programs.neovim.defaultEditor = true` when you want to replace the base editor |
+| User configuration | Existing Neovim configuration remains user-owned |
 
 ## Guarantees
 
-| Guarantee                                                | Checked by                      |
-| -------------------------------------------------------- | ------------------------------- |
+| Guarantee | Checked by |
+| -- | -- |
 | Neovim and its vi/vim aliases are installed and runnable | `eval.defaults`, `run.commands` |
-| An ordinary setting can make Neovim the default editor   | `eval.defaultEditor`            |
-| The module declares no language providers                | `eval.optionalProviders`        |
+| An ordinary setting can make Neovim the default editor | `eval.defaultEditor` |
+| The module declares no language providers | `eval.optionalProviders` |
 
 Removing this module removes its declarations when no other selected module
 imports it. Personal configuration and XDG data, state and cache directories

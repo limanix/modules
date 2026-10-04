@@ -62,7 +62,7 @@ def catalog_names(root: Path) -> set[str]:
 
 
 def documentation_path(path: str, status: str) -> bool:
-    """Skip README edits inside checked directories; other Markdown is a fixture."""
+    """Skip module tests for README edits; other Markdown is a fixture."""
     parts = path.split("/")
     if len(parts) == 3 and parts[0] == "catalog" and parts[2] == "README.md":
         # Adding, removing or changing the file type can break module structure.
@@ -120,6 +120,8 @@ def plan(root: Path, paths: dict[str, str] | None, dependencies: object = None) 
     common = paths is None
     for path, status in (paths or {}).items():
         if documentation_path(path, status):
+            # Catalog validation in the common suite reads README headings.
+            common = common or path.startswith("catalog/")
             continue
         parts = path.split("/")
         if parts[0] == "catalog" and len(parts) >= 3 and parts[1] != "_shared":

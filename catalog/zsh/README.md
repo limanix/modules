@@ -26,17 +26,17 @@ version.
 
 ## Use
 
-| Tool                    | Behavior inside the VM                                                                             |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
-| Oh My Zsh               | Loads the shell framework; Starship supplies the prompt                                            |
-| Zsh autosuggestions     | Suggests commands from shell history; press Right to accept                                        |
-| Zsh syntax highlighting | Highlights commands as you type                                                                    |
-| fzf-tab and Carapace    | Press Tab to search completion candidates                                                          |
-| fzf                     | Ctrl-T inserts selected paths; Alt-C changes directory; Ctrl-R remains assigned to Atuin           |
-| Starship                | Shows the VM hostname, directory, Git state, detected language versions, and failed command status |
-| Atuin                   | Press Ctrl-R to search recorded commands; Up retains shell history navigation                      |
-| zoxide                  | After visiting directories, use `z project` or `zi` to find them again                             |
-| direnv and nix-direnv   | Loads an approved project environment when you enter its directory                                 |
+| Tool | Behavior inside the VM |
+| -- | -- |
+| Oh My Zsh | Loads the shell framework; Starship supplies the prompt |
+| Zsh autosuggestions | Suggests commands from shell history; press Right to accept |
+| Zsh syntax highlighting | Highlights commands as you type |
+| fzf-tab and Carapace | Press Tab to search completion candidates |
+| fzf | Ctrl-T inserts selected paths; Alt-C changes directory; Ctrl-R remains assigned to Atuin |
+| Starship | Shows the VM hostname, directory, Git state, detected language versions, and failed command status |
+| Atuin | Press Ctrl-R to search recorded commands; Up retains shell history navigation |
+| zoxide | After visiting directories, use `z project` or `zi` to find them again |
+| direnv and nix-direnv | Loads an approved project environment when you enter its directory |
 
 The VM platform supplies Ghostty's terminal description for connections with
 `TERM=xterm-ghostty`. The Carapace initialization script is generated during the
@@ -91,34 +91,34 @@ command-line tools.
 
 ## Configuration and integration
 
-| Boundary                  | Contract                                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------------------- |
-| Public setting            | `limanix.user.shell` accepts a different login shell                                            |
-| Standard settings         | `programs.zsh.*`, `programs.starship.settings`, `programs.atuin.*` and the tools' NixOS options |
-| Personal state            | `~/.zshrc`, native XDG configuration, Atuin history and project direnv state                    |
-| Integration               | Supplies shell hooks; Yazi adds its directory handoff independently                             |
-| Services and capabilities | No language-support provider declarations; Atuin synchronization defaults off                   |
+| Boundary | Contract |
+| -- | -- |
+| Public setting | `limanix.user.shell` accepts a different login shell |
+| Standard settings | `programs.zsh.*`, `programs.starship.settings`, `programs.atuin.*` and the tools' NixOS options |
+| Personal state | `~/.zshrc`, native XDG configuration, Atuin history and project direnv state |
+| Integration | Supplies shell hooks; Yazi adds its directory handoff independently |
+| Services and capabilities | No language-support provider declarations; Atuin synchronization defaults off |
 
 ## Corner cases
 
-| Case                               | Behavior or next step                                                                          |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Project environment is blocked     | Inspect `.envrc` and run `direnv allow` in the guest                                           |
-| History is not shared with the Mac | Atuin uses guest-local state and does not sync by default                                      |
-| Different login shell              | Zsh integrations apply when you run Zsh; changing the login shell does not remove its packages |
-| Pristine home                      | The managed shell starts without creating `~/.zshrc` or opening the setup wizard               |
-| Custom startup directory           | Zsh reads personal startup files from `ZDOTDIR` when set                                       |
-| You want the setup wizard          | The normal `zsh-newuser-install` function remains available for explicit manual use            |
+| Case | Behavior or next step |
+| -- | -- |
+| Project environment is blocked | Inspect `.envrc` and run `direnv allow` in the guest |
+| History is not shared with the Mac | Atuin uses guest-local state and does not sync by default |
+| Different login shell | Zsh integrations apply when you run Zsh; changing the login shell does not remove its packages |
+| Pristine home | The managed shell starts without creating `~/.zshrc` or opening the setup wizard |
+| Custom startup directory | Zsh reads personal startup files from `ZDOTDIR` when set |
+| You want the setup wizard | The normal `zsh-newuser-install` function remains available for explicit manual use |
 
 ## Guarantees
 
-| Guarantee                                                                                                  | Checked by                                         |
-| ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Suggests Zsh as the account shell; an ordinary `limanix.user.shell` assignment can choose another shell    | `eval.defaults`, `eval.shell`                      |
-| Managed startup loads Oh My Zsh, Carapace, fzf-tab, autosuggestions and highlighting                       | `eval.defaults`, `run.startup`                     |
-| Managed startup keeps Tab completion, Atuin Ctrl-R, fzf Ctrl-T, zoxide and direnv hooks available together | `run.startup`, `vm.activation`                     |
-| Managed Starship settings use Mocha, show the hostname and failed status, and accept ordinary overrides    | `eval.preferences`, `run.startup`                  |
-| Atuin synchronization and update checks default off and accept ordinary overrides                          | `eval.defaults`, `eval.preferences`, `run.startup` |
-| Fresh and repeat logins skip the automatic wizard without creating personal startup files                  | `run.startup`, `vm.activation`                     |
-| Personal startup settings, custom `ZDOTDIR` and an existing new-user handler remain unchanged              | `run.startup`, `vm.activation`                     |
-| The activated account uses Zsh and reads its installed global startup files                                | `vm.activation`                                    |
+| Guarantee | Checked by |
+| -- | -- |
+| Suggests Zsh as the account shell; an ordinary `limanix.user.shell` assignment can choose another shell | `eval.defaults`, `eval.shell` |
+| Managed startup loads Oh My Zsh, Carapace, fzf-tab, autosuggestions and highlighting | `eval.defaults`, `run.startup` |
+| Managed startup keeps Tab completion, Atuin Ctrl-R, fzf Ctrl-T, zoxide and direnv hooks available together | `run.startup`, `vm.activation` |
+| Managed Starship settings use Mocha, show the hostname and failed status, and accept ordinary overrides | `eval.preferences`, `run.startup` |
+| Atuin synchronization and update checks default off and accept ordinary overrides | `eval.defaults`, `eval.preferences`, `run.startup` |
+| Fresh and repeat logins skip the automatic wizard without creating personal startup files | `run.startup`, `vm.activation` |
+| Personal startup settings, custom `ZDOTDIR` and an existing new-user handler remain unchanged | `run.startup`, `vm.activation` |
+| The activated account uses Zsh and reads its installed global startup files | `vm.activation` |

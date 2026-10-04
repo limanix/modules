@@ -36,28 +36,28 @@ Check the account and region before running project commands.
 
 ## Configuration and integration
 
-| Boundary    | Contract                                                                             |
-| ----------- | ------------------------------------------------------------------------------------ |
-| Settings    | Native AWS profiles and environment variables; no catalog-specific public options    |
-| State       | Normally `~/.aws/config` and `~/.aws/credentials`; native path overrides still apply |
-| Integration | Cozy imports this entry point; `lmx:aws` can be selected alone                       |
-| Activation  | Adds no startup units, activation commands or cloud resources                        |
+| Boundary | Contract |
+| -- | -- |
+| Settings | Native AWS profiles and environment variables; no catalog-specific public options |
+| State | Normally `~/.aws/config` and `~/.aws/credentials`; native path overrides still apply |
+| Integration | Cozy imports this entry point; `lmx:aws` can be selected alone |
+| Activation | Adds no startup units, activation commands or cloud resources |
 
 Host credentials are not copied into the guest. Keep credentials out of Nix
 modules and guest-wide TOML environment settings.
 
 ## Corner cases
 
-| Case                                | Behavior or next step                                                                             |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Command installed but access denied | Authenticate for the guest account and confirm the selected profile                               |
-| Wrong account or region             | Use an explicit `--profile` or `--region`                                                         |
-| VM deletion                         | The managed home normally survives; deliberate home removal also removes credentials stored there |
+| Case | Behavior or next step |
+| -- | -- |
+| Command installed but access denied | Authenticate for the guest account and confirm the selected profile |
+| Wrong account or region | Use an explicit `--profile` or `--region` |
+| VM deletion | The managed home normally survives; deliberate home removal also removes credentials stored there |
 
 ## Guarantees
 
-| Guarantee                                                             | Checked by       |
-| --------------------------------------------------------------------- | ---------------- |
-| Adds base Nixpkgs AWS CLI v2 without unrelated profile packages       | `eval.package`   |
-| Adds no startup units or activation commands                          | `eval.noStartup` |
-| The system-profile version command runs offline with an isolated home | `run.commands`   |
+| Guarantee | Checked by |
+| -- | -- |
+| Adds base Nixpkgs AWS CLI v2 without unrelated profile packages | `eval.package` |
+| Adds no startup units or activation commands | `eval.noStartup` |
+| The system-profile version command runs offline with an isolated home | `run.commands` |

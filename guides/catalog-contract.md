@@ -22,12 +22,12 @@ flowchart LR
 
 ## Ownership
 
-| Component | Owns                                                     | Uses from other components                    |
-| --------- | -------------------------------------------------------- | --------------------------------------------- |
-| Module    | Its packages, pins, settings, adapters, tests and README | Public entry points, options and capabilities |
-| `_shared` | Generic schemas, data and test helpers                   | Explicit arguments; no named module policy    |
-| Platform  | Base Nixpkgs, account identity and public schemas        | Module entry points                           |
-| Harness   | Discovery, contract validation, scheduling and results   | Public metadata and `test.nix` exports        |
+| Component | Owns | Uses from other components |
+| -- | -- | -- |
+| Module | Its packages, pins, settings, adapters, tests and README | Public entry points, options and capabilities |
+| `_shared` | Generic schemas, data and test helpers | Explicit arguments; no named module policy |
+| Platform | Base Nixpkgs, account identity and public schemas | Module entry points |
+| Harness | Discovery, contract validation, scheduling and results | Public metadata and `test.nix` exports |
 
 An aggregate is also a module. Its component choices and integration scenarios
 stay in its directory. External code does not read another module's private
@@ -48,17 +48,16 @@ catalog/<name>/
 
 `module.toml`, entry points, documented options and `test.nix` are the machine
 interface. The README is the public human interface. Other filenames are
-private; a harness must not require `check.nix`, `smoke.nix`, `packages.nix` or
-any other private layout.
+private; a harness must not depend on their names or layout.
 
 ### Discovery metadata
 
-| Field         | Rule                                                     |
-| ------------- | -------------------------------------------------------- |
-| `description` | Required nonempty string                                 |
-| `versions`    | Optional list of unique numeric strings                  |
-| `default`     | Required member of nonempty `versions`; absent otherwise |
-| Unknown field | Error                                                    |
+| Field | Rule |
+| -- | -- |
+| `description` | Required nonempty string |
+| `versions` | Optional list of unique numeric strings |
+| `default` | Required member of nonempty `versions`; absent otherwise |
+| Unknown field | Error |
 
 A module name matches `[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*`; each segment starts
 with a letter. A line matches `[0-9]+(\.[0-9]+)*`. Both are at most 63
@@ -91,18 +90,20 @@ package priority; import order and `mkBefore` do not define their winner.
 
 ## Option classes and availability
 
-| Namespace                   | Declares                  | Reads and writes                                                     |
-| --------------------------- | ------------------------- | -------------------------------------------------------------------- |
-| `limanix.*`                 | `interface.nix`           | Platform identity; module shell and session declarations             |
-| `lmx.<name>.*`              | The named module          | Documented public settings                                           |
-| `lmx.capabilities.<area>.*` | Root `_shared/<area>.nix` | Providers and consumers                                              |
-| `lmx.pins`                  | `_shared/pins.nix`        | Modules declare their revisions; shared infrastructure resolves them |
-| `lmx.internal.<name>.*`     | The named module          | That module only                                                     |
-| Standard NixOS options      | Nixpkgs                   | Normal NixOS definitions                                             |
+| Namespace | Declares | Reads and writes |
+| -- | -- | -- |
+| `limanix.*` | `interface.nix` | Platform identity; module shell and session declarations |
+| `lmx.<name>.*` | The named module | Documented public settings |
+| `lmx.capabilities.<area>.*` | Root `_shared/<area>.nix` | Providers and consumers |
+| `lmx.pins` | `_shared/pins.nix` | Modules declare their revisions; shared infrastructure resolves them |
+| `lmx.internal.<name>.*` | The named module | That module only |
+| Standard NixOS options | Nixpkgs | Normal NixOS definitions |
 
-`limanix.session.command` is an executable path. It receives exactly one literal
-session name and returns status 64 for an invalid name. Its provider owns the
-application behavior.
+`limanix.session.command` is the absolute path of an executable, or `null` when
+no selected module provides sessions. It receives exactly one literal session
+name and returns status 64 for an invalid name. Its provider owns the
+application behavior. `limanix.session.providers` lists the selectors the client
+suggests while the command is `null`; it defaults to `[ "lmx:tmux" ]`.
 
 ## Capability providers and consumers
 
@@ -177,13 +178,13 @@ permission and local-build permission are separate. Build this list from
 constant package names, without evaluating `pkgs` or `pinned`. Each system
 fixture applies its own merged list.
 
-| Shared location                 | Contents                                                                     |
-| ------------------------------- | ---------------------------------------------------------------------------- |
-| Root `*.nix`, except `test.nix` | Always-loaded schemas and infrastructure                                     |
-| `test.nix`                      | Shared checks using the same test ABI, without module metadata or a selector |
-| `lib/`                          | Pure generic functions                                                       |
-| `test/`                         | Generic fixtures and test helpers                                            |
-| Non-Nix files                   | Common data such as the palette                                              |
+| Shared location | Contents |
+| -- | -- |
+| Root `*.nix`, except `test.nix` | Always-loaded schemas and infrastructure |
+| `test.nix` | Shared checks using the same test ABI, without module metadata or a selector |
+| `lib/` | Pure generic functions |
+| `test/` | Generic fixtures and test helpers |
+| Non-Nix files | Common data such as the palette |
 
 ## Required checks for every module
 
@@ -201,10 +202,10 @@ Public invocation:
 import (moduleDirectory + "/test.nix") { inherit evalSystem pkgs lib; }
 ```
 
-| Argument      | Meaning                                                                      |
-| ------------- | ---------------------------------------------------------------------------- |
-| `evalSystem`  | List of public NixOS modules to checked `config`; evaluates without building |
-| `pkgs`, `lib` | Base packages and library for the native runner                              |
+| Argument | Meaning |
+| -- | -- |
+| `evalSystem` | List of public NixOS modules to checked `config`; evaluates without building |
+| `pkgs`, `lib` | Base packages and library for the native runner |
 
 The harness memoizes one application of a module's `test.nix` within one Nix
 evaluation/test context. It does not reimport the export for each line. Separate
@@ -214,13 +215,13 @@ returns the checked configuration for its supplied module list. Related
 assertions should reuse that configuration; the harness may reuse identical
 public-entry evaluations.
 
-| Export   | Value                                                          | Evidence                                                       |
-| -------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
-| `eval`   | Required nonempty attribute set; every value is Boolean `true` | Configuration                                                  |
-| `fails`  | Records with a module list and nonempty diagnostic string      | The supplied modules fail with that diagnostic                 |
-| `run`    | Native derivations                                             | Actual command and application behavior in an isolated fixture |
-| `builds` | Exact derivations allowed to build locally                     | Permission only                                                |
-| `vm`     | Native `pkgs.testers.runNixOSTest` derivations                 | Real NixOS activation                                          |
+| Export | Value | Evidence |
+| -- | -- | -- |
+| `eval` | Required nonempty attribute set; every value is Boolean `true` | Configuration |
+| `fails` | Records with a module list and nonempty diagnostic string | The supplied modules fail with that diagnostic |
+| `run` | Native derivations | Actual command and application behavior in an isolated fixture |
+| `builds` | Exact derivations allowed to build locally | Permission only |
+| `vm` | Native `pkgs.testers.runNixOSTest` derivations | Real NixOS activation |
 
 Optional groups default to `{}`. Unknown top-level fields fail. Each `fails`
 record contains exactly `modules` (a list of NixOS modules) and `message` (a
@@ -228,13 +229,13 @@ nonempty string). A failure case does not pass on a timeout, crash or unrelated
 diagnostic. A printed derivation path does not establish execution. Native `run`
 fixtures stay offline and do not use a VM or `system.build.toplevel`.
 
-| Group    | Names                                                 |
-| -------- | ----------------------------------------------------- |
-| `eval`   | camelCase promise, `line-<line>`, or `allLines`       |
-| `fails`  | camelCase reason; `twoLines` for incompatible lines   |
-| `run`    | `commands`, `commands-<line>`, or a camelCase feature |
-| `builds` | `artifact` or `artifact-<line>`                       |
-| `vm`     | `activation`                                          |
+| Group | Names |
+| -- | -- |
+| `eval` | camelCase promise, `line-<line>`, or `allLines` |
+| `fails` | camelCase reason; `twoLines` for incompatible lines |
+| `run` | `commands`, `commands-<line>`, or a camelCase feature |
+| `builds` | `artifact` or `artifact-<line>` |
+| `vm` | `activation` |
 
 Choose the cheapest sufficient level. Configuration assertions do not prove
 startup, application settings or service health. Native execution can prepare an
@@ -285,20 +286,22 @@ runtime dry-run.
 
 ## Cost and reports
 
-| Level                                                    | When                                             | Target per module             |
-| -------------------------------------------------------- | ------------------------------------------------ | ----------------------------- |
-| Structure, entry points, recommendation, `eval`, `fails` | Changed modules on PRs                           | 2 minutes                     |
-| `run`                                                    | Changed modules, both native Linux architectures | 5 minutes with prepared cache |
-| `vm`                                                     | Release                                          | 15 minutes                    |
+| Level | When | Target per module |
+| -- | -- | -- |
+| Structure, entry points, recommendation, `eval`, `fails` | Changed modules on PRs | 2 minutes |
+| `run` | Changed modules, both native Linux architectures | 5 minutes with prepared cache |
+| `vm` | Release | 15 minutes |
 
 Reuse one default fixture, one per needed line and one for each different
 scenario. Fixture counts guide cost; they are not hard limits on correctness.
 Each README promise and relevant regression determines the required coverage.
 
-The PR flow targets ten minutes on its critical path. Targets are measured, not
-enforced: checks run without time limits. Reports identify architecture, actual
-duration, cache state, builds and VM status. Unknown cache state stays unknown.
-A cancelled or interrupted run is incomplete evidence.
+The PR flow targets ten minutes on its critical path with a prepared cache.
+Targets are measured, not enforced: checks run without time limits. Reports
+identify the suite, stage, architecture, actual duration, cache state, builds
+and VM status. They separate newly executed checks from reused results where
+known; unknown cache state stays unknown. A cancelled or interrupted run is
+incomplete evidence.
 
 Changed modules include consumers of their public imports. Changes to `_shared`,
 `interface.nix` or `flake.lock` affect every module. Platform `eval` and `run`
@@ -308,11 +311,12 @@ Required compositions belong in their own module tests.
 ## README guarantees
 
 A module page explains what is installed, selectors, public settings, several
-line behavior, generated files, services, persistent data and corner cases. Its
-`Guarantees` table uses exact existing keys in `Checked by`, such as
-`eval.packages`, `run.commands` or `vm.activation`. A row may list one or more
-exact keys. Several promises can share a fixture when it explicitly asserts each
-property. Corner cases and regressions must relate to a stated promise.
+line behavior, generated files, services, persistent data and corner cases. The
+harness requires a `## Guarantees` heading. Its table uses exact existing keys
+in `Checked by`, such as `eval.packages`, `run.commands` or `vm.activation`. A
+row may list one or more exact keys. Several promises can share a fixture when
+it explicitly asserts each property. Corner cases and regressions must relate to
+a stated promise.
 
 `builds.*` is not evidence. Private filenames and wildcard keys are not test
 exports. Do not add a generic `Tests` section that repeats this ABI.

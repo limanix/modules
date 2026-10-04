@@ -29,7 +29,7 @@
         python3 -c 'import venv; print("python runtime available")'
         aws --version
         gcloud version
-        posting --version
+        posting locate config
         harlequin --version
         set +e
         tmux-project one two > invalid-arguments.txt 2>&1

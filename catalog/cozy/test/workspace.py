@@ -93,6 +93,24 @@ def pane_command(pane):
     return pane_value(pane, "#{pane_current_command}").decode()
 
 
+def pane_process_commands(pane):
+    # The launcher can lead the foreground group while its tool runs as a child.
+    pid = int(pane_value(pane, "#{pane_pid}"))
+    try:
+        children = Path(f"/proc/{pid}/task/{pid}/children").read_text().split()
+    except FileNotFoundError:
+        children = []
+    commands = []
+    for process in [str(pid), *children]:
+        try:
+            command = Path(f"/proc/{process}/cmdline").read_bytes().split(b"\0", 1)[0]
+        except FileNotFoundError:
+            continue
+        if command:
+            commands.append(Path(os.fsdecode(command)).name)
+    return commands
+
+
 def shell_running(pane):
     return pane_command(pane).strip(".").removesuffix("-wrapped") == SHELL_NAME
 
@@ -100,7 +118,10 @@ def shell_running(pane):
 def editor_exit(terminal, session, state, *, fail):
     pane = state["editor"][1]
     tmux("select-window", "-t", state["editor"][0])
-    terminal.until(lambda: "nvim" in pane_command(pane), label="real configured editor")
+    terminal.until(
+        lambda: any("nvim" in command for command in pane_process_commands(pane)),
+        label="real configured editor",
+    )
     tmux("send-keys", "-t", pane, "Escape", ":cquit" if fail else ":qa!", "Enter")
     terminal.until(lambda: shell_running(pane), label="editor window shell fallback")
     if fail:
@@ -114,7 +135,8 @@ def other_app_exits(terminal, state):
         window, pane = state[name]
         tmux("select-window", "-t", window)
         terminal.until(
-            lambda: shell_running(pane) or "lazy" in pane_command(pane),
+            lambda: shell_running(pane)
+            or any("lazy" in command for command in pane_process_commands(pane)),
             label=f"real {name} window application",
         )
         if not shell_running(pane):

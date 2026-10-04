@@ -22,21 +22,21 @@ This module has no version lines.
 
 Run these commands inside the VM:
 
-| Command | Purpose                                              |
-| ------- | ---------------------------------------------------- |
-| `rg`    | Search file contents with ripgrep                    |
-| `fd`    | Find files by name                                   |
-| `fzf`   | Select from a list with fuzzy search                 |
-| `bat`   | Read files with syntax highlighting                  |
-| `eza`   | List directory contents                              |
-| `delta` | Read highlighted diffs                               |
-| `jq`    | Query JSON                                           |
-| `yq`    | Query YAML with Mike Farah's yq, packaged as `yq-go` |
-| `xh`    | Send HTTP requests                                   |
-| `btop`  | Inspect CPU, memory, and processes                   |
-| `dust`  | Inspect directory sizes                              |
-| `duf`   | Inspect filesystem space                             |
-| `tldr`  | Read command examples with tealdeer                  |
+| Command | Purpose |
+| -- | -- |
+| `rg` | Search file contents with ripgrep |
+| `fd` | Find files by name |
+| `fzf` | Select from a list with fuzzy search |
+| `bat` | Read files with syntax highlighting |
+| `eza` | List directory contents |
+| `delta` | Read highlighted diffs |
+| `jq` | Query JSON |
+| `yq` | Query YAML with Mike Farah's yq, packaged as `yq-go` |
+| `xh` | Send HTTP requests |
+| `btop` | Inspect CPU, memory, and processes |
+| `dust` | Inspect directory sizes |
+| `duf` | Inspect filesystem space |
+| `tldr` | Read command examples with tealdeer |
 
 For example, search the current project and select a file:
 
@@ -63,25 +63,25 @@ configuration can override them.
 
 ## Configuration and integration
 
-| Boundary                  | Contract                                                                               |
-| ------------------------- | -------------------------------------------------------------------------------------- |
-| Settings                  | Standard `programs.git.config` controls the default delta pager and interactive filter |
-| Personal state            | Git settings in `~/.gitconfig`; tealdeer pages in the user cache                       |
-| Integration               | Imports Git; tools remain usable without Console or an editor                          |
-| Services and capabilities | No daemon or language-support declarations                                             |
+| Boundary | Contract |
+| -- | -- |
+| Settings | Standard `programs.git.config` controls the default delta pager and interactive filter |
+| Personal state | Git settings in `~/.gitconfig`; tealdeer pages in the user cache |
+| Integration | Imports Git; tools remain usable without Console or an editor |
+| Services and capabilities | No daemon or language-support declarations |
 
 ## Corner cases
 
-| Case                      | Behavior or next step                                                      |
-| ------------------------- | -------------------------------------------------------------------------- |
-| Missing tldr pages        | Run `tldr --update` once with network access                               |
+| Case | Behavior or next step |
+| -- | -- |
+| Missing tldr pages | Run `tldr --update` once with network access |
 | Pager behaves differently | Check repository and user Git settings, which can override system defaults |
-| System monitor            | `btop` displays the guest workload; it does not monitor all Mac processes  |
+| System monitor | `btop` displays the guest workload; it does not monitor all Mac processes |
 
 ## Guarantees
 
-| Guarantee                                                               | Checked by                           |
-| ----------------------------------------------------------------------- | ------------------------------------ |
-| Installs the listed tools, enables Git and runs their commands          | `eval.packages`, `run.commands`      |
-| Generated Git settings select delta for paging and interactive diffs    | `eval.gitDefaults`, `run.gitConfig`  |
+| Guarantee | Checked by |
+| -- | -- |
+| Installs the listed tools, enables Git and runs their commands | `eval.packages`, `run.commands` |
+| Generated Git settings select delta for paging and interactive diffs | `eval.gitDefaults`, `run.gitConfig` |
 | Ordinary NixOS and personal Git settings can replace the pager defaults | `eval.gitOverrides`, `run.gitConfig` |

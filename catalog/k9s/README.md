@@ -12,11 +12,11 @@ Add the selector to your VM's `nixos.modules` list and
 
 ## Versions
 
-| Selector                  | K9s     | Notes   |
-| ------------------------- | ------- | ------- |
-| `lmx:k9s`, `lmx:k9s-0.51` | 0.51.0  | Default |
-| `lmx:k9s-0.50`            | 0.50.18 |         |
-| `lmx:k9s-0.40`            | 0.40.10 |         |
+| Selector | K9s | Notes |
+| -- | -- | -- |
+| `lmx:k9s`, `lmx:k9s-0.51` | 0.51.0 | Default |
+| `lmx:k9s-0.50` | 0.50.18 |  |
+| `lmx:k9s-0.40` | 0.40.10 |  |
 
 Upstream maintenance status for these lines has not been confirmed. The catalog
 records their [EOL status](../../guides/catalog.md#versions) as unknown and does
@@ -75,21 +75,21 @@ explicit entry points provide the same commands for the same line, including
 
 ## Configuration and integration
 
-| Boundary                  | Contract                                                                                     |
-| ------------------------- | -------------------------------------------------------------------------------------------- |
-| Settings                  | Native K9s configuration, normally under `~/.config/k9s/`                                    |
-| Personal state            | Kubeconfig and K9s configuration in the guest home                                           |
-| Integration               | Included as a default recommendation by Minikube; explicit lines replace that recommendation |
-| Services and capabilities | No cluster, daemon or language-support declarations                                          |
+| Boundary | Contract |
+| -- | -- |
+| Settings | Native K9s configuration, normally under `~/.config/k9s/` |
+| Personal state | Kubeconfig and K9s configuration in the guest home |
+| Integration | Included as a default recommendation by Minikube; explicit lines replace that recommendation |
+| Services and capabilities | No cluster, daemon or language-support declarations |
 
 ## Corner cases
 
-| Case                              | Behavior or next step                                                                                  |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| No cluster or authentication      | Provide a guest-readable kubeconfig and reachable cluster                                              |
-| Historical 0.40 build             | Application sources stay pinned; its separately pinned build compiler does not select a project Go SDK |
-| Wrong context                     | Pass `--context` or inspect the active kubeconfig context before changes                               |
-| Default versus explicit selection | Both entry points provide the same ordinary and version-suffixed commands                              |
+| Case | Behavior or next step |
+| -- | -- |
+| No cluster or authentication | Provide a guest-readable kubeconfig and reachable cluster |
+| Historical 0.40 build | Application sources stay pinned; its separately pinned build compiler does not select a project Go SDK |
+| Wrong context | Pass `--context` or inspect the active kubeconfig context before changes |
+| Default versus explicit selection | Both entry points provide the same ordinary and version-suffixed commands |
 
 ## Local builds
 
@@ -100,13 +100,13 @@ dependencies still need a cache.
 
 ## Guarantees
 
-| Guarantee                                                                                   | Checked by                                                    |
-| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Each K9s line installs its package and emits applicable warnings once                       | `eval.line-0.40`, `eval.line-0.50`, `eval.line-0.51`          |
-| Selected lines coexist; the newest package supplies `k9s`                                   | `eval.allLines`, `run.allLines`                               |
-| Each line provides working ordinary and version-suffixed commands                           | `run.commands-0.40`, `run.commands-0.50`, `run.commands-0.51` |
-| The rebuilt historical line keeps its application, vendor sources and declared compiler pin | `eval.buildSource`                                            |
-| The rebuild retains upstream checks and matching build paths                                | `eval.checkCache`                                             |
-| The upstream version test executes the rebuilt package                                      | `eval.rebuiltVersionTest`, `run.upstreamVersion`              |
+| Guarantee | Checked by |
+| -- | -- |
+| Each K9s line installs its package and emits applicable warnings once | `eval.line-0.40`, `eval.line-0.50`, `eval.line-0.51` |
+| Selected lines coexist; the newest package supplies `k9s` | `eval.allLines`, `run.allLines` |
+| Each line provides working ordinary and version-suffixed commands | `run.commands-0.40`, `run.commands-0.50`, `run.commands-0.51` |
+| The rebuilt historical line keeps its application, vendor sources and declared compiler pin | `eval.buildSource` |
+| The rebuild retains upstream checks and matching build paths | `eval.checkCache` |
+| The upstream version test executes the rebuilt package | `eval.rebuiltVersionTest`, `run.upstreamVersion` |
 
 These checks do not connect to a cluster or establish guest authentication.

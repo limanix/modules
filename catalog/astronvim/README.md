@@ -16,9 +16,9 @@ Neovim the default `EDITOR` unless a custom module overrides that setting.
 
 ## Versions
 
-| Selector                           | AstroNvim line | Pinned release |
-| ---------------------------------- | -------------- | -------------- |
-| `lmx:astronvim`, `lmx:astronvim-6` | 6 (default)    | 6.0.0          |
+| Selector | AstroNvim line | Pinned release |
+| -- | -- | -- |
+| `lmx:astronvim`, `lmx:astronvim-6` | 6 (default) | 6.0.0 |
 
 Upstream maintenance status for this line has not been confirmed. The catalog
 records its EOL status as unknown.
@@ -153,36 +153,36 @@ usage.
 
 ## Configuration and integration
 
-| Boundary               | Contract                                                                                 |
-| ---------------------- | ---------------------------------------------------------------------------------------- |
-| Standard settings      | `programs.neovim.defaultEditor` and `programs.nix-ld.enable` remain overridable          |
+| Boundary | Contract |
+| -- | -- |
+| Standard settings | `programs.neovim.defaultEditor` and `programs.nix-ld.enable` remain overridable |
 | Personal configuration | Native Neovim XDG directory: `init.lua`, `init.vim`, `lua/plugins/` and `lua/polish.lua` |
-| Integration            | Consumes public language-support declarations; imports Neovim, Git and Lazygit           |
-| Services               | No daemon; plugins, parsers and language servers run with the editor                     |
+| Integration | Consumes public language-support declarations; imports Neovim, Git and Lazygit |
+| Services | No daemon; plugins, parsers and language servers run with the editor |
 
 ## Corner cases
 
-| Case                                   | Behavior or next step                                                                                                        |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Existing init file                     | Your `init.lua` or `init.vim` replaces the bundled startup; remove it only when you choose to use the catalog setup          |
-| Missing language server                | Select a provider or declare the tool through the public capability; a binary on PATH alone is insufficient                  |
-| Foreign plugin or Mason tool           | Extra tools may need libraries or interpreters even with nix-ld enabled                                                      |
-| Two AstroNvim lines                    | Choose one line; different supported lines fail with `astronvim: select one line`                                            |
+| Case | Behavior or next step |
+| -- | -- |
+| Existing init file | Your `init.lua` or `init.vim` replaces the bundled startup; remove it only when you choose to use the catalog setup |
+| Missing language server | Select a provider or declare the tool through the public capability; a binary on PATH alone is insufficient |
+| Foreign plugin or Mason tool | Extra tools may need libraries or interpreters even with nix-ld enabled |
+| Two AstroNvim lines | Choose one line; different supported lines fail with `astronvim: select one line` |
 | Unsaved edits or running terminal jobs | Save edits and finish jobs; restoring a session restores layout and file positions rather than unsaved contents or processes |
-| Resume a saved session                 | Save current edits first; the example above replaces the current editor layout                                               |
+| Resume a saved session | Save current edits first; the example above replaces the current editor layout |
 
 ## Guarantees
 
-| Guarantee                                                                                                              | Checked by                                                                  |
-| ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| The configured editor, Git and Lazygit are installed                                                                   | `eval.line-6`                                                               |
-| Editor and compatibility-loader preferences accept ordinary settings                                                   | `eval.preferences`                                                          |
-| Language providers remain optional; catalog and third-party declarations are accepted                                  | `eval.optionalProviders`, `eval.catalogProvider`, `eval.thirdPartyProvider` |
-| Rust and TypeScript server names are translated; other identities are preserved                                        | `eval.serverNames`                                                          |
-| Bundled startup loads Mocha, key bindings and Lua highlighting from immutable plugin sources                           | `run.commands-6`                                                            |
-| Personal init files replace bundled startup and remain unchanged                                                       | `run.personalLua`, `run.personalVim`                                        |
-| Personal polish and plugin specifications extend the bundled setup                                                     | `run.polish`, `run.personalPlugins`                                         |
-| A catalog Rust server and a guarded third-party Go server attach with the declared command, arguments and highlighting | `run.languageServer`                                                        |
+| Guarantee | Checked by |
+| -- | -- |
+| The configured editor, Git and Lazygit are installed | `eval.line-6` |
+| Editor and compatibility-loader preferences accept ordinary settings | `eval.preferences` |
+| Language providers remain optional; catalog and third-party declarations are accepted | `eval.optionalProviders`, `eval.catalogProvider`, `eval.thirdPartyProvider` |
+| Rust and TypeScript server names are translated; other identities are preserved | `eval.serverNames` |
+| Bundled startup loads Mocha, key bindings and Lua highlighting from immutable plugin sources | `run.commands-6` |
+| Personal init files replace bundled startup and remain unchanged | `run.personalLua`, `run.personalVim` |
+| Personal polish and plugin specifications extend the bundled setup | `run.polish`, `run.personalPlugins` |
+| A catalog Rust server and a guarded third-party Go server attach with the declared command, arguments and highlighting | `run.languageServer` |
 
 Removing this module removes its declarations and bundled store packages when no
 other selected module imports it. It does not delete personal Neovim files,

@@ -3,14 +3,14 @@
 Automation consumes the public module contract. It does not inspect private
 package maps or choose module-specific test scenarios.
 
-| Layer                | Responsibility                                                                      |
-| -------------------- | ----------------------------------------------------------------------------------- |
-| Workflow             | Events, change selection, native matrices, cache restore/save and the required gate |
-| Taskfile             | The same explicit commands for local use and CI                                     |
-| `plan_checks.py`     | Git diff to modules, public-import consumers and the common flag                    |
-| `run_checks.sh`      | Contract validation, stage execution and build permission                           |
-| `cache_nix_build.sh` | Post-build hook exporting local builds with their runtime closure                   |
-| `prune_nix_cache.sh` | Removal of cached builds the last run did not need                                  |
+| Layer | Responsibility |
+| -- | -- |
+| Workflow | Events, change selection, native matrices, cache restore/save and the required gate |
+| Taskfile | The same explicit commands for local use and CI |
+| `plan_checks.py` | Git diff to modules, public-import consumers and the common flag |
+| `run_checks.sh` | Contract validation, stage execution and build permission |
+| `cache_nix_build.sh` | Post-build hook exporting local builds with their runtime closure |
+| `prune_nix_cache.sh` | Removal of cached builds the last run did not need |
 
 Module scenarios stay in each module's `test.nix` and private `test/` files. The
 runner implements their common calling and result contract.
@@ -28,13 +28,13 @@ flowchart LR
     common --> gate
 ```
 
-| Job      | Work                                                   | Selection                                                      |
-| -------- | ------------------------------------------------------ | -------------------------------------------------------------- |
-| `plan`   | Git diff and public dependency discovery               | Every run                                                      |
-| `lint`   | Nixfmt, Statix, Deadnix and source Markdown formatting | Every run                                                      |
-| `test`   | One module: `eval`, then `run`                         | Changed modules and their consumers, on x86 and ARM            |
-| `common` | Shared and platform `eval`/`run`                       | Evaluation input or Task configuration changes, on x86 and ARM |
-| `gate`   | Require all selected jobs to succeed                   | Every run                                                      |
+| Job | Work | Selection |
+| -- | -- | -- |
+| `plan` | Git diff and public dependency discovery | Every run |
+| `lint` | Nixfmt, Statix, Deadnix and source Markdown formatting | Every run |
+| `test` | One module: `eval`, then `run` | Changed modules and their consumers, on x86 and ARM |
+| `common` | Shared and platform `eval`/`run` | Evaluation input or Task configuration changes, on x86 and ARM |
+| `gate` | Require all selected jobs to succeed | Every run |
 
 There is no barrier between all module evaluations and all native runs. Each
 module job completes its own cycle. A new push cancels the previous run of the
@@ -43,20 +43,24 @@ caches its own changes.
 
 The full catalog runs only when a change affects every module evaluation:
 
-| Changed path                  | Modules                                     | Common |
-| ----------------------------- | ------------------------------------------- | ------ |
-| `catalog/<module>/**`         | That module and its public-import consumers | No     |
-| An evaluation input           | Full catalog                                | Yes    |
-| `Taskfile.yml`, `.taskrc.yml` | None                                        | Yes    |
-| Any other file                | None                                        | No     |
+| Changed path | Modules | Common |
+| -- | -- | -- |
+| `catalog/<module>/**` | That module and its public-import consumers | No |
+| An edited existing `README.md` in a module or `_shared` | None | Yes |
+| An evaluation input | Full catalog | Yes |
+| `Taskfile.yml`, `.taskrc.yml` | None | Yes |
+| Any other file | None | No |
 
-Evaluation inputs are `catalog/_shared/**`, `interface.nix`, `flake.nix`,
+Evaluation inputs are every file under `catalog/` outside a module directory,
+including `catalog/_shared/**`, as well as `interface.nix`, `flake.nix`,
 `flake.lock`, `checks/**`, `scripts/run_checks.sh` and
 `.github/workflows/nix-tests.yml`.
 
-Lint runs for every change. Editing an existing `README.md` in a module or in
-`_shared` selects no tests. Adding or removing one changes module structure and
-counts as a module change.
+Lint runs for every change. Editing an existing `README.md` runs no module
+tests; the common suite still validates that every module page keeps its
+`## Guarantees` heading. Adding or removing a module's README changes its
+structure and counts as a change to that module; in `_shared`, it is an
+evaluation input.
 
 The planner discovers module directories. Contract validation belongs to the
 harness. Dependency discovery evaluates public default and version entry points
@@ -81,15 +85,16 @@ modules run one after another, each in its own evaluator. The common cycle runs
 shared, then platform checks.
 
 `ci/test/modules` defaults to `MODE=check`. `ci/test/common` defaults to
-`SUITE=common` and `MODE=check`. Select an individual suite or stage when
-diagnosing a failure or running release checks:
+`SUITE=common` and `MODE=check`; `MODE=eval` and `MODE=run` need `SUITE=shared`
+or `SUITE=platform`. Select an individual suite or stage when diagnosing a
+failure or running release checks:
 
-| Task                                          | Result                                                                              |
-| --------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Task | Result |
+| -- | -- |
 | `ci/test/modules MODE=eval MODULES=dev-tools` | Metadata, entry points, recommendation, Boolean assertions and expected diagnostics |
-| `ci/test/modules MODE=run MODULES=dev-tools`  | Native execution after the local-build dry-run                                      |
-| `ci/test/common SUITE=shared MODE=eval`       | Shared schemas and test helpers                                                     |
-| `ci/test/common SUITE=platform MODE=run`      | Native builder permissions                                                          |
+| `ci/test/modules MODE=run MODULES=dev-tools` | Native execution after the local-build dry-run |
+| `ci/test/common SUITE=shared MODE=eval` | Shared schemas and test helpers |
+| `ci/test/common SUITE=platform MODE=run` | Native builder permissions |
 
 On native Linux, the same runner is available directly:
 
@@ -119,9 +124,10 @@ task --yes ci/plan/vm-modules SYSTEM=aarch64-linux OUTPUT=build/vm-modules.json
 
 Each native job restores one cache for its target (a module or the common suite)
 and architecture. It holds downloaded sources in `.cache/nix` and the target's
-own local builds in `.cache/nix-binary`. Successful runs on `main`, pushes and
-manual runs, save it; pull requests and tags only restore it. Cache failures do
-not replace check results.
+own local builds in `.cache/nix-binary`. Successful runs on `main`, whether
+pushed or started manually, save it when no archive with the exact key exists;
+pull requests, tags and other branches only restore it. Cache failures do not
+replace check results.
 
 The key combines the architecture, the target and a hash of `flake.lock`,
 `flake.nix`, `interface.nix`, `catalog/**`, `checks/**` and the three cache and
@@ -137,8 +143,8 @@ the runner lists the build closure of the checks it ran, and the job removes
 every cached path outside that list before saving. Builds of older versions
 therefore leave the cache, which holds only what the target's current version
 builds locally, with its runtime closure. The step summary reports the size.
-Saved narinfo lookups are removed as well, so the next run sees the cache as
-saved.
+Before saving, the job also deletes Nix's local record of binary-cache lookups,
+so the next run does not reuse stale answers about pruned or newly added paths.
 
 The module's `builds` export permits exact artifacts. The harness includes
 permissions from selected modules and their default/individual-line public-entry
@@ -149,28 +155,28 @@ dry-run. Restoring a cache does not expand build permission.
 
 ## Duration and evidence
 
-The PR flow targets ten minutes on its critical path with a prepared cache.
-Per-module targets are in
-[Cost and reports](catalog-contract.md#cost-and-reports). Targets are measured,
-not enforced: the runner and the jobs set no time limits, so a slow check
-finishes and reports its actual duration. Only cache restore and save steps stop
-after two minutes, because a stuck transfer produces no check result. A hung job
-runs until GitHub's default job limit unless cancelled. CI uses one build job
-and all available cores for that build.
+[Cost and reports](catalog-contract.md#cost-and-reports) sets the duration
+targets for the PR flow and each module, and what a report records. Targets are
+measured, not enforced: the runner and the jobs set no time limits, so a slow
+check finishes and reports its actual duration. Only cache transfers stop after
+two minutes, because a stuck transfer produces no check result: the restore and
+save steps, and each post-build copy into the cache. A hung job runs until
+GitHub's default job limit unless cancelled. CI uses one build job and all
+available cores for that build.
 
-Reports identify the suite, stage, architecture, actual duration and result.
-Separate new execution from reused results where known. A cache hit or printed
-derivation path does not prove a fresh run. Unknown cache state stays unknown.
-VM status is passed, failed or not run, with the reason for unavailable KVM.
+The runner prints the system before each stage and a `RESULT` line with the
+suite, stage, status and duration after it. A cache hit or printed derivation
+path does not prove a fresh run. VM status is passed, failed or not run, with
+the reason for unavailable KVM.
 
 ## Other automation
 
-`build_docs.py` prepares source Markdown for the documentation site.
-`nixpkgs/update` remains an explicit local command. The release flow runs the
-same `check` cycle for every module and the common suite, then the modules' VM
-tests.
+`build_docs.py` prepares source Markdown for the documentation site. The release
+flow runs the same `check` cycle for every module and the common suite, then the
+modules' VM tests.
 
-Each module declares additional revisions in `lmx.pins`. Shared
+`nixpkgs/update` is an explicit local command and changes only the base revision
+in `flake.lock`. Additional revisions belong to the modules that declare them in
+`lmx.pins` and change only when those modules edit them. Shared
 `_module.args.pinned` resolves one lazy package set per revision within that
-system, using its architecture and unfree policy. Automation has no named-module
-snapshot registry.
+system, using its architecture and unfree policy.

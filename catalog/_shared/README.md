@@ -4,15 +4,15 @@
 has no selector or module metadata. Each module owns its packages, source pins,
 configuration and application scenarios.
 
-| Path                            | Role                                                               | Loaded by                    |
-| ------------------------------- | ------------------------------------------------------------------ | ---------------------------- |
-| Root `*.nix`, except `test.nix` | NixOS schemas and infrastructure                                   | Every evaluated system       |
-| `languageSupport.nix`           | Tool and language capability schema                                | Every evaluated system       |
-| `pins.nix`                      | Module-declared source registry                                    | Every evaluated system       |
-| `test.nix`                      | Shared infrastructure checks; the standard three-argument test ABI | Once per native architecture |
-| `lib/`                          | Pure helpers                                                       | Explicit imports             |
-| `test/`                         | Generic fixtures and test helpers                                  | Module-owned `test.nix`      |
-| `palette.toml`                  | Common color data                                                  | Consumers that need it       |
+| Path | Role | Loaded by |
+| -- | -- | -- |
+| Root `*.nix`, except `test.nix` | NixOS schemas and infrastructure | Every evaluated system |
+| `languageSupport.nix` | Tool and language capability schema | Every evaluated system |
+| `pins.nix` | Module-declared source registry | Every evaluated system |
+| `test.nix` | Shared infrastructure checks; the standard three-argument test ABI | Once per native architecture |
+| `lib/` | Pure helpers | Explicit imports |
+| `test/` | Generic fixtures and test helpers | Module-owned `test.nix` |
+| `palette.toml` | Common color data | Consumers that need it |
 
 See the [module contract](../../guides/catalog-contract.md). Shared code does
 not name modules, choose their lines or reconstruct their private scenarios.
@@ -31,11 +31,11 @@ policy.
 `pinned.<revision>` is a shared lazy package set. An empty registry imports no
 additional source. Inspecting its keys does not resolve its package sets.
 
-| Input to `lib/pinned.nix` | Meaning                             |
-| ------------------------- | ----------------------------------- |
-| `sources`                 | Revision-to-hash attribute set      |
-| `system`                  | Effective NixOS host platform       |
-| `unfreePackages`          | Allowed package names; default `[]` |
+| Input to `lib/pinned.nix` | Meaning |
+| -- | -- |
+| `sources` | Revision-to-hash attribute set |
+| `system` | Effective NixOS host platform |
+| `unfreePackages` | Allowed package names; default `[]` |
 
 Each imported value receives the supplied platform, `overlays = []` and unfree
 policy. The policy reads that system's final
@@ -54,12 +54,12 @@ local-build permission are separate rules.
 
 `lmx.capabilities.languageSupport.tools.<identity>` declares one complete tool:
 
-| Field       | Type                          | Meaning                          |
-| ----------- | ----------------------------- | -------------------------------- |
-| `package`   | package, required             | Package supplying the executable |
-| `command`   | string, required              | Executable to launch             |
-| `args`      | list of strings; default `[]` | Arguments                        |
-| `languages` | list of strings; default `[]` | Language identities              |
+| Field | Type | Meaning |
+| -- | -- | -- |
+| `package` | package, required | Package supplying the executable |
+| `command` | string, required | Executable to launch |
+| `args` | list of strings; default `[]` | Arguments |
+| `languages` | list of strings; default `[]` | Language identities |
 
 A tool key identifies the tool independently of provider modules and versions.
 Providers apply `lib.mkOverride (1000 - rank)` to the complete record, with
@@ -93,15 +93,15 @@ callback receives the numeric line string and a record `{ config; pkgs; lib; }`.
 `config` comes from `evalSystem` of that line's public entry point. The other
 fields are the supplied native package set and library.
 
-| Result                  | Value                                                  |
-| ----------------------- | ------------------------------------------------------ |
-| `metadata`              | Parsed module `module.toml`                            |
-| `lines`                 | Numeric version order, for example `1.9`, `1.10`       |
-| `configurations.<line>` | Lazy record for `versions/<line>.nix`                  |
-| `defaultConfiguration`  | Separate lazy record for `default.nix`                 |
-| `allConfiguration`      | Separate lazy record importing all public line entries |
-| `eval."line-<line>"`    | Callback predicate; returns `true` or fails            |
-| `run."commands-<line>"` | Callback derivation; absent when `runLine = null`      |
+| Result | Value |
+| -- | -- |
+| `metadata` | Parsed module `module.toml` |
+| `lines` | Numeric version order, for example `1.9`, `1.10` |
+| `configurations.<line>` | Lazy record for `versions/<line>.nix` |
+| `defaultConfiguration` | Separate lazy record for `default.nix` |
+| `allConfiguration` | Separate lazy record importing all public line entries |
+| `eval."line-<line>"` | Callback predicate; returns `true` or fails |
+| `run."commands-<line>"` | Callback derivation; absent when `runLine = null` |
 
 Reading metadata does not evaluate a system. Each demanded configuration is
 shared by callbacks that use it. The helper does not export `allLines`, impose
@@ -166,19 +166,19 @@ unit checks use local fake processes and no network.
 
 ## Corner cases
 
-| Case                                        | Result                                                    |
-| ------------------------------------------- | --------------------------------------------------------- |
-| Empty pin registry                          | No additional source import                               |
-| Equal ordinary hashes for one revision      | One declaration                                           |
-| Different ordinary hashes for one revision  | Evaluation error                                          |
-| Inspecting unused pin names                 | Package sets remain lazy                                  |
-| Equal-priority unequal tool records         | Evaluation error                                          |
-| Stronger complete tool record               | All fields change together; omitted optional fields reset |
-| Parser-only contribution                    | Accepted without a tool declaration                       |
-| Metadata-only line inspection               | No `evalSystem` call                                      |
-| Forbidden line combination                  | Module owns the diagnostic; helper does not hide it       |
-| User changes VM identity                    | Fixture account follows final name, home and shell        |
-| Contextual strings or `__toString` packages | Values and priorities survive canonical ordering          |
+| Case | Result |
+| -- | -- |
+| Empty pin registry | No additional source import |
+| Equal ordinary hashes for one revision | One declaration |
+| Different ordinary hashes for one revision | Evaluation error |
+| Inspecting unused pin names | Package sets remain lazy |
+| Equal-priority unequal tool records | Evaluation error |
+| Stronger complete tool record | All fields change together; omitted optional fields reset |
+| Parser-only contribution | Accepted without a tool declaration |
+| Metadata-only line inspection | No `evalSystem` call |
+| Forbidden line combination | Module owns the diagnostic; helper does not hide it |
+| User changes VM identity | Fixture account follows final name, home and shell |
+| Contextual strings or `__toString` packages | Values and priorities survive canonical ordering |
 
 ## Guarantees
 
@@ -187,23 +187,23 @@ checks cover helper behavior; module checks cover integration with real tools.
 Pin checks exercise the current loader's empty/lazy paths and argument wiring;
 they do not download a source to prove architecture or unfree policy.
 
-| Guarantee                                                                                | Checked by                                                                         |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Empty language schemas contribute no tools or languages                                  | `eval.emptyCapabilities`                                                           |
-| Optional tool defaults normalize before equality comparison                              | `eval.normalizedDeclarations`, `eval.equalDeclarations`                            |
-| Tool records select atomically, including omitted optional fields                        | `eval.atomicDeclaration`                                                           |
-| Parser contributions add and deduplicate independently of tools                          | `eval.parserContributions`                                                         |
-| Unequal command, argument or language declarations fail                                  | `fails.conflictingCommands`, `fails.conflictingArgs`, `fails.conflictingLanguages` |
-| Required tool fields and parser lists cannot be omitted                                  | `fails.missingToolCommand`, `fails.missingToolPackage`, `fails.missingParserList`  |
-| Empty and unused pin values stay lazy in the actual loader                               | `eval.emptyPins`, `eval.lazyPins`                                                  |
-| Equal ordinary pin hashes agree; different ordinary hashes fail                          | `eval.pinDeclarations`, `fails.conflictingPins`                                    |
-| Empty registry reaches the actual `pinned` module argument                               | `eval.pinWiring`                                                                   |
-| VM foundation loads public schemas, excludes test export and follows configured identity | `eval.vmPlatform`                                                                  |
-| Package ordering preserves values, context, duplicates and replacement semantics         | `eval.canonicalPackages`, `eval.packageValues`                                     |
-| Canonical profile retains the explicit package-priority winner                           | `run.packagePriority`                                                              |
-| Lines sort numerically and callbacks receive their public entry records                  | `eval.numericLines`, `eval.lineCallbacks`                                          |
-| Runtime callbacks produce named derivations without automatic realization                | `eval.lineRuntimeRecipes`                                                          |
-| Metadata inspection stays lazy; default and all-line fixtures are separate               | `eval.lazyLineFixtures`, `eval.separateLineFixtures`                               |
-| A non-Boolean line predicate fails                                                       | `eval.strictLinePredicate`                                                         |
-| PTY deadlines, fragmented I/O, bounded output and cleanup work                           | `run.terminal`                                                                     |
-| JSON-RPC framing, unrelated messages, failure diagnostics and cleanup work               | `run.protocol`                                                                     |
+| Guarantee | Checked by |
+| -- | -- |
+| Empty language schemas contribute no tools or languages | `eval.emptyCapabilities` |
+| Optional tool defaults normalize before equality comparison | `eval.normalizedDeclarations`, `eval.equalDeclarations` |
+| Tool records select atomically, including omitted optional fields | `eval.atomicDeclaration` |
+| Parser contributions add and deduplicate independently of tools | `eval.parserContributions` |
+| Unequal command, argument or language declarations fail | `fails.conflictingCommands`, `fails.conflictingArgs`, `fails.conflictingLanguages` |
+| Required tool fields and parser lists cannot be omitted | `fails.missingToolCommand`, `fails.missingToolPackage`, `fails.missingParserList` |
+| Empty and unused pin values stay lazy in the actual loader | `eval.emptyPins`, `eval.lazyPins` |
+| Equal ordinary pin hashes agree; different ordinary hashes fail | `eval.pinDeclarations`, `fails.conflictingPins` |
+| Empty registry reaches the actual `pinned` module argument | `eval.pinWiring` |
+| VM foundation loads public schemas, excludes test export and follows configured identity | `eval.vmPlatform` |
+| Package ordering preserves values, context, duplicates and replacement semantics | `eval.canonicalPackages`, `eval.packageValues` |
+| Canonical profile retains the explicit package-priority winner | `run.packagePriority` |
+| Lines sort numerically and callbacks receive their public entry records | `eval.numericLines`, `eval.lineCallbacks` |
+| Runtime callbacks produce named derivations without automatic realization | `eval.lineRuntimeRecipes` |
+| Metadata inspection stays lazy; default and all-line fixtures are separate | `eval.lazyLineFixtures`, `eval.separateLineFixtures` |
+| A non-Boolean line predicate fails | `eval.strictLinePredicate` |
+| PTY deadlines, fragmented I/O, bounded output and cleanup work | `run.terminal` |
+| JSON-RPC framing, unrelated messages, failure diagnostics and cleanup work | `run.protocol` |

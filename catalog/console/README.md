@@ -3,15 +3,15 @@
 `lmx:console` combines the configured terminal modules into a development
 environment. Each component can also be selected separately.
 
-| Component                           | Provides                                                                             |
-| ----------------------------------- | ------------------------------------------------------------------------------------ |
-| [Zsh](../zsh/README.md)             | Oh My Zsh, completion, suggestions, Starship, local Atuin history, zoxide and direnv |
-| [tmux](../tmux/README.md)           | Panes, sessions, clipboard integration and saved layouts                             |
-| [AstroNvim](../astronvim/README.md) | Configured editor, language-server integration and Nix-built parsers                 |
-| [CLI tools](../cli-tools/README.md) | Search, previews, Git diffs, structured data and system tools                        |
-| [Lazygit](../lazygit/README.md)     | Git terminal interface                                                               |
-| [GitHub CLI](../gh/README.md)       | GitHub repositories, pull requests and workflow runs                                 |
-| [Yazi](../yazi/README.md)           | File manager                                                                         |
+| Component | Provides |
+| -- | -- |
+| [Zsh](../zsh/README.md) | Oh My Zsh, completion, suggestions, Starship, local Atuin history, zoxide and direnv |
+| [tmux](../tmux/README.md) | Panes, sessions, clipboard integration and saved layouts |
+| [AstroNvim](../astronvim/README.md) | Configured editor, language-server integration and Nix-built parsers |
+| [CLI tools](../cli-tools/README.md) | Search, previews, Git diffs, structured data and system tools |
+| [Lazygit](../lazygit/README.md) | Git terminal interface |
+| [GitHub CLI](../gh/README.md) | GitHub repositories, pull requests and workflow runs |
+| [Yazi](../yazi/README.md) | File manager |
 
 ## Select the module
 
@@ -109,23 +109,23 @@ selections follow each component's selection policy.
 
 ## Configuration and integration
 
-| Boundary       | Contract                                                                                                    |
-| -------------- | ----------------------------------------------------------------------------------------------------------- |
-| Settings       | Owned by the individual components; the aggregate declares no additional public options                     |
-| Personal state | Guest home: shell history, editor state, tmux snapshots and application configuration                       |
-| Integration    | Imports the seven documented entry points; an explicit supported AstroNvim line replaces its recommendation |
-| Services       | Does not enable Docker or create a Kubernetes cluster                                                       |
+| Boundary | Contract |
+| -- | -- |
+| Settings | Owned by the individual components; the aggregate declares no additional public options |
+| Personal state | Guest home: shell history, editor state, tmux snapshots and application configuration |
+| Integration | Imports the seven documented entry points; an explicit supported AstroNvim line replaces its recommendation |
+| Services | Does not enable Docker or create a Kubernetes cluster |
 
 ## Corner cases
 
-| Case                           | Behavior or next step                                                  |
-| ------------------------------ | ---------------------------------------------------------------------- |
-| No language server             | Select a language provider; Console does not choose project toolchains |
-| Conflicting component versions | Follow the component's selection policy                                |
+| Case | Behavior or next step |
+| -- | -- |
+| No language server | Select a language provider; Console does not choose project toolchains |
+| Conflicting component versions | Follow the component's selection policy |
 
 ## Guarantees
 
-| Guarantee                                                               | Checked by        |
-| ----------------------------------------------------------------------- | ----------------- |
+| Guarantee | Checked by |
+| -- | -- |
 | Imports the seven public components and their terminal/session settings | `eval.components` |
-| Leaves Docker Engine disabled                                           | `eval.noDocker`   |
+| Leaves Docker Engine disabled | `eval.noDocker` |

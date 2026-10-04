@@ -16,10 +16,10 @@ Add the selector to your VM's `nixos.modules` list and
 `lmx:docker` recommends the catalog default. An explicit `lmx:docker-LINE`
 selection replaces that recommendation, including when Cozy imports the default.
 
-| Selector                      | Docker Engine and CLI | Notes       |
-| ----------------------------- | --------------------- | ----------- |
-| `lmx:docker`, `lmx:docker-29` | 29.8.0                | Default     |
-| `lmx:docker-28`               | 28.5.2                | End of life |
+| Selector | Docker Engine and CLI | Notes |
+| -- | -- | -- |
+| `lmx:docker`, `lmx:docker-29` | 29.8.0 | Default |
+| `lmx:docker-28` | 28.5.2 | End of life |
 
 Support status follows
 [Moby's branch maintenance table](https://github.com/moby/moby/blob/master/project/BRANCHES-AND-TAGS.md).
@@ -88,27 +88,27 @@ as to any other service in the VM. For details, see Docker's guides to
 
 ## Configuration and integration
 
-| Boundary    | Contract                                                                        |
-| ----------- | ------------------------------------------------------------------------------- |
-| Settings    | Standard `virtualisation.docker.*` options                                      |
-| State       | Engine images, containers and volumes under `/var/lib/docker` on the guest disk |
-| Integration | Imports Lazydocker and adds the development account to the Docker group         |
-| Services    | `docker.service` and the NixOS Docker socket configuration                      |
+| Boundary | Contract |
+| -- | -- |
+| Settings | Standard `virtualisation.docker.*` options |
+| State | Engine images, containers and volumes under `/var/lib/docker` on the guest disk |
+| Integration | Imports Lazydocker and adds the development account to the Docker group |
+| Services | `docker.service` and the NixOS Docker socket configuration |
 
 ## Corner cases
 
-| Case                      | Behavior or next step                                                                           |
-| ------------------------- | ----------------------------------------------------------------------------------------------- |
-| Two Docker lines          | Choose one service package; version lines share the same engine state                           |
+| Case | Behavior or next step |
+| -- | -- |
+| Two Docker lines | Choose one service package; version lines share the same engine state |
 | Unexpected reachable port | Docker manages published-port firewall rules; check the bind address in `docker run` or Compose |
-| VM deletion               | Guest-disk Docker volumes are deleted with that disk                                            |
-| Permission changes        | Reconnect after the applied account groups change                                               |
+| VM deletion | Guest-disk Docker volumes are deleted with that disk |
+| Permission changes | Reconnect after the applied account groups change |
 
 ## Guarantees
 
-| Guarantee                                                                                       | Checked by                           |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Each Engine line selects its CLI, Compose and Lazydocker, account group, socket and EOL warning | `eval.line-28`, `eval.line-29`       |
-| Two explicit Engine lines fail with `docker: select one line`                                   | `fails.twoLines`                     |
-| Both Engine lines execute Docker and Compose from the selected profile                          | `run.commands-28`, `run.commands-29` |
-| The default Engine boots; the development account runs an offline container and Compose service | `vm.activation`                      |
+| Guarantee | Checked by |
+| -- | -- |
+| Each Engine line selects its CLI, Compose and Lazydocker, account group, socket and EOL warning | `eval.line-28`, `eval.line-29` |
+| Two explicit Engine lines fail with `docker: select one line` | `fails.twoLines` |
+| Both Engine lines execute Docker and Compose from the selected profile | `run.commands-28`, `run.commands-29` |
+| The default Engine boots; the development account runs an offline container and Compose service | `vm.activation` |

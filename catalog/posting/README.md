@@ -42,25 +42,25 @@ configuration.
 
 ## Configuration and integration
 
-| Boundary                  | Contract                                                                                            |
-| ------------------------- | --------------------------------------------------------------------------------------------------- |
-| Settings                  | `environment.variables.POSTING_THEME` defaults to `catppuccin-mocha`; personal YAML may override it |
-| Personal state            | `~/.config/posting/config.yaml` and request collections, respecting XDG configuration               |
-| Integration               | Cozy ships a project collection for its notes API                                                   |
-| Services and capabilities | No API server or language-support declarations                                                      |
+| Boundary | Contract |
+| -- | -- |
+| Settings | `environment.variables.POSTING_THEME` defaults to `catppuccin-mocha`; personal YAML may override it |
+| Personal state | `~/.config/posting/config.yaml` and request collections, respecting XDG configuration |
+| Integration | Cozy ships a project collection for its notes API |
+| Services and capabilities | No API server or language-support declarations |
 
 ## Corner cases
 
-| Case                  | Behavior or next step                                                               |
-| --------------------- | ----------------------------------------------------------------------------------- |
-| Collection is missing | Create or select an existing directory before using `--collection`                  |
-| API is unreachable    | Check the URL from inside the guest; guest localhost is separate from Mac localhost |
-| Personal theme wins   | The YAML setting overrides the managed environment default                          |
+| Case | Behavior or next step |
+| -- | -- |
+| Collection is missing | Create or select an existing directory before using `--collection` |
+| API is unreachable | Check the URL from inside the guest; guest localhost is separate from Mac localhost |
+| Personal theme wins | The YAML setting overrides the managed environment default |
 
 ## Guarantees
 
-| Guarantee                                                                         | Checked by                      |
-| --------------------------------------------------------------------------------- | ------------------------------- |
+| Guarantee | Checked by |
+| -- | -- |
 | The module installs the base Posting package and its config-location command runs | `eval.defaults`, `run.commands` |
-| POSTING_THEME defaults to catppuccin-mocha                                        | `eval.defaults`                 |
-| An ordinary assignment can replace POSTING_THEME                                  | `eval.themeOverride`            |
+| POSTING_THEME defaults to catppuccin-mocha | `eval.defaults` |
+| An ordinary assignment can replace POSTING_THEME | `eval.themeOverride` |

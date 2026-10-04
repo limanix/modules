@@ -16,11 +16,11 @@ Add the selector to your VM's `nixos.modules` list and
 selection replaces that recommendation. Multiple explicit supported lines retain
 the side-by-side behavior described below.
 
-| Selector                              | Terraform | Notes   |
-| ------------------------------------- | --------- | ------- |
-| `lmx:terraform`, `lmx:terraform-1.16` | 1.16.4    | Default |
-| `lmx:terraform-1.15`                  | 1.15.9    |         |
-| `lmx:terraform-1.14`                  | 1.14.9    |         |
+| Selector | Terraform | Notes |
+| -- | -- | -- |
+| `lmx:terraform`, `lmx:terraform-1.16` | 1.16.4 | Default |
+| `lmx:terraform-1.15` | 1.15.9 |  |
+| `lmx:terraform-1.14` | 1.14.9 |  |
 
 Upstream maintenance status for these Terraform CLI lines has not been
 confirmed. The catalog records their
@@ -61,27 +61,27 @@ terraform-1.16 version
 
 ## Configuration and integration
 
-| Boundary                  | Contract                                                                               |
-| ------------------------- | -------------------------------------------------------------------------------------- |
-| Settings                  | Project HCL, backend configuration and native Terraform environment variables          |
-| Personal state            | Project `.terraform/`, provider lock file and the chosen local or remote state backend |
-| Integration               | Cloud credentials and provider plugins are configured by the project                   |
-| Services and capabilities | No daemon or language-support declarations                                             |
+| Boundary | Contract |
+| -- | -- |
+| Settings | Project HCL, backend configuration and native Terraform environment variables |
+| Personal state | Project `.terraform/`, provider lock file and the chosen local or remote state backend |
+| Integration | Cloud credentials and provider plugins are configured by the project |
+| Services and capabilities | No daemon or language-support declarations |
 
 ## Corner cases
 
-| Case                     | Behavior or next step                                                                    |
-| ------------------------ | ---------------------------------------------------------------------------------------- |
-| Provider is missing      | Run `terraform init` for the project; the module installs the CLI, not every provider    |
-| Wrong account or backend | Inspect the selected credentials, workspace and backend before plan or apply             |
-| Several versions         | Use versioned commands with a state and provider configuration compatible with that line |
+| Case | Behavior or next step |
+| -- | -- |
+| Provider is missing | Run `terraform init` for the project; the module installs the CLI, not every provider |
+| Wrong account or backend | Inspect the selected credentials, workspace and backend before plan or apply |
+| Several versions | Use versioned commands with a state and provider configuration compatible with that line |
 
 ## Local builds
 
 The module declares exact build permissions for each CLI and its vendor inputs:
 
-| Line | CLI                     | Vendor inputs                  |
-| ---- | ----------------------- | ------------------------------ |
+| Line | CLI | Vendor inputs |
+| -- | -- | -- |
 | 1.14 | `builds.terraform-1.14` | `builds.terraform-vendor-1.14` |
 | 1.15 | `builds.terraform-1.15` | `builds.terraform-vendor-1.15` |
 | 1.16 | `builds.terraform-1.16` | `builds.terraform-vendor-1.16` |
@@ -92,11 +92,11 @@ before running the checks.
 
 ## Guarantees
 
-| Guarantee                                                                                            | Checked by                                                    |
-| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Each Terraform line installs its package with the expected warning behavior                          | `eval.line-1.14`, `eval.line-1.15`, `eval.line-1.16`          |
-| Selected lines coexist; the newest package supplies `terraform`                                      | `eval.allLines`, `run.allLines`                               |
-| The evaluated system declares Terraform unfree permission through NixOS                              | `eval.unfreeDeclaration`                                      |
+| Guarantee | Checked by |
+| -- | -- |
+| Each Terraform line installs its package with the expected warning behavior | `eval.line-1.14`, `eval.line-1.15`, `eval.line-1.16` |
+| Selected lines coexist; the newest package supplies `terraform` | `eval.allLines`, `run.allLines` |
+| The evaluated system declares Terraform unfree permission through NixOS | `eval.unfreeDeclaration` |
 | Versioned commands initialize, validate and plan local output-only HCL without a backend or provider | `run.commands-1.14`, `run.commands-1.15`, `run.commands-1.16` |
 
 No test provisions infrastructure.

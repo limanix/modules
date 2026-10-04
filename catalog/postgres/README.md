@@ -19,11 +19,11 @@ Add the selector to your VM's `nixos.modules` list and
 selection replaces that recommendation. Multiple explicit supported lines retain
 the side-by-side behavior described below.
 
-| Selector                          | PostgreSQL | Notes   |
-| --------------------------------- | ---------- | ------- |
-| `lmx:postgres`, `lmx:postgres-18` | 18.6       | Default |
-| `lmx:postgres-17`                 | 17.11      |         |
-| `lmx:postgres-16`                 | 16.15      |         |
+| Selector | PostgreSQL | Notes |
+| -- | -- | -- |
+| `lmx:postgres`, `lmx:postgres-18` | 18.6 | Default |
+| `lmx:postgres-17` | 17.11 |  |
+| `lmx:postgres-16` | 16.15 |  |
 
 Upstream support dates are listed in the
 [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/).
@@ -101,10 +101,10 @@ PostgreSQL references for
 
 For the manually initialized instance, edit these files inside the VM:
 
-| File                            | Controls                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------ |
+| File | Controls |
+| -- | -- |
 | `$pg_root/data/postgresql.conf` | Server settings, including `listen_addresses`, `port`, and memory limits |
-| `$pg_root/data/pg_hba.conf`     | Which connections are allowed and how they authenticate                  |
+| `$pg_root/data/pg_hba.conf` | Which connections are allowed and how they authenticate |
 
 These are PostgreSQL configuration files, not shell scripts; shell variables
 such as `$HOME` are not expanded in them. The start command's `-k` option
@@ -349,32 +349,32 @@ old databases.
 
 ## Configuration and integration
 
-| Boundary                  | Contract                                                                                                   |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Settings                  | No catalog-specific public options; configure a server through standard `services.postgresql.*` separately |
-| Personal state            | Manually initialized data directory, or the directory selected by the enabled NixOS service                |
-| Integration               | Supplies server and client binaries for manual use without enabling a database service                     |
-| Services and capabilities | No service or language-support declaration from this module alone                                          |
+| Boundary | Contract |
+| -- | -- |
+| Settings | No catalog-specific public options; configure a server through standard `services.postgresql.*` separately |
+| Personal state | Manually initialized data directory, or the directory selected by the enabled NixOS service |
+| Integration | Supplies server and client binaries for manual use without enabling a database service |
+| Services and capabilities | No service or language-support declaration from this module alone |
 
 ## Corner cases
 
-| Case                                 | Behavior or next step                                                                                              |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| No server after selecting the module | Initialize and start one manually or enable the NixOS PostgreSQL service                                           |
-| Switching major versions             | Migrate the data directory with PostgreSQL's supported upgrade process; selecting another line does not migrate it |
-| Service package differs from CLI     | The service package is configured separately; ordinary catalog commands retain their documented precedence         |
-| Building client bindings             | Inspect the intended line with `pg_config-LINE`; choose the project compiler or SDK separately                     |
+| Case | Behavior or next step |
+| -- | -- |
+| No server after selecting the module | Initialize and start one manually or enable the NixOS PostgreSQL service |
+| Switching major versions | Migrate the data directory with PostgreSQL's supported upgrade process; selecting another line does not migrate it |
+| Service package differs from CLI | The service package is configured separately; ordinary catalog commands retain their documented precedence |
+| Building client bindings | Inspect the intended line with `pg_config-LINE`; choose the project compiler or SDK separately |
 
 ## Guarantees
 
-| Guarantee                                                                                        | Checked by                                              |
-| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| Each line installs its server, matching `pg_config`, shared data and expected EOL warning        | `eval.line-16`, `eval.line-17`, `eval.line-18`          |
-| Selected lines retain their commands; the newest server and `pg_config` supply ordinary commands | `eval.allLines`, `run.allLines`                         |
-| Selection leaves the PostgreSQL service disabled and declares no PostgreSQL unit                 | `eval.noService`                                        |
-| Catalog commands outrank an independently configured service package                             | `eval.servicePackagePrecedence`                         |
-| Versioned commands execute and report real header, library and PGXS paths for their line         | `run.commands-16`, `run.commands-17`, `run.commands-18` |
-| The default line initializes, queries and stops a temporary database without root                | `run.lifecycle`                                         |
+| Guarantee | Checked by |
+| -- | -- |
+| Each line installs its server, matching `pg_config`, shared data and expected EOL warning | `eval.line-16`, `eval.line-17`, `eval.line-18` |
+| Selected lines retain their commands; the newest server and `pg_config` supply ordinary commands | `eval.allLines`, `run.allLines` |
+| Selection leaves the PostgreSQL service disabled and declares no PostgreSQL unit | `eval.noService` |
+| Catalog commands outrank an independently configured service package | `eval.servicePackagePrecedence` |
+| Versioned commands execute and report real header, library and PGXS paths for their line | `run.commands-16`, `run.commands-17`, `run.commands-18` |
+| The default line initializes, queries and stops a temporary database without root | `run.lifecycle` |
 
 `run.lifecycle` uses an isolated temporary data directory and Unix socket. It
 does not test the independent NixOS service described above.

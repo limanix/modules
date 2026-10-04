@@ -28,14 +28,14 @@ VM's platform; optional applications come from your chosen modules.
 
 ## Find the right guide
 
-| Goal                                                        | Page                                    |
-| ----------------------------------------------------------- | --------------------------------------- |
-| Select ready-made tools and their version lines             | [Catalog](catalog.md)                   |
-| Understand the platform, module boundaries and composition  | [Concepts](concepts.md)                 |
-| Add project settings or create a module                     | [Write a module](writing-modules.md)    |
+| Goal | Page |
+| -- | -- |
+| Select ready-made tools and their version lines | [Catalog](catalog.md) |
+| Understand the platform, module boundaries and composition | [Concepts](concepts.md) |
+| Add project settings or create a module | [Write a module](writing-modules.md) |
 | Maintain a catalog module's public interface and guarantees | [Catalog contract](catalog-contract.md) |
-| Run checks and understand timings and cache results         | [Automation](automation.md)             |
-| Diagnose evaluation, command or activation failures         | [Troubleshooting](troubleshooting.md)   |
+| Run checks and understand timings and cache results | [Automation](automation.md) |
+| Diagnose evaluation, command or activation failures | [Troubleshooting](troubleshooting.md) |
 
 ```{toctree}
 :hidden:

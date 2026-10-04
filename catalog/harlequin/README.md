@@ -49,25 +49,25 @@ profile discovery and precedence.
 
 ## Configuration and integration
 
-| Boundary                  | Contract                                                                              |
-| ------------------------- | ------------------------------------------------------------------------------------- |
-| Settings                  | Native project and user Harlequin TOML profiles; command-line options take precedence |
-| Personal state            | `~/.config/harlequin/config.toml`, home and project profiles                          |
-| Integration               | Packaged PostgreSQL adapter plus Harlequin's DuckDB and SQLite adapters               |
-| Services and capabilities | No database server or language-support declarations                                   |
+| Boundary | Contract |
+| -- | -- |
+| Settings | Native project and user Harlequin TOML profiles; command-line options take precedence |
+| Personal state | `~/.config/harlequin/config.toml`, home and project profiles |
+| Integration | Packaged PostgreSQL adapter plus Harlequin's DuckDB and SQLite adapters |
+| Services and capabilities | No database server or language-support declarations |
 
 ## Corner cases
 
-| Case                        | Behavior or next step                                                                      |
-| --------------------------- | ------------------------------------------------------------------------------------------ |
-| PostgreSQL connection fails | Check the guest-visible host, port, database, credentials and running server               |
-| Wrong connection profile    | Inspect project and user configuration discovery before starting the SQL interface         |
-| BigQuery adapter            | Not included by this module; installing gcloud separately does not add a Harlequin adapter |
+| Case | Behavior or next step |
+| -- | -- |
+| PostgreSQL connection fails | Check the guest-visible host, port, database, credentials and running server |
+| Wrong connection profile | Inspect project and user configuration discovery before starting the SQL interface |
+| BigQuery adapter | Not included by this module; installing gcloud separately does not add a Harlequin adapter |
 
 ## Guarantees
 
-| Guarantee                                                                                    | Checked by                      |
-| -------------------------------------------------------------------------------------------- | ------------------------------- |
-| The module-owned package installs Harlequin with its PostgreSQL adapter                      | `eval.defaults`, `run.commands` |
-| The installed CLI loads the PostgreSQL adapter and its connection options                    | `run.commands`                  |
-| The module patch sets Mocha as the default without replacing personal or command-line themes | `run.theme`                     |
+| Guarantee | Checked by |
+| -- | -- |
+| The module-owned package installs Harlequin with its PostgreSQL adapter | `eval.defaults`, `run.commands` |
+| The installed CLI loads the PostgreSQL adapter and its connection options | `run.commands` |
+| The module patch sets Mocha as the default without replacing personal or command-line themes | `run.theme` |
