@@ -37,22 +37,23 @@ instead of `--global` inside that repository.
 
 ## Configuration and integration
 
-| Boundary | Contract |
-| -- | -- |
-| Settings | `programs.git.*`; personal identity and preferences in global Git configuration |
-| Integration | Imported by CLI tools and Lazygit; repeated entry-point imports configure Git once |
-| Services and capabilities | No daemon or language-support declarations |
+| Boundary                  | Contract                                                                           |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| Settings                  | `programs.git.*`; personal identity and preferences in global Git configuration    |
+| Integration               | Imported by CLI tools and Lazygit; repeated entry-point imports configure Git once |
+| Services and capabilities | No daemon or language-support declarations                                         |
 
 ## Corner cases
 
-| Case | Behavior or next step |
-| -- | -- |
-| Missing commit identity | Set `user.name` and `user.email` in the guest; the module does not copy the Mac identity |
+| Case                      | Behavior or next step                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| Missing commit identity   | Set `user.name` and `user.email` in the guest; the module does not copy the Mac identity |
 | Private repository access | Configure authentication for the guest account; installing Git does not authorize access |
-| Shared repositories | Changes in a read-write project mount affect the Mac files |
+| Shared repositories       | Changes in a read-write project mount affect the Mac files                               |
 
 ## Guarantees
 
-| Guarantee | Covered by |
-| -- | -- |
-| Enables Git and installs the configured NixOS Git package | `check.nix` |
+| Guarantee                                                          | Checked by                     |
+| ------------------------------------------------------------------ | ------------------------------ |
+| Enables Git and installs the configured NixOS package              | `eval.package`, `eval.enabled` |
+| The system-profile Git command prints its version and hashes input | `run.commands`                 |

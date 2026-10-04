@@ -38,13 +38,13 @@ create a VM, apply changes or import custom modules.
 
 ## Documentation
 
-| Guide | Contents |
-| -- | -- |
-| [Catalog](guides/catalog.md) | Available modules, version selectors and links to each module's reference. |
-| [Concepts](guides/concepts.md) | NixOS configuration, composition and package pins. |
-| [Write a module](guides/writing-modules.md) | Custom modules and adding them to the catalog. |
-| [Catalog contract](guides/catalog-contract.md) | Responsibilities, compatibility and required checks. |
-| [Troubleshooting](guides/troubleshooting.md) | Configuration errors, builds and catalog checks. |
+| Guide                                          | Contents                                                                   |
+| ---------------------------------------------- | -------------------------------------------------------------------------- |
+| [Catalog](guides/catalog.md)                   | Available modules, version selectors and links to each module's reference. |
+| [Concepts](guides/concepts.md)                 | NixOS configuration, composition and package pins.                         |
+| [Write a module](guides/writing-modules.md)    | Custom modules and adding them to the catalog.                             |
+| [Catalog contract](guides/catalog-contract.md) | Responsibilities, compatibility and required checks.                       |
+| [Troubleshooting](guides/troubleshooting.md)   | Configuration errors, builds and catalog checks.                           |
 
 The guides and module references are published at
 [limanix.dev](https://limanix.dev/categories/nixos/index.html).

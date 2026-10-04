@@ -1,12 +1,18 @@
 version:
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  pinned,
+  ...
+}:
 let
   tools = import ./packages.nix {
-    inherit version;
-    inherit (pkgs.stdenv.hostPlatform) system;
+    inherit version pinned;
   };
 
-  releases = builtins.attrValues (import ./releases.nix).versions;
+  catalog = import ./releases.nix;
+  source = catalog.sources.${catalog.versions.${version}.source};
+  releases = builtins.attrValues catalog.versions;
   olderReleases = builtins.filter (
     release: lib.versionOlder release.version tools.rustc.version
   ) releases;
@@ -22,7 +28,7 @@ let
   ];
 
   versionedRust =
-    pkgs.runCommand "rust-${version}-commands"
+    pkgs.runCommandLocal "rust-${version}-commands"
       {
         nativeBuildInputs = [ pkgs.makeWrapper ];
       }
@@ -39,12 +45,24 @@ let
       '';
 in
 {
-  lmx.capabilities.languageSupport = {
-    languages.rust.parsers = [ "rust" ];
-    tools.rust-analyzer = lib.mkOverride (1000 - rank) {
-      package = lib.setPrio priority tools.rust-analyzer;
-      command = "${tools.rust-analyzer}/bin/rust-analyzer";
-      languages = [ "rust" ];
+  assertions = [
+    {
+      assertion = rank >= 0 && rank < 100;
+      message = "rust: provider recommendation rank must be between 0 and 99";
+    }
+  ];
+
+  lmx = {
+    pins.${source.rev} = source.sha256;
+    internal.rust.packages.${version} = tools;
+
+    capabilities.languageSupport = {
+      languages.rust.parsers = [ "rust" ];
+      tools.rust-analyzer = lib.mkOverride (1000 - rank) {
+        package = lib.setPrio priority tools.rust-analyzer;
+        command = "${tools.rust-analyzer}/bin/rust-analyzer";
+        languages = [ "rust" ];
+      };
     };
   };
 

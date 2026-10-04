@@ -1,7 +1,7 @@
 # Posting
 
-Installs Posting, a terminal client for HTTP APIs, with Catppuccin Mocha as its
-default theme.
+Installs Posting, a terminal client for HTTP APIs, and sets `POSTING_THEME` to
+`catppuccin-mocha` by default.
 
 ```toml
 [nixos]
@@ -42,24 +42,25 @@ configuration.
 
 ## Configuration and integration
 
-| Boundary | Contract |
-| -- | -- |
-| Settings | `environment.variables.POSTING_THEME` defaults to `catppuccin-mocha`; personal YAML may override it |
-| Personal state | `~/.config/posting/config.yaml` and request collections, respecting XDG configuration |
-| Integration | Cozy ships a project collection for its notes API |
-| Services and capabilities | No API server or language-support declarations |
+| Boundary                  | Contract                                                                                            |
+| ------------------------- | --------------------------------------------------------------------------------------------------- |
+| Settings                  | `environment.variables.POSTING_THEME` defaults to `catppuccin-mocha`; personal YAML may override it |
+| Personal state            | `~/.config/posting/config.yaml` and request collections, respecting XDG configuration               |
+| Integration               | Cozy ships a project collection for its notes API                                                   |
+| Services and capabilities | No API server or language-support declarations                                                      |
 
 ## Corner cases
 
-| Case | Behavior or next step |
-| -- | -- |
-| Collection is missing | Create or select an existing directory before using `--collection` |
-| API is unreachable | Check the URL from inside the guest; guest localhost is separate from Mac localhost |
-| Personal theme wins | The YAML setting overrides the managed environment default |
+| Case                  | Behavior or next step                                                               |
+| --------------------- | ----------------------------------------------------------------------------------- |
+| Collection is missing | Create or select an existing directory before using `--collection`                  |
+| API is unreachable    | Check the URL from inside the guest; guest localhost is separate from Mac localhost |
+| Personal theme wins   | The YAML setting overrides the managed environment default                          |
 
 ## Guarantees
 
-| Guarantee | Covered by |
-| -- | -- |
-| Installs the base Nixpkgs Posting package | `check.nix` |
-| Uses Catppuccin Mocha by default and respects a personal YAML theme | `check.nix`, `smoke.nix`: theme |
+| Guarantee                                                                         | Checked by                      |
+| --------------------------------------------------------------------------------- | ------------------------------- |
+| The module installs the base Posting package and its config-location command runs | `eval.defaults`, `run.commands` |
+| POSTING_THEME defaults to catppuccin-mocha                                        | `eval.defaults`                 |
+| An ordinary assignment can replace POSTING_THEME                                  | `eval.themeOverride`            |

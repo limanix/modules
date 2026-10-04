@@ -1,5 +1,5 @@
 {
   imports = [ ../module.nix ];
 
-  lmx.internal.astronvim.version = "6";
+  lmx.internal.astronvim.versions = [ "6" ];
 }

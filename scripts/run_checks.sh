@@ -1,306 +1,246 @@
 #!/usr/bin/env bash
+# Stage scheduling belongs here; application behavior belongs in public test.nix.
 set -euo pipefail
 set -f
+export LC_ALL=C
 
-arguments=("$@")
-mode=${1:?Specify modules or common}
-shift
-# Full NixOS evaluations can use several GiB; keep local evaluators serial.
-# Increase NIX_CHECK_JOBS only when the runner has enough memory.
-jobs=${NIX_CHECK_JOBS:-1}
-batch_size=${NIX_CHECK_BATCH_SIZE:-4}
-timeout_seconds=${NIX_CHECK_TIMEOUT:-1800}
-target_seconds=${NIX_CHECK_TARGET_SECONDS:-600}
-runtime_profile=${NIX_RUNTIME_PROFILE:-all}
-case "$runtime_profile" in
-  all|pr) ;;
-  *) printf 'Unsupported module runtime profile: %s\n' "$runtime_profile" >&2; exit 2 ;;
-esac
-if test "$mode" != modules && { test "$runtime_profile" != all || test -n "${NIX_RUNTIME_VERSIONS:-}"; }; then
-  printf 'Runtime selections require module checks\n' >&2
-  exit 2
+# Only the outer call owns the process-group timeout. Its children use this
+# positional entry, rather than an inherited environment flag.
+execute=0
+if test "${1:-}" = --execute; then execute=1; shift; fi
+suite=${1:?Usage: run_checks.sh module|common|shared|platform check|eval|run|vm [modules]}
+phase=${2:?Specify check, eval, run or vm}
+shift 2
+case "$suite" in module|common|shared|platform) ;; *) printf 'Unknown suite: %s\n' "$suite" >&2; exit 2 ;; esac
+case "$phase" in check|eval|run|vm) ;; *) printf 'Unknown phase: %s\n' "$phase" >&2; exit 2 ;; esac
+if test "$suite" = common && test "$phase" != check; then
+  printf 'The common suite runs shared and platform eval/run together\n' >&2; exit 2
 fi
-runtime_versions=()
-for version in ${NIX_RUNTIME_VERSIONS:-}; do
-  if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)*$ ]] || ((${#version} > 63)); then
-    printf 'Invalid runtime version: %s\n' "$version" >&2
-    exit 2
-  fi
-  runtime_versions+=("$version")
-done
-if test "$runtime_profile" = all && ((${#runtime_versions[@]})); then
-  printf 'Explicit runtime versions require the pr profile\n' >&2
-  exit 2
-fi
-
-case "$mode" in
-  modules|common) ;;
-  *) printf 'Unsupported check mode: %s\n' "$mode" >&2; exit 2 ;;
-esac
-for value in "$jobs" "$batch_size" "${NIX_BUILD_CORES:-1}" "$timeout_seconds" "$target_seconds"; do
-  if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
-    printf 'Check jobs, batch size, build cores, timeout, and timing target must be positive integers\n' >&2
-    exit 2
-  fi
-done
-profile='pr'
-if test "$mode" = common; then
-  profile=${1:-pr}
-  (($# == 0)) || shift
-  case "$profile" in
-    pr|release|release-eval|release-smoke) ;;
-    *) printf 'Unsupported common check mode: %s\n' "$profile" >&2; exit 2 ;;
-  esac
-  if (($#)); then
-    printf 'Common checks accept one profile: pr, release, release-eval or release-smoke\n' >&2
-    exit 2
-  fi
-fi
-integration_group=${NIX_INTEGRATION_GROUP:-all}
-case "$integration_group" in
-  all) ;;
-  base|compositions|versions)
-    if test "$mode" != common || { test "$profile" != release && test "$profile" != release-eval; }; then
-      printf 'Integration groups require common release or release-eval\n' >&2
-      exit 2
-    fi
-    ;;
-  *) printf 'Unsupported integration group: %s\n' "$integration_group" >&2; exit 2 ;;
-esac
-# A runaway guard bounds the whole suite; exceeding the speed target does not fail it.
-# GNU timeout terminates the process group, covering Nix worker descendants.
-if test "${_LIMANIX_CHECK_BOUNDED:-}" != 1; then
-  command -v timeout >/dev/null || {
-    printf 'Module checks require GNU timeout on the Linux runner\n' >&2
-    exit 2
-  }
-  export _LIMANIX_CHECK_BOUNDED=1
-  exec timeout --kill-after=15s "$timeout_seconds" bash "$0" "${arguments[@]}"
-fi
-# Module names follow the catalog grammar; no shell or Nix expressions are accepted.
 requested=()
 for argument in "$@"; do
   for name in $argument; do
-    if [[ ! "$name" =~ ^[a-z][a-z0-9]*(-[a-z0-9]+)*$ ]] || ((${#name} > 63)); then
-      printf 'Invalid module name: %s\n' "$name" >&2
-      exit 2
+    if [[ ! "$name" =~ ^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$ ]] || ((${#name} > 63)); then
+      printf 'Invalid module name: %s\n' "$name" >&2; exit 2
     fi
+    case "$name" in internal|capabilities|pins) printf 'Reserved module name: %s\n' "$name" >&2; exit 2 ;; esac
     requested+=("$name")
   done
 done
-if ((${#runtime_versions[@]} && ${#requested[@]} != 1)); then
-  printf 'Explicit runtime versions require exactly one module\n' >&2
-  exit 2
+if test "$suite" != module && ((${#requested[@]})); then
+  printf 'Only the module suite accepts module names\n' >&2; exit 2
 fi
-json_strings() {
-  local separator='' name
-  printf '['
-  for name in "$@"; do
-    printf '%s"%s"' "$separator" "$name"
-    separator=,
-  done
-  printf ']'
-}
-
-if test -n "${NIX_BUILD_CACHE:-}"; then
-  case "$NIX_BUILD_CACHE" in
-    /*) ;;
-    *) printf 'NIX_BUILD_CACHE must be an absolute directory\n' >&2; exit 2 ;;
-  esac
-  mkdir -p "$NIX_BUILD_CACHE"
-  export NIX_BUILD_CACHE
-  export NIX_CONFIG="${NIX_CONFIG:-}
-extra-substituters = file://$NIX_BUILD_CACHE?trusted=1
-post-build-hook = $PWD/scripts/cache_nix_build.sh"
-fi
-
-temporary=$(mktemp -d)
-active_pids=()
-cleanup() {
-  trap - EXIT INT TERM
-  if ((${#active_pids[@]})); then
-    kill "${active_pids[@]}" 2>/dev/null || true
-    for pid in "${active_pids[@]}"; do
-      wait "$pid" 2>/dev/null || true
-    done
+limit=${NIX_CHECK_TIMEOUT:-540}
+if test "$phase" = vm; then limit=${NIX_CHECK_TIMEOUT:-900}; fi
+case_limit=${NIX_CHECK_CASE_TIMEOUT:-$limit}
+build_limit=${NIX_BUILD_TIMEOUT:-$limit}
+jobs=${NIX_CHECK_JOBS:-1}
+cores=${NIX_BUILD_CORES:-0}
+for value in "$limit" "$case_limit" "$build_limit" "$jobs"; do
+  if [[ ! "$value" =~ ^[1-9][0-9]*$ ]] || ((${#value} > 6)); then
+    printf 'Timeouts and build jobs must be bounded positive integers\n' >&2; exit 2
   fi
+done
+if test -z "${NIX_CHECK_CASE_TIMEOUT:-}" && ((case_limit > 180)); then case_limit=180; fi
+if [[ ! "$cores" =~ ^(0|[1-9][0-9]*)$ ]] || ((${#cores} > 6)); then
+  printf 'Build cores must be zero or a bounded positive integer\n' >&2; exit 2
+fi
+maximum=540
+if test "$phase" = vm; then maximum=900; fi
+if ((limit > maximum || case_limit > limit || build_limit > limit || jobs > 64 || cores > 64)); then
+  printf 'Check limits exceed the per-module budget (%ss)\n' "$maximum" >&2; exit 2
+fi
+for tool in timeout nix nix-store; do
+  command -v "$tool" >/dev/null || { printf 'Required runner tool missing: %s\n' "$tool" >&2; exit 2; }
+done
+# Discovery has its own case deadline. Every selected module gets a fresh
+# whole-cycle deadline; a slow module cannot consume another module's budget.
+if test "$execute" = 0 && { test "$suite" != module || ((${#requested[@]} == 1)); }; then
+  if ((${#requested[@]})); then
+    exec timeout --kill-after=10s "$limit" bash "$0" --execute "$suite" "$phase" "${requested[@]}"
+  fi
+  exec timeout --kill-after=10s "$limit" bash "$0" --execute "$suite" "$phase"
+fi
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+started=$SECONDS
+temporary=$(mktemp -d)
+cleanup() {
+  status=$?
+  trap - EXIT
+  printf 'RESULT suite=%s phase=%s status=%s exit=%s seconds=%s\n' "$suite" "$phase" "$([ "$status" = 0 ] && printf pass || printf fail)" "$status" "$((SECONDS - started))"
   rm -rf "$temporary"
 }
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-system=$(nix eval --raw --impure --expr builtins.currentSystem)
-case "$system" in
-  x86_64-linux|aarch64-linux) ;;
-  *) printf 'Module checks require a native Linux runner: %s\n' "$system" >&2; exit 2 ;;
-esac
-run_diagnostics() {
-  local file=$1 output=$2 name expected
-  shift 2
-  # Nix owns ${name}; keep shell expansion disabled in this expression.
-  # shellcheck disable=SC2016
-  nix eval --raw --impure --file "$file" diagnostics "$@" \
-    --apply 'checks: builtins.concatStringsSep "\n" (map
-      (name: name + "\t" + checks.${name}.expected) (builtins.attrNames checks)) + "\n"' \
-    > "$output/cases"
-  while IFS=$'\t' read -r name expected; do
-    test -n "$name" || continue
-    test -n "$expected"
-    printf 'Checking expected diagnostic: %s\n' "$name"
-    if nix eval --json --show-trace --impure \
-      --option allow-import-from-derivation false \
-      --file "$file" "$@" \
-      "diagnostics.\"$name\".actual" > "$output/stdout" 2> "$output/stderr"; then
-      printf 'Expected %s to fail, but it succeeded\n' "$name" >&2
-      return 1
-    fi
-    if ! grep -F -- "$expected" "$output/stderr" > /dev/null; then
-      cat "$output/stderr" >&2
-      printf 'Missing expected diagnostic: %s\n' "$expected" >&2
-      return 1
-    fi
-  done < "$output/cases"
-}
-
-report_timing() {
-  local label=$1 elapsed=$2
-  printf 'Timing %s: %ss (performance target %ss; runaway guard %ss)\n' "$label" "$elapsed" "$target_seconds" "$timeout_seconds"
-  if ((elapsed > target_seconds)); then
-    printf 'Performance target exceeded for %s; completed checks remain valid.\n' "$label"
+if test "$phase" = check && { test "$suite" != module || ((${#requested[@]} == 1)); }; then
+  if test "$suite" = common; then
+    for component in shared platform; do
+      bash "$PWD/scripts/run_checks.sh" --execute "$component" eval
+      bash "$PWD/scripts/run_checks.sh" --execute "$component" run
+    done
+  elif ((${#requested[@]})); then
+    bash "$PWD/scripts/run_checks.sh" --execute "$suite" eval "${requested[@]}"
+    bash "$PWD/scripts/run_checks.sh" --execute "$suite" run "${requested[@]}"
+  else
+    bash "$PWD/scripts/run_checks.sh" --execute "$suite" eval
+    bash "$PWD/scripts/run_checks.sh" --execute "$suite" run
   fi
-}
-
-cores=${NIX_BUILD_CORES:-$(( $(nproc) / jobs ))}
-((cores > 0)) || cores=1
-build_jobs=$jobs
-realise_smoke() {
-  local output=$1 label=$2 derivation
-  local -a derivations=()
-  sort -u "$output/derivations" > "$output/unique-derivations"
-  while IFS= read -r derivation; do
-    derivations+=("$derivation")
-  done < "$output/unique-derivations"
-  if ((${#derivations[@]})); then
-    printf 'Realising %s distinct smoke derivations for %s\n' "${#derivations[@]}" "$label"
-    local -a build_options=(--max-jobs "$build_jobs" --cores "$cores")
-    if test "$(id -u)" = 0; then
-      local build_users_group
-      build_users_group=$(nix config show build-users-group)
-      if test -z "$build_users_group"; then
-        # The CI image has dedicated builders but disables them by default.
-        # Root controls the store; fixtures and upstream checks must run unprivileged.
-        build_options+=(--option build-users-group nixbld)
-      fi
-    fi
-    nix-store --realise "${build_options[@]}" "${derivations[@]}"
-  fi
-}
-
-if test "$mode" = common; then
-  started=$SECONDS
-  printf 'Checking common %s (%s) on %s\n' "$profile" "$integration_group" "$system"
-  if test "$profile" != release-smoke && { test "$integration_group" = all || test "$integration_group" = base; }; then
-    nix eval --json --show-trace --impure \
-      --option allow-import-from-derivation false \
-      --file checks/common.nix all
-    run_diagnostics checks/common.nix "$temporary"
-    nix-instantiate checks/common.nix --show-trace --attr smoke \
-      --option allow-import-from-derivation false > "$temporary/derivations"
-    realise_smoke "$temporary" "common $profile"
-  fi
-  if test "$profile" = release || test "$profile" = release-eval; then
-    integration_attribute=evaluation
-    if test "$integration_group" != all; then
-      integration_attribute="evaluationGroups.\"$integration_group\""
-    fi
-    nix eval --raw --impure --file checks/integration.nix "$integration_attribute" \
-      --apply 'checks: builtins.concatStringsSep "\n" (builtins.attrNames checks) + "\n"' \
-      > "$temporary/integration-cases"
-    while IFS= read -r case_name; do
-      printf 'Checking catalog integration: %s\n' "$case_name"
-      nix eval --json --show-trace --impure \
-        --option allow-import-from-derivation false \
-        --file checks/integration.nix "$integration_attribute.\"$case_name\"" \
-        --apply 'value: builtins.deepSeq value true'
-    done < "$temporary/integration-cases"
-    if test "$integration_group" = all || test "$integration_group" = base; then
-      run_diagnostics checks/integration.nix "$temporary"
-    fi
-  fi
-  if test "$profile" = release || test "$profile" = release-smoke; then
-    nix-instantiate checks/integration.nix --show-trace --attr smoke \
-      --option allow-import-from-derivation false > "$temporary/derivations"
-    realise_smoke "$temporary" 'common release'
-  fi
-  printf 'Passed common %s (%s) on %s in %ss\n' "$profile" "$integration_group" "$system" "$((SECONDS - started))"
-  report_timing "common $profile" "$((SECONDS - started))"
   exit 0
 fi
 
-selected_json=$(json_strings "${requested[@]}")
-runtime_arguments=(--argstr runtimeProfile "$runtime_profile" --argstr runtimeVersions "$(json_strings "${runtime_versions[@]}")")
-nix eval --raw --impure --file checks/modules.nix names \
-  --argstr modules "$selected_json" \
-  --apply 'names: builtins.concatStringsSep "\n" names' > "$temporary/modules"
-mapfile -t modules < "$temporary/modules"
-test "${#modules[@]}" -gt 0
-workers=$(( (${#modules[@]} + batch_size - 1) / batch_size ))
-((workers <= jobs)) || workers=$jobs
-build_jobs=$((jobs / workers))
-
-run_batch() {
-  local identifier=$1 name selection started phase_started
+# File caches remain optional and never grant local build permissions.
+if test -n "${NIX_BUILD_CACHE:-}"; then
+  case "$NIX_BUILD_CACHE" in /*) ;; *) printf 'NIX_BUILD_CACHE must be absolute\n' >&2; exit 2 ;; esac
+  uri=${NIX_BUILD_CACHE//\%/%25}; uri=${uri// /%20}; uri=${uri//\#/%23}
+  uri=${uri//\?/%3F}; uri=${uri//\&/%26}; uri=${uri//+/%2B}
+  if mkdir -p "$NIX_BUILD_CACHE"; then
+    cache_hook=''
+    if test -n "${NIX_BUILD_CACHE_HOOK:-}"; then
+      case "$NIX_BUILD_CACHE_HOOK" in /*) ;; *) printf 'NIX_BUILD_CACHE_HOOK must be absolute\n' >&2; exit 2 ;; esac
+      test -x "$NIX_BUILD_CACHE_HOOK" || { printf 'NIX_BUILD_CACHE_HOOK must be executable\n' >&2; exit 2; }
+      cache_hook=$'\n'"post-build-hook = $NIX_BUILD_CACHE_HOOK"
+    fi
+    export NIX_CONFIG="${NIX_CONFIG:-}
+extra-substituters = file://$uri?trusted=1$cache_hook"
+  else
+    printf 'Optional cache unavailable; continuing without it\n' >&2
+  fi
+elif test -n "${NIX_BUILD_CACHE_HOOK:-}"; then
+  printf 'NIX_BUILD_CACHE_HOOK requires NIX_BUILD_CACHE\n' >&2; exit 2
+fi
+flags=(--extra-experimental-features nix-command --option allow-import-from-derivation false --log-format raw)
+system=$(timeout --foreground --kill-after=10s "$case_limit" nix eval "${flags[@]}" --raw --impure --expr builtins.currentSystem)
+case "$system" in x86_64-linux|aarch64-linux) ;; *) printf 'A native Linux runner is required: %s\n' "$system" >&2; exit 2 ;; esac
+export LMX_CHECK_SUITE=$suite LMX_CHECK_MODULES='[]'
+if ((${#requested[@]})); then
+  separator=''; LMX_CHECK_MODULES='['
+  for name in "${requested[@]}"; do LMX_CHECK_MODULES+="$separator\"$name\""; separator=,; done
+  LMX_CHECK_MODULES+=']'
+fi
+expression='let checks = import ./checks/modules.nix {
+  suite = builtins.getEnv "LMX_CHECK_SUITE";
+  modules = builtins.getEnv "LMX_CHECK_MODULES";
+}; in builtins.getAttr (builtins.getEnv "LMX_CHECK_ATTRIBUTE") checks'
+evaluate() {
+  export LMX_CHECK_ATTRIBUTE=$1
   shift
-  local output="$temporary/$identifier"
-  mkdir "$output"
-  for name in "$@"; do
-    started=$SECONDS
-    selection=$(json_strings "$name")
-    printf 'Checking %s on %s: %s (runtime %s; additional versions: %s)\n' "$mode" "$system" "$name" "$runtime_profile" "${runtime_versions[*]:-none}"
-    phase_started=$SECONDS
-    # Each module shares evaluation and smoke configurations, then releases its evaluator.
-    nix-instantiate checks/modules.nix --show-trace --attr all \
-      --option allow-import-from-derivation false \
-      --argstr modules "$selection" "${runtime_arguments[@]}" > "$output/derivations"
-    printf "Timing %s evaluation: %ss\n" "$name" "$((SECONDS - phase_started))"
-    phase_started=$SECONDS
-    run_diagnostics checks/modules.nix "$output" --argstr modules "$selection" "${runtime_arguments[@]}"
-    printf "Timing %s diagnostics: %ss\n" "$name" "$((SECONDS - phase_started))"
-    phase_started=$SECONDS
-    realise_smoke "$output" "$name"
-    printf "Timing %s build and runtime checks: %ss\n" "$name" "$((SECONDS - phase_started))"
-    printf 'Passed %s on %s in %ss\n' "$name" "$system" "$((SECONDS - started))"
-  done
+  timeout --foreground --kill-after=10s "$case_limit" nix eval "${flags[@]}" --impure --expr "$expression" "$@"
+}
+primary_error() {
+  # Source excerpts and trace frames are not evidence of the expected error.
+  local line text='' seen=0
+  local error_pattern='^[[:space:]]*error:'
+  local source_pattern='^[[:space:]]*([0-9]+[[:space:]]*)?[|]'
+  local location_pattern='^[[:space:]]*at .*:[0-9]+:[0-9]+:$'
+  while IFS= read -r line || test -n "$line"; do
+    if [[ "$line" =~ $error_pattern ]]; then text=''; seen=1; fi
+    if [[ "$line" =~ $source_pattern || "$line" =~ $location_pattern ]]; then continue; fi
+    if test "$seen" = 1; then text+="$line"$'\n'; fi
+  done < "$1"
+  printf '%s' "$text"
 }
 
-# Parallel module batches are bounded independently of the number of selectors.
-# CI isolates each module; local selections are serial unless explicitly overridden.
-started=$SECONDS
-offset=0
-while ((offset < ${#modules[@]} || ${#active_pids[@]})); do
-  while ((offset < ${#modules[@]} && ${#active_pids[@]} < workers)); do
-    count=$batch_size
-    if ((offset + count > ${#modules[@]})); then
-      count=$((${#modules[@]} - offset))
+# Keep each pod in its own evaluator and independently bounded process group.
+if test "$suite" = module && ((${#requested[@]} != 1)); then
+  evaluate selectionManifest --write-to "$temporary/selection"
+  failed=0
+  while IFS= read -r name; do
+    test -n "$name" || continue
+    status=0
+    bash "$PWD/scripts/run_checks.sh" module "$phase" "$name" || status=$?
+    if test "$failed" = 0 && test "$status" != 0; then failed=$status; fi
+  done < "$temporary/selection/modules"
+  exit "$failed"
+fi
+
+printf 'Checking suite=%s phase=%s system=%s cache=%s\n' "$suite" "$phase" "$system" "${NIX_BUILD_CACHE:-configured Nix substituters}"
+
+manifest="$temporary/manifest"
+if test "$phase" = eval; then
+  evaluate evalManifest --write-to "$manifest"
+  cat "$manifest/results.json"
+  printf '\n'
+  while IFS=$'\t' read -r target key; do
+    test -n "$target" || continue
+    export LMX_CHECK_TARGET=$target LMX_CHECK_CASE=$key
+    case_started=$SECONDS
+    status=0
+    evaluate failure --json > "$temporary/failure.out" 2> "$temporary/failure.err" || status=$?
+    expected=$(cat "$manifest/expected/$target/$key"; printf '.')
+    expected=${expected%.}
+    diagnostic=$(primary_error "$temporary/failure.err"; printf '.')
+    diagnostic=${diagnostic%.}
+    if test "$status" != 1 || [[ "$diagnostic" != *"$expected"* ]]; then
+      cat "$temporary/failure.err" >&2
+      printf 'Unexpected failure target=%s case=%s exit=%s\n' "$target" "$key" "$status" >&2
+      exit 1
     fi
-    run_batch "$offset" "${modules[@]:offset:count}" &
-    active_pids+=("$!")
-    offset=$((offset + count))
-  done
+    printf 'PASS target=%s fails.%s seconds=%s\n' "$target" "$key" "$((SECONDS - case_started))"
+  done < "$manifest/failures"
+  exit 0
+fi
+
+evaluate "${phase}Manifest" --write-to "$manifest"
+derivations=()
+while IFS= read -r path; do test -z "$path" || derivations+=("$path"); done < "$manifest/roots"
+if ((${#derivations[@]} == 0)); then printf 'No %s exports in this selection\n' "$phase"; exit 0; fi
+if test "$phase" = vm; then
+  if ! test -r /dev/kvm || ! test -w /dev/kvm; then printf 'VM checks require readable/writable /dev/kvm\n' >&2; exit 2; fi
+else
   status=0
-  finished=''
-  wait -n -p finished "${active_pids[@]}" || status=$?
-  test "$status" -eq 0 || exit "$status"
-  if test -z "${finished:-}"; then
-    printf 'No active module batch returned a result\n' >&2
-    exit 1
+  timeout --foreground --kill-after=10s "$case_limit" nix-store --realise --dry-run --option fallback false "${derivations[@]}" > "$temporary/plan.out" 2> "$temporary/plan.err" || status=$?
+  cat "$temporary/plan.err" >&2
+  test "$status" = 0 || exit "$status"
+  # Fail closed on an unknown or count-mismatched build section.
+  header=0; expected=0; section=0; count=0
+  plural_pattern='^these ([1-9][0-9]*) derivations will be built:$'
+  path_pattern='^[[:space:]]+(/nix/store/[^[:space:]]+[.]drv)$'
+  any_path_pattern='/nix/store/[^[:space:]]+[.]drv'
+  : > "$temporary/planned"
+  while IFS= read -r line || test -n "$line"; do
+    if test "$line" = 'this derivation will be built:'; then
+      test "$header" = 0 || { printf 'Duplicate build-plan header\n' >&2; exit 1; }
+      header=1; expected=1; section=1; continue
+    fi
+    if [[ "$line" =~ $plural_pattern ]]; then
+      test "$header" = 0 || { printf 'Duplicate build-plan header\n' >&2; exit 1; }
+      header=1; expected=${BASH_REMATCH[1]}; section=1; continue
+    fi
+    if [[ "$line" = *'will be built'* ]]; then printf 'Unknown build-plan header\n' >&2; exit 1; fi
+    if test "$section" = 1 && [[ "$line" =~ $path_pattern ]]; then
+      printf '%s\n' "${BASH_REMATCH[1]}" >> "$temporary/planned"
+      count=$((count + 1)); continue
+    fi
+    section=0
+    if [[ "$line" =~ $any_path_pattern ]]; then printf 'Unclassified planned derivation\n' >&2; exit 1; fi
+  done < "$temporary/plan.err"
+  test "$count" = "$expected" || { printf 'Build-plan count mismatch\n' >&2; exit 1; }
+  planned=()
+  while IFS= read -r path; do test -z "$path" || planned+=("$path"); done < "$temporary/planned"
+  if ((${#planned[@]})); then
+    timeout --foreground --kill-after=10s "$case_limit" nix derivation show "${flags[@]}" "${planned[@]}" > "$temporary/derivations.json"
+  else printf '{}\n' > "$temporary/derivations.json"
   fi
-  remaining=()
-  for pid in "${active_pids[@]}"; do
-    test "$pid" = "$finished" || remaining+=("$pid")
-  done
-  active_pids=("${remaining[@]}")
-done
-printf 'Passed %s module suites on %s in %ss\n' "${#modules[@]}" "$system" "$((SECONDS - started))"
-report_timing "module suites" "$((SECONDS - started))"
+  export LMX_PLAN_DIRECTORY=$temporary
+  policy='let
+    directory = builtins.getEnv "LMX_PLAN_DIRECTORY";
+    list = name: builtins.filter builtins.isString (builtins.split "\n" (builtins.readFile (directory + "/" + name)));
+    paths = name: builtins.filter (value: value != "") (list name);
+    result = import ./checks/build-plan.nix {
+      planned = paths "planned"; roots = paths "manifest/roots"; builds = paths "manifest/builds";
+      derivations = builtins.fromJSON (builtins.readFile (directory + "/derivations.json"));
+    };
+  in if result.allowed then builtins.toJSON result
+  else throw ("Undeclared local builds:\n" + builtins.concatStringsSep "\n" result.blocked)'
+  timeout --foreground --kill-after=10s "$case_limit" nix eval "${flags[@]}" --raw --impure --expr "$policy"
+  printf '\n'
+fi
+options=(--max-jobs "$jobs" --cores "$cores" --option timeout "$build_limit" --option fallback false --option builders "")
+if test "$(id -u)" = 0; then
+  group=$(nix config show "${flags[@]}" build-users-group)
+  test -n "$group" || options+=(--option build-users-group nixbld)
+fi
+build_started=$SECONDS
+nix-store --realise "${options[@]}" "${derivations[@]}"
+printf 'PASS phase=%s roots=%s seconds=%s\n' "$phase" "${#derivations[@]}" "$((SECONDS - build_started))"

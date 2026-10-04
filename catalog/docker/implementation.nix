@@ -1,17 +1,21 @@
 version:
 {
-  pkgs,
+  pinned,
   lib,
   config,
   ...
 }:
 let
+  releases = import ./releases.nix;
+  source = releases.sources.${releases.versions.${version}.source};
   tools = import ./packages.nix {
-    inherit version;
-    inherit (pkgs.stdenv.hostPlatform) system;
+    inherit version pinned;
   };
 in
 {
+  lmx.pins.${source.rev} = source.sha256;
+  lmx.internal.docker.packages.${version} = tools;
+
   virtualisation.docker = {
     enable = true;
     package = tools.docker;

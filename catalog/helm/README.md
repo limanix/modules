@@ -16,11 +16,11 @@ Add the selector to your VM's `nixos.modules` list and
 replaces that recommendation. Multiple explicit supported lines retain the
 side-by-side behavior described below.
 
-| Selector | Helm | Notes |
-| -- | -- | -- |
-| `lmx:helm`, `lmx:helm-4.3` | 4.3.0 | Default |
-| `lmx:helm-4.2` | 4.2.4 | End of life |
-| `lmx:helm-3.20` | 3.20.2 | End of life |
+| Selector                   | Helm   | Notes       |
+| -------------------------- | ------ | ----------- |
+| `lmx:helm`, `lmx:helm-4.3` | 4.3.0  | Default     |
+| `lmx:helm-4.2`             | 4.2.4  | End of life |
+| `lmx:helm-3.20`            | 3.20.2 | End of life |
 
 The catalog derives these EOL marks from Helm's
 [version support policy](https://helm.sh/docs/topics/version_skew/#supported-versions),
@@ -65,26 +65,25 @@ helm-4.3 version --short
 
 ## Configuration and integration
 
-| Boundary | Contract |
-| -- | -- |
-| Settings | Native Helm CLI and environment settings |
-| Personal state | Helm configuration, cache and data directories; guest kubeconfig |
-| Integration | Uses an existing Kubernetes cluster; no cluster or driver is installed |
-| Services and capabilities | No daemon or language-support declarations |
+| Boundary                  | Contract                                                               |
+| ------------------------- | ---------------------------------------------------------------------- |
+| Settings                  | Native Helm CLI and environment settings                               |
+| Personal state            | Helm configuration, cache and data directories; guest kubeconfig       |
+| Integration               | Uses an existing Kubernetes cluster; no cluster or driver is installed |
+| Services and capabilities | No daemon or language-support declarations                             |
 
 ## Corner cases
 
-| Case | Behavior or next step |
-| -- | -- |
-| Cluster access fails | Check the guest kubeconfig, current context and cluster reachability |
-| Different major lines | Use the versioned command required by the chart workflow |
+| Case                    | Behavior or next step                                                             |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| Cluster access fails    | Check the guest kubeconfig, current context and cluster reachability              |
+| Different major lines   | Use the versioned command required by the chart workflow                          |
 | Offline chart operation | Repository refresh and remote chart downloads need network access or cached files |
 
 ## Guarantees
 
-| Guarantee | Covered by |
-| -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs the pinned Helm line and its `helm-LINE` command | `check.nix`, `smoke.nix`: commands |
-| Selected lines coexist and the newest supplies `helm` | `tests.nix`: coexistence, `smoke.nix`: coexistence |
-| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |
+| Guarantee                                                                              | Checked by                                                  |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Each Helm line installs its package and expected EOL warning                           | `eval.line-3.20`, `eval.line-4.2`, `eval.line-4.3`          |
+| Selected lines coexist; the newest package supplies `helm`                             | `eval.allLines`, `run.allLines`                             |
+| Versioned commands lint a local chart and render its supplied values without a cluster | `run.commands-3.20`, `run.commands-4.2`, `run.commands-4.3` |

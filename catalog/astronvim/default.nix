@@ -5,5 +5,5 @@ in
 {
   imports = [ ./module.nix ];
 
-  lmx.internal.astronvim.version = lib.mkDefault metadata.default;
+  lmx.internal.astronvim.versions = lib.mkDefault [ metadata.default ];
 }

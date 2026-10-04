@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  pinned,
   ...
 }:
 let
@@ -19,11 +20,36 @@ in
     description = "docker version lines selected by catalog modules.";
   };
 
+  options.lmx.internal.docker.packages = lib.mkOption {
+    type = lib.types.attrsOf lib.types.raw;
+    default = { };
+    internal = true;
+    visible = false;
+    description = "Resolved packages for the selected docker lines.";
+  };
+
   config = lib.mkMerge (
-    map (
+    [
+      {
+        assertions = [
+          {
+            assertion = builtins.length selected == 1;
+            message = "docker: select one line";
+          }
+        ];
+      }
+    ]
+    ++ map (
       version:
-      lib.mkIf (builtins.elem version selected) (
-        (import ./implementation.nix version) { inherit config lib pkgs; }
+      lib.mkIf (builtins.length selected == 1 && builtins.elem version selected) (
+        (import ./implementation.nix version) {
+          inherit
+            config
+            lib
+            pkgs
+            pinned
+            ;
+        }
       )
     ) (builtins.attrNames releases)
   );

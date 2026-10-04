@@ -40,7 +40,7 @@ let
   ) (builtins.readFile ./theme-default.toml);
   theme = builtins.fromTOML themeText;
   themeFile = pkgs.writeText "yazi-mocha-theme.toml" themeText;
-  defaultConfiguration = pkgs.runCommand "yazi-mocha-default-configuration" { } ''
+  defaultConfiguration = pkgs.runCommandLocal "yazi-mocha-default-configuration" { } ''
     mkdir -p "$out"
     ln -s ${themeFile} "$out/theme.toml"
   '';
@@ -60,6 +60,8 @@ let
           upstream = pkgs.yazi.override (
             arguments
             // {
+              # These builders generate configuration links and command wrappers only.
+              runCommand = pkgs.runCommandLocal;
               settings =
                 if managed then
                   settings
@@ -83,7 +85,7 @@ let
         if managed then
           upstream
         else
-          pkgs.runCommand upstream.name
+          pkgs.runCommandLocal upstream.name
             {
               inherit (upstream) pname version meta;
             }

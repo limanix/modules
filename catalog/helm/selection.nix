@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  pinned,
   ...
 }:
 let
@@ -17,11 +18,26 @@ in
     description = "helm version lines selected by catalog modules.";
   };
 
+  options.lmx.internal.helm.packages = lib.mkOption {
+    type = lib.types.attrsOf lib.types.raw;
+    default = { };
+    internal = true;
+    visible = false;
+    description = "Resolved packages for the selected helm lines.";
+  };
+
   config = lib.mkMerge (
     map (
       version:
       lib.mkIf (builtins.elem version selected) (
-        (import ./implementation.nix version) { inherit config lib pkgs; }
+        (import ./implementation.nix version) {
+          inherit
+            config
+            lib
+            pkgs
+            pinned
+            ;
+        }
       )
     ) (builtins.attrNames releases)
   );

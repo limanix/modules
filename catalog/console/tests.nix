@@ -1,4 +1,0 @@
-{ componentChecks, ... }:
-{
-  evaluation.composition = componentChecks;
-}

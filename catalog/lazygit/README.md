@@ -49,26 +49,26 @@ The package is configurable with `programs.lazygit.package`.
 
 ## Configuration and integration
 
-| Boundary | Contract |
-| -- | -- |
-| Settings | `programs.lazygit.package` and `programs.lazygit.settings` |
-| Managed configuration | `/etc/xdg/lazygit/config.yml` |
-| Personal configuration | `~/.config/lazygit/config.yml`; project `.lazygit.yml` and `.git/lazygit.yml` |
-| Integration | Imports Git; AstroNvim opens the same Lazygit application |
-| Services and capabilities | No daemon or language-support declarations |
+| Boundary                  | Contract                                                                      |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| Settings                  | `programs.lazygit.package` and `programs.lazygit.settings`                    |
+| Managed configuration     | `/etc/xdg/lazygit/config.yml`                                                 |
+| Personal configuration    | `~/.config/lazygit/config.yml`; project `.lazygit.yml` and `.git/lazygit.yml` |
+| Integration               | Imports Git; AstroNvim opens the same Lazygit application                     |
+| Services and capabilities | No daemon or language-support declarations                                    |
 
 ## Corner cases
 
-| Case | Behavior or next step |
-| -- | -- |
-| Directory is not a Git repository | Open the project repository before starting Lazygit |
-| Personal theme wins | Native personal and project configuration precedence remains active |
-| Authentication or identity | Configure Git credentials and commit identity for the guest account |
+| Case                              | Behavior or next step                                               |
+| --------------------------------- | ------------------------------------------------------------------- |
+| Directory is not a Git repository | Open the project repository before starting Lazygit                 |
+| Personal theme wins               | Native personal and project configuration precedence remains active |
+| Authentication or identity        | Configure Git credentials and commit identity for the guest account |
 
 ## Guarantees
 
-| Guarantee | Covered by |
-| -- | -- |
-| Installs Lazygit and enables Git | `check.nix` |
-| Selecting Git again preserves the system and public settings | `tests.nix`: composition |
-| Mocha is the managed default; ordinary settings and personal XDG configuration override it | `tests.nix`: theme; `smoke.nix`: theme |
+| Guarantee                                                    | Checked by                      |
+| ------------------------------------------------------------ | ------------------------------- |
+| Lazygit and Git are enabled and their installed commands run | `eval.defaults`, `run.commands` |
+| All managed theme and author colors use the Mocha palette    | `eval.defaults`                 |
+| An ordinary user setting replaces a managed theme color      | `eval.themeOverride`            |

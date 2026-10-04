@@ -15,12 +15,12 @@ Add the selector to your VM's `nixos.modules` list and
 `lmx:nodejs` recommends the catalog default. An explicit `lmx:nodejs-LINE`
 selection replaces that recommendation, including when Cozy imports the default.
 
-| Selector | Node.js | Notes |
-| -- | -- | -- |
-| `lmx:nodejs`, `lmx:nodejs-26` | 26.9.0 | Default |
-| `lmx:nodejs-25` | 25.9.0 | End of life |
-| `lmx:nodejs-24` | 24.20.0 |  |
-| `lmx:nodejs-23` | 23.11.0 | End of life |
+| Selector                      | Node.js | Notes       |
+| ----------------------------- | ------- | ----------- |
+| `lmx:nodejs`, `lmx:nodejs-26` | 26.9.0  | Default     |
+| `lmx:nodejs-25`               | 25.9.0  | End of life |
+| `lmx:nodejs-24`               | 24.20.0 |             |
+| `lmx:nodejs-23`               | 23.11.0 | End of life |
 
 Each line includes npm and npx for its Node.js version. Support status follows
 the [Node.js release lifecycle](https://nodejs.org/en/about/previous-releases).
@@ -89,30 +89,28 @@ selected line.
 
 ## Configuration and integration
 
-| Boundary | Contract |
-| -- | -- |
+| Boundary          | Contract                                                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
 | Public capability | `lmx.capabilities.languageSupport.tools.typescript-language-server`; JavaScript, TypeScript and TSX parsers |
-| Personal state | Project `node_modules`, lock files and package-manager caches |
-| Integration | Declares the server without enabling an editor; versioned npm/npx run the matching Node.js line |
-| Services | No daemon |
+| Personal state    | Project `node_modules`, lock files and package-manager caches                                               |
+| Integration       | Declares the server without enabling an editor; versioned npm/npx run the matching Node.js line             |
+| Services          | No daemon                                                                                                   |
 
 ## Corner cases
 
-| Case | Behavior or next step |
-| -- | -- |
-| node-gyp build fails | Add Python, make, a compiler and required native libraries for that project |
+| Case                        | Behavior or next step                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------- |
+| node-gyp build fails        | Add Python, make, a compiler and required native libraries for that project                       |
 | Unexpected compiler version | The server uses the project TypeScript version when configured; its fallback follows base Nixpkgs |
-| Several Node.js lines | Use versioned npm/npx when scripts need a specific interpreter |
+| Several Node.js lines       | Use versioned npm/npx when scripts need a specific interpreter                                    |
 
 ## Guarantees
 
-| Guarantee | Covered by |
-| -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs each selected Node.js line with npm, npx and their versioned commands | `check.nix`, `smoke.nix`: commands |
-| Versioned npm and npx scripts use the matching Node.js interpreter by default | `smoke.nix`: commands |
-| Selected lines coexist and the newest supplies unqualified commands | `tests.nix`: coexistence, `smoke.nix`: coexistence |
-| Declares JavaScript/TypeScript/TSX parsers and the TypeScript language server package, command, arguments, and languages without enabling an editor | `check.nix`, `tests.nix`: providerSelection |
-| A user tool declaration overrides the complete server declaration and installed package | `tests.nix`: userOverride, forceOverride; `smoke.nix`: providerOverride |
-| The declared TypeScript language server starts and answers an LSP initialization request | `smoke.nix`: languageServer |
-| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |
+| Guarantee                                                                                      | Checked by                                                                 |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| The Node.js version, language server, parsers and end-of-life warnings match the selected line | `eval.line-23`, `eval.line-24`, `eval.line-25`, `eval.line-26`             |
+| Explicit lines coexist; ordinary commands and the provider select the newest line              | `eval.allLines`, `run.allLines`                                            |
+| The selected user-supplied provider is installed and runs from the system profile              | `eval.userOverride`, `run.userOverride`                                    |
+| Versioned npm and npx scripts use their matching Node.js interpreter                           | `run.commands-23`, `run.commands-24`, `run.commands-25`, `run.commands-26` |
+| Installing this module does not enable an editor                                               | `eval.allLines`                                                            |
+| The declared and user-supplied servers answer an LSP initialization request                    | `run.languageServer`, `run.userOverride`                                   |

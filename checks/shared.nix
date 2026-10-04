@@ -1,10 +1,5 @@
-{
-  nixpkgs,
-  system,
-}:
+{ pkgs, lib }:
 let
-  pkgs = import nixpkgs { inherit system; };
-  inherit (pkgs) lib;
   files = import ./shared-files.nix;
   checkFile =
     path:
@@ -13,4 +8,4 @@ let
       modules = [ path ];
     };
 in
-builtins.all checkFile (files.public ++ files.private)
+builtins.all checkFile files.public
