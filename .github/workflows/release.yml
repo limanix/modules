@@ -14,9 +14,11 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     outputs:
       chunks: ${{ steps.plan.outputs.chunks }}
+      has-modules: ${{ steps.plan.outputs.has-modules }}
+      vm-chunks: ${{ steps.vm-plan.outputs.vm-chunks }}
+      has-vm: ${{ steps.vm-plan.outputs.has-vm }}
     steps:
       - name: Check module tag format
         uses: mr-chelyshkin/actions/check-tag-format@v1
@@ -26,38 +28,57 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
       - uses: mr-chelyshkin/actions/check-tag-branch@v1
         with:
           branch: main
 
-      - name: Test runner and change planning
-        run: python3 -B -m unittest discover -s scripts/tests
       - name: Plan all module checks
         id: plan
         shell: bash
         run: |
           plan=$(python3 -B scripts/plan_checks.py --all)
-          printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")" >> "$GITHUB_OUTPUT"
+          {
+            printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")"
+            printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")"
+          } >> "$GITHUB_OUTPUT"
 
-  quality:
+      - name: Find x86 VM tests
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/plan/vm-modules SYSTEM=x86_64-linux OUTPUT=build/vm-x86.json
+
+      - name: Find ARM VM tests
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/plan/vm-modules SYSTEM=aarch64-linux OUTPUT=build/vm-arm.json
+
+      - name: Plan VM checks
+        id: vm-plan
+        shell: bash
+        run: |
+          chunks=$(jq -cn --argjson x86 "$(cat build/vm-x86.json)" --argjson arm "$(cat build/vm-arm.json)" \
+            '[$x86[] | {id: ., modules: ., runner: "ubuntu-24.04"}] + [$arm[] | {id: ., modules: ., runner: "ubuntu-24.04-arm"}]')
+          {
+            printf 'vm-chunks=%s\n' "$chunks"
+            printf 'has-vm=%s\n' "$(jq -r 'length > 0' <<< "$chunks")"
+          } >> "$GITHUB_OUTPUT"
+
+  lint:
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [ci/nixos-fmt, ci/nixos-lint]
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
-          command: ${{ matrix.task }}
+          command: ci/lint
 
   test:
-    name: Modules (${{ matrix.runner }}, ${{ matrix.chunk.id }})
+    name: Test ${{ matrix.chunk.id }} (${{ matrix.runner }})
     needs: verify
+    if: ${{ needs.verify.outputs.has-modules == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -65,36 +86,43 @@ jobs:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
     uses: ./.github/workflows/nix-tests.yml
     with:
-      task: ci/test
       runner: ${{ matrix.runner }}
+      suite: module
+      mode: check
       modules: ${{ matrix.chunk.modules }}
-      cache-id: modules-${{ matrix.chunk.id }}
 
   common:
-    name: Common (${{ matrix.runner }}, ${{ matrix.suite.id }})
+    name: Common (${{ matrix.runner }})
     needs: verify
     strategy:
       fail-fast: false
       matrix:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
-        suite:
-          - {id: base, mode: release-eval, group: base}
-          - {id: compositions, mode: release-eval, group: compositions}
-          - {id: versions, mode: release-eval, group: versions}
-          - {id: smoke, mode: release-smoke, group: all}
     uses: ./.github/workflows/nix-tests.yml
     with:
-      task: ci/common
       runner: ${{ matrix.runner }}
-      mode: ${{ matrix.suite.mode }}
-      integration-group: ${{ matrix.suite.group }}
-      cache-id: common-${{ matrix.suite.id }}
+      suite: common
+      mode: check
+
+  vm:
+    name: VM ${{ matrix.check.id }} (${{ matrix.check.runner }})
+    needs: [verify, test, common]
+    if: ${{ needs.verify.outputs.has-vm == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ${{ fromJSON(needs.verify.outputs.vm-chunks) }}
+    uses: ./.github/workflows/nix-tests.yml
+    with:
+      runner: ${{ matrix.check.runner }}
+      suite: module
+      mode: vm
+      modules: ${{ matrix.check.modules }}
 
   docs:
     name: Prepare docs
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -116,9 +144,8 @@ jobs:
   release:
     name: Create GitHub release
     if: ${{ always() && !cancelled() }}
-    needs: [test, common, quality, docs]
+    needs: [verify, lint, test, common, vm, docs]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     permissions:
       contents: write
     steps:
@@ -126,6 +153,7 @@ jobs:
         uses: mr-chelyshkin/actions/check-job-results@v1
         with:
           results: ${{ toJSON(needs) }}
+          skipped: ${{ format('{0}{1}', needs.verify.outputs.has-modules != 'true' && 'test ' || '', needs.verify.outputs.has-vm != 'true' && 'vm' || '') }}
       - name: Download docs archive
         uses: actions/download-artifact@v8
         with:
@@ -146,7 +174,6 @@ jobs:
     name: Notify client
     needs: release
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     permissions: {}
     steps:
       - name: Create token

@@ -53,7 +53,7 @@ profile discovery and precedence.
 | -- | -- |
 | Settings | Native project and user Harlequin TOML profiles; command-line options take precedence |
 | Personal state | `~/.config/harlequin/config.toml`, home and project profiles |
-| Integration | Packaged PostgreSQL adapter plus Harlequin's DuckDB and SQLite adapters; Cozy supplies a project profile |
+| Integration | Packaged PostgreSQL adapter plus Harlequin's DuckDB and SQLite adapters |
 | Services and capabilities | No database server or language-support declarations |
 
 ## Corner cases
@@ -66,8 +66,8 @@ profile discovery and precedence.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Installs Harlequin with its packaged PostgreSQL adapter in the application's Python environment | `check.nix`, `smoke.nix`: adapters |
-| The installed command discovers and loads the PostgreSQL adapter and its connection options | `smoke.nix`: adapters |
-| Uses Catppuccin Mocha by default, respects a personal profile theme and gives an explicit command-line theme precedence | `smoke.nix`: theme |
+| The module-owned package installs Harlequin with its PostgreSQL adapter | `eval.defaults`, `run.commands` |
+| The installed CLI loads the PostgreSQL adapter and its connection options | `run.commands` |
+| The module patch sets Mocha as the default without replacing personal or command-line themes | `run.theme` |

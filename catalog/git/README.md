@@ -53,6 +53,7 @@ instead of `--global` inside that repository.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Enables Git and installs the configured NixOS Git package | `check.nix` |
+| Enables Git and installs the configured NixOS package | `eval.package`, `eval.enabled` |
+| The system-profile Git command prints its version and hashes input | `run.commands` |

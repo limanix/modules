@@ -111,11 +111,14 @@ minikube-1.38 start --driver=docker --profile=mk138
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs the pinned Minikube line and its `minikube-LINE` command | `check.nix`, `smoke.nix`: commands |
-| Selected Minikube lines coexist; the newest supplies `minikube` | `tests.nix`: coexistence, `smoke.nix`: coexistence |
-| Includes a K9s recommendation that explicit K9s version selections can replace | `check.nix`, `checks/integration.nix`: minikubeK9sSelection |
-| Does not enable Docker or create a cluster by being selected | `tests.nix` |
-| Unknown EOL status emits no EOL warning | `check.nix` |
+| Each Minikube line installs its package with the expected warning behavior and a working versioned command | `eval.line-1.36`, `eval.line-1.37`, `eval.line-1.38`, `run.commands-1.36`, `run.commands-1.37`, `run.commands-1.38` |
+| Selected lines coexist; the newest package supplies `minikube` | `eval.allLines`, `run.allLines` |
+| An explicit K9s line preserves the selected Minikube line | `eval.explicitDependency` |
+| The default dependency supplies a working K9s command | `run.dependency` |
+| Selection adds no boot units or activation commands and leaves Docker disabled | `eval.noStartup`, `eval.optionalDocker` |
+
+`eval.noStartup` compares units, enabled flags and activation commands with the
+empty platform. It normalizes only the generated `/etc` path and D-Bus restart
+reference changed by installing packages. These checks do not start a cluster.

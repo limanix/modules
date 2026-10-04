@@ -1,0 +1,15 @@
+{ pkgs, profile }:
+{
+  commands =
+    pkgs.runCommand "git-system-commands"
+      {
+        nativeBuildInputs = [ profile ];
+      }
+      ''
+        export HOME="$TMPDIR/home"
+        mkdir -p "$HOME"
+        git --version
+        test "$(printf 'hello\n' | git hash-object --stdin)" = ce013625030ba8dba906f756967f9e9ca394464a
+        touch "$out"
+      '';
+}

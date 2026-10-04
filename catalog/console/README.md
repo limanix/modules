@@ -97,12 +97,9 @@ cannot enable host support.
 
 ## Composition
 
-`lmx:console` uses ordinary Nix imports of the component modules. Selecting a
-component alongside Console refers to the same module path and does not create a
-second configuration. CI compares the resulting system derivations for both
-selections. This requires a client that preserves the catalog source tree when
-preparing the VM. Older clients that copy each module into an isolated directory
-cannot consume these imports.
+`lmx:console` imports the documented public component entry points. The client
+must preserve the catalog source tree when preparing the VM. Older clients that
+copy each module into an isolated directory cannot consume these imports.
 
 ## Versions
 
@@ -124,15 +121,11 @@ selections follow each component's selection policy.
 | Case | Behavior or next step |
 | -- | -- |
 | No language server | Select a language provider; Console does not choose project toolchains |
-| Component selected twice | The shared entry point is imported once; supported public values remain the same |
-| Conflicting component versions | Follow the component's selection policy; aggregate import order does not resolve conflicts |
+| Conflicting component versions | Follow the component's selection policy |
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Imports the seven components listed above through their ordinary entry points | `components.nix`, `check.nix` |
-| Repeating component imports preserves the system derivation and public option values | `tests.nix`: composition |
-| The AstroNvim recommendation accepts an explicit supported line | `checks/integration.nix`: console.astronvimVersionSelection |
-| Bash login-shell and disabled tmux-navigation overrides remain available | `checks/integration.nix`: console.shell, console.navigation |
-| Component startup and integration behavior remains owned by its component | Component `check.nix` and `smoke.nix` checks |
+| Imports the seven public components and their terminal/session settings | `eval.components` |
+| Leaves Docker Engine disabled | `eval.noDocker` |

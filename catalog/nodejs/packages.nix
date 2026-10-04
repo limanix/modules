@@ -1,12 +1,17 @@
-{ version, system }:
+{ version, pinned }:
 let
   releases = import ./releases.nix;
   release = releases.versions.${version};
   source = releases.sources.${release.source};
-  packages = import (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/${source.rev}.tar.gz";
-    inherit (source) sha256;
-  }) { inherit system; };
+  packages = pinned.${source.rev};
+  npm =
+    if release ? npm then
+      packages.callPackage ./npm.nix {
+        nodejs = packages."nodejs-slim_${version}";
+        inherit (release.npm) version hash;
+      }
+    else
+      null;
   nodejs =
     if release ? npm then
       let
@@ -14,10 +19,7 @@ let
       in
       packages.${release.package}.override {
         nodejs-slim = slim // {
-          npm = packages.callPackage ./npm.nix {
-            nodejs = slim;
-            inherit (release.npm) version hash;
-          };
+          inherit npm;
         };
       }
     else
@@ -28,3 +30,4 @@ assert nodejs.version == release.version;
   inherit nodejs;
   inherit (release) endOfLife;
 }
+// packages.lib.optionalAttrs (npm != null) { inherit npm; }

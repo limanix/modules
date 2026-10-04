@@ -90,10 +90,11 @@ default Mocha wrapper. See Yazi's
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Enables the configured Yazi package with its packaged preview/search dependencies | `check.nix` |
-| Mocha defaults respect explicit directories, personal themes, managed overrides and managed flavors | `tests.nix`: managedOverride, managedFlavor; `smoke.nix`: startup |
-| Personal files stay unchanged and temporary overlays are cleaned after exit, failure or handled interruption | `smoke.nix`: startup, errors |
-| Bash and Zsh receive the `y` directory-handoff function without enabling Zsh | `tests.nix`: independentShell; `smoke.nix`: startup |
-| The default package supports an ordinary NixOS package override | `tests.nix`: packageOverride |
+| Enables the configured Yazi package and accepts an ordinary package override | `eval.installed`, `eval.packageOverride` |
+| Bash and Zsh receive `y` without selecting Zsh as a dependency | `eval.independentShell`, `run.shellHandoff` |
+| Mocha defaults respect explicit directories, personal themes, managed overrides and managed flavors | `eval.managedOverride`, `eval.managedFlavor`, `run.shellHandoff` |
+| `q` passes the selected directory back to the shell, including spaces and newlines; `Q` retains the shell directory | `run.shellHandoff` |
+| Personal files stay unchanged; temporary handoff files and theme overlays are cleaned after exit, failure or handled interruption | `run.shellHandoff`, `run.shellErrors` |
+| The shell function returns Yazi and temporary-file creation failures | `run.shellErrors` |

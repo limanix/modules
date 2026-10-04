@@ -37,7 +37,8 @@ single cause.
 | `The option … does not exist` | The option name and whether its declaring module is included | Check [option search](https://search.nixos.org/options) for built-in options, or the module that declares a custom option |
 | `is not of type` | The expected type and the definition value printed in the error | Match the option's type; for example, Boolean `true` is not the string `"true"` |
 | `has conflicting definition values` | The definitions and their source files listed in the error | Remove an unintended assignment or use an intentional override; see [Combine with other modules](writing-modules.md#combine-with-other-modules) |
-| `is defined multiple times while it's expected to be unique` | Multiple definitions of an option that permits only one | Keep one definition, as when choosing one [Docker version](../catalog/docker/README.md#versions) |
+| `is defined multiple times while it's expected to be unique` | Multiple definitions of an option that permits only one, such as two modules setting `limanix.user.shell` | Keep one definition, or give the intended one a higher priority; see [Read VM user settings](writing-modules.md#read-vm-user-settings) |
+| `<module>: select one line` | Several explicit lines of a module that supports only one | Keep one selector; see that module's `Versions` section, such as [Docker](../catalog/docker/README.md#versions) |
 | `path '…' does not exist` | The spelling, relative path, and presence of the referenced file | Resolve relative paths from the file that contains them; keep [imported files](writing-modules.md#split-a-module-into-files) inside the module directory |
 | `infinite recursion encountered` | Values that depend on each other while the configuration is being evaluated | Use [`lib.mkIf`](https://nixos.org/manual/nixos/stable/#sec-option-definitions-delaying-conditionals) for conditional option definitions; other cycles need their dependencies corrected |
 
@@ -50,7 +51,7 @@ An option or package shown for another release may not be available in that pin.
 ### Nix package builds
 
 Find the failing package's `.drv` path in the output. Run
-[`nix log`](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-log.html)
+[`nix log`](https://nix.dev/manual/nix/stable/command-ref/new-cli/nix3-log.html)
 with that path in the environment where the build ran: inside the VM for a guest
 build. The command shows the build log if it is available locally or from a
 configured binary cache.
@@ -137,89 +138,102 @@ describes service status and logs in more detail.
 
 ## Catalog checks
 
-This section applies when contributing entries to this repository, not to every
-custom module. Keep the `while checking … on …` context: it identifies the entry
-or combination and the architecture under evaluation.
+Keep the complete module, suite, stage, architecture and test-key context from
+the failing command. Find the first concrete error, rather than a later summary
+that its dependency failed.
 
-| Diagnostic | What to check | Next step |
+| Failure | Inspect | Next step |
 | -- | -- | -- |
-| `Module catalog:` | The named entry's files, metadata, or selector collision | Follow the specific message and the [metadata rules](writing-modules.md#follow-the-metadata-rules) |
-| `Module result:` | The named module's configuration assertion | Compare `check.nix` or `tests.nix` with the evaluated settings; see [Write the result check](writing-modules.md#write-the-result-check) |
-| `Module smoke:` | The returned checks and their target system | Inspect the module's `smoke.nix` and the reported check |
-| `Common contract:` | A shared declaration or capability-schema assertion | Inspect the named fixture in [checks/common.nix](../checks/common.nix) |
-| `Catalog integration:` | A full-catalog or intermodule assertion | Inspect the named combination in [checks/integration.nix](../checks/integration.nix) |
-| `Catalog base:` | The root Nixpkgs input and lock file | Follow the diagnostic and [Update the NixOS base](writing-modules.md#update-the-nixos-base) |
-| `Killed` or exit status `137` | The Linux runner's memory limit and kernel log | Confirm whether the kernel killed an evaluator for memory pressure; see [Validation memory](#validation-memory) |
-| `assertion … failed` in an entry's `packages.nix` | The assertion at the reported line, including expected package versions | Check the [release map and package loader](writing-modules.md#support-multiple-versions) together |
+| Metadata or selector validation | `module.toml` and public entry points | Follow the [metadata rules](writing-modules.md#follow-the-metadata-rules) |
+| Configuration assertion or non-Boolean result | `eval.<key>` from the public `test.nix` | Inspect the owning fixture under `test/`; configuration checks must return `true` |
+| Expected refusal succeeds or has a different message | `fails.<key>.modules` and `message` | Use the intended public entries; a timeout or unrelated failure is not the expected diagnostic |
+| Unexpected local build | Reported `.drv` paths and `builds` export | Identify the actual uncached artifact; exact permission does not cover its dependencies |
+| Native command failure | `run.<key>` log and selected profile | Read the command assertion and its temporary fixture; see [Write the result check](writing-modules.md#write-the-result-check) |
+| Wrong architecture | Runner system and derivation system | Use native Linux matching the declared test architecture |
+| KVM unavailable | VM runner features and `/dev/kvm` access | Use a native KVM runner; record the activation test as not run |
+| Activation assertion | `vm.activation` driver and guest journal | Inspect the module-owned scenario and actual service/login state |
+| `Killed` or status `137` | Runner limits and kernel log | Confirm an OOM kill before attributing it to memory |
 
-Run the tasks in the repository's [Taskfile](../Taskfile.yml) from the
-repository root. Select the modules involved in the failure:
-
-```console
-task --yes ci/test MODULES="go rust"
-```
-
-`ci/test` evaluates every supported line of the selected modules, verifies
-expected diagnostics and runs profile-selected native smoke. Omitting `MODULES`
-selects every module; local runtime defaults to `all`. Module evaluation and
-smoke instantiation reuse the same configurations. The PR runtime profile
-retains current/default startup and override corners plus requested lines;
-strong compatibility evaluation remains complete. To reproduce current runtime
-plus one changed line:
+From the repository root, repeat the combined check or isolate the failing
+stage:
 
 ```console
-task --yes ci/test MODULES=go RUNTIME_PROFILE=pr RUNTIME_VERSIONS="1.26"
+task --yes ci/test/modules MODULES=dev-tools
+task --yes ci/test/modules MODE=eval MODULES=dev-tools
+task --yes ci/test/modules MODE=run MODULES=dev-tools
 ```
 
-Additional lines must be declared, space-separated numeric versions for exactly
-one selected module. Use `RUNTIME_PROFILE=all` for all historical runtime
-checks, including the named `coexistence` check. The PR planner adds changed
-declared numeric version lines to current runtime. Other non-document module
-changes, including metadata and release maps, use full runtime for that module
-and its transitive consumers. `ci/common` uses `MODE=pr` by default to check
-metadata and shared interfaces through small fixtures. Use release mode to
-investigate full-catalog and intermodule failures:
+Replace `dev-tools` with an existing module. `MODULES` contains space-separated
+directory names; omitting it selects the catalog. The public module export
+contains its line and feature checks. The runner sets no time limits. When a
+check hangs, repeat that one module and stop it by hand; an interrupted run is
+incomplete evidence.
+
+For shared and platform checks:
 
 ```console
-task --yes ci/common MODE=release
+task --yes ci/test/common
+task --yes ci/test/common SUITE=shared MODE=eval
+task --yes ci/test/common SUITE=platform MODE=run
 ```
 
-Release mode combines full-catalog evaluation with AstroNvim LSP integration
-smoke. Use `MODE=release-eval` or `MODE=release-smoke` to isolate those stages.
-The ten-minute goal reports slow successful checks without failing them.
-`NIX_CHECK_TARGET_SECONDS` defaults to 600 seconds; the output includes
-evaluation, diagnostic and build/runtime timings. The separate
-`NIX_CHECK_TIMEOUT` runaway guard defaults to 1800 seconds locally and in native
-CI. If that guard fires, inspect the last active phase, dependency downloads and
-cache availability. Preserve full tests when adjusting it for a cold build. Both
-tasks use the container's native Linux architecture and identify it in their
-output. These checks do not boot a complete Lima VM. A passing check does not
-replace testing the module's documented commands in a VM.
+`ci/test/common` runs shared, then platform, each with `eval` and then `run`.
+`MODE=eval` and `MODE=run` need `SUITE=shared` or `SUITE=platform`; the combined
+suite accepts only `check`. The same CLI on native Linux is
+`bash scripts/run_checks.sh SUITE MODE [module names]`; use `module check` or
+`common check` for the combined checks. A release activation check uses
+`module vm` and needs KVM. With Task on that native Linux host, pass
+`CONTAINER_RUN_ARGS=--device=/dev/kvm`; the device must exist and be accessible.
+Native execution does not establish activation. Platform `eval`/`run` check the
+generic harness and base.
+
+### Build and cache failures
+
+Find the reported derivation and inspect its log in the runner that built it:
+
+```console
+nix log /nix/store/DERIVATION.drv
+```
+
+Use the real `.drv` path from the diagnostic. A source hash mismatch requires
+checking the intended revision and hash; changing a pin merely to obtain a cache
+hit can change the product. A missing cache entry for an undeclared dependency
+must be resolved before the runtime check can run. Adding an artifact to
+`builds` permits only that exact derivation and is not a passing test.
+Permissions from dependencies come from default and individual-line public
+imports; an import made only inside a test fixture does not extend them.
+
+The PR flow restores one cache per target and architecture with fetcher state
+and local builds. Only successful runs on `main` save new archives, pruned to
+the paths that run needed. A PR cache miss can therefore remain until a main run
+publishes the result. The fetcher archive is best effort and does not guarantee
+that all source payloads are available.
+
+Check local logs and configured cache availability before repeating expensive
+work. Preserve the failed attempt. A changed cache condition or a fixed fixture
+can justify a bounded retry; an unchanged long run provides little new evidence.
 
 ### Validation memory
 
-Full native module evaluation, including historical version lines, can need
-close to 8 GiB per evaluator. Selecting `RUNTIME_PROFILE=pr` reduces native
-build/run work while retaining the full compatibility evaluation and its memory
-needs. The local runner defaults to `NIX_CHECK_JOBS=1` and evaluates one module
-at a time. Avoid running separate module suites in parallel on an 8 GiB Linux
-runner. Allow about 12 GiB for heavy whole-catalog validation and additional
-memory when increasing concurrency or building large packages. These evaluation
-and build requirements are separate from the memory used by the installed
-development tools. The 8 GiB
-[Cozy example](https://limanix.dev/categories/client/workspace.html#create-the-workbench)
-remains the starting point for ordinary project development.
+Evaluation memory depends on the module and selected fixtures. Reduce concurrent
+evaluators while diagnosing pressure; give the Linux runner the memory rather
+than relying on the Mac's total capacity. Confirm an out-of-memory kill in the
+kernel log. A skipped historical line or missing VM run is a coverage gap, not a
+successful optimization.
 
-To repeat one module with explicit serial execution:
+When reporting a failed or slow check, include the last completed stage.
+[Cost and reports](catalog-contract.md#cost-and-reports) lists the duration
+targets and the rest of a report; [Repository automation](automation.md)
+describes stage selection.
 
-```console
-task --yes ci/test MODULES=rust CONTAINER_ENVS="NIX_CHECK_JOBS=1"
-```
+### Contract and fixture errors
 
-Replace `rust` with the failing module. Give the Docker or VM Linux runner the
-memory allocation, rather than relying only on the Mac's total memory. Check its
-kernel log to confirm an out-of-memory kill before treating exit status 137 as a
-memory diagnosis.
+| Error | Correction |
+| -- | -- |
+| Unknown `test.nix` group or empty `eval` | Export only the public ABI groups and at least one Boolean assertion |
+| Read-only user name/home defined more than once | Remove the module assignment; choose the VM identity through `userName`/`userHome` fixture parameters |
+| Recursion while resolving imports or options | Keep `pinned` in configuration values; imports and option structure resolve before `_module.args` |
+| Capability conflict | Read that schema's identity and merge rule; atomic records need a complete winning declaration |
 
 ## Warnings
 

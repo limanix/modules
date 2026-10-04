@@ -1,12 +1,18 @@
 version:
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  pinned,
+  ...
+}:
 let
   tools = import ./packages.nix {
-    inherit version;
-    inherit (pkgs.stdenv.hostPlatform) system;
+    inherit version pinned;
   };
 
-  releases = builtins.attrValues (import ./releases.nix).versions;
+  catalog = import ./releases.nix;
+  source = catalog.sources.${catalog.versions.${version}.source};
+  releases = builtins.attrValues catalog.versions;
   olderReleases = builtins.filter (
     release: lib.versionOlder release.version tools.nodejs.version
   ) releases;
@@ -14,7 +20,7 @@ let
   priority = lib.meta.defaultPriority - rank;
 
   versionedNode =
-    pkgs.runCommand "nodejs-${version}-commands"
+    pkgs.runCommandLocal "nodejs-${version}-commands"
       {
         nativeBuildInputs = [ pkgs.makeWrapper ];
       }
@@ -29,22 +35,34 @@ let
       '';
 in
 {
-  lmx.capabilities.languageSupport = {
-    languages = {
-      javascript.parsers = [ "javascript" ];
-      typescript.parsers = [
-        "typescript"
-        "tsx"
-      ];
-    };
-    tools.typescript-language-server = lib.mkOverride (1000 - rank) {
-      package = lib.setPrio priority pkgs.typescript-language-server;
-      command = "${pkgs.typescript-language-server}/bin/typescript-language-server";
-      args = [ "--stdio" ];
-      languages = [
-        "javascript"
-        "typescript"
-      ];
+  assertions = [
+    {
+      assertion = rank >= 0 && rank < 100;
+      message = "nodejs: provider recommendation rank must be between 0 and 99";
+    }
+  ];
+
+  lmx = {
+    pins.${source.rev} = source.sha256;
+    internal.nodejs.packages.${version} = tools;
+
+    capabilities.languageSupport = {
+      languages = {
+        javascript.parsers = [ "javascript" ];
+        typescript.parsers = [
+          "typescript"
+          "tsx"
+        ];
+      };
+      tools.typescript-language-server = lib.mkOverride (1000 - rank) {
+        package = lib.setPrio priority pkgs.typescript-language-server;
+        command = "${pkgs.typescript-language-server}/bin/typescript-language-server";
+        args = [ "--stdio" ];
+        languages = [
+          "javascript"
+          "typescript"
+        ];
+      };
     };
   };
 

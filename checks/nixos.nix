@@ -1,3 +1,4 @@
+# The native evaluator and VM nodes use one public platform foundation.
 {
   nixpkgs,
   system,
@@ -5,46 +6,12 @@
   userName,
 }:
 let
-  shared = import ./shared-files.nix;
-in
-import (nixpkgs + "/nixos/lib/eval-config.nix") {
-  inherit system;
-  modules = [
-    ../interface.nix
-    (
-      { lib, ... }:
-      let
-        priority =
-          package:
-          if builtins.isAttrs package then
-            package.meta.priority or lib.meta.defaultPriority
-          else
-            lib.meta.defaultPriority;
-      in
+  evaluated = import (nixpkgs + "/nixos/lib/eval-config.nix") {
+    inherit system;
+    modules = [
+      (import ../catalog/_shared/test/platform.nix { inherit userName; })
       {
-        # Match the platform base: profile inputs do not depend on import order.
-        # Contextual strings and __toString objects are valid package values.
-        options.environment.systemPackages = lib.mkOption {
-          apply = lib.sort (
-            left: right:
-            if toString left == toString right then
-              priority left < priority right
-            else
-              toString left < toString right
-          );
-        };
-      }
-    )
-    (
-      { config, ... }:
-      {
-        limanix.user = {
-          name = userName;
-          home = "/home/${userName}";
-        };
         networking.hostName = "module-check";
-        system.stateVersion = config.system.nixos.release;
-
         boot.loader.grub = {
           device = "nodev";
           efiSupport = true;
@@ -60,15 +27,17 @@ import (nixpkgs + "/nixos/lib/eval-config.nix") {
             fsType = "vfat";
           };
         };
-
-        users.users.${config.limanix.user.name} = {
-          isNormalUser = true;
-          uid = 1000;
-          inherit (config.limanix.user) home shell;
-        };
       }
-    )
-  ]
-  ++ shared.public
-  ++ modules;
+    ]
+    ++ modules;
+  };
+in
+{
+  inherit (evaluated)
+    config
+    pkgs
+    options
+    graph
+    ;
+  inherit (evaluated.pkgs) lib;
 }

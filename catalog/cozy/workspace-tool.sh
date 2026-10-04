@@ -2,6 +2,9 @@
 # shellcheck disable=SC2154
 set -uo pipefail
 
+# Keep the launcher alive on Ctrl-C; the application still receives SIGINT.
+trap ':' INT
+
 if test -x "$cozy_command"; then
   "$cozy_command" || printf 'Workspace %s exited with status %s; opening a shell.\n' "$cozy_window" "$?" >&2
 else

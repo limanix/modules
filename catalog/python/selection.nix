@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  pinned,
   ...
 }:
 let
@@ -19,11 +20,26 @@ in
     description = "python version lines selected by catalog modules.";
   };
 
+  options.lmx.internal.python.packages = lib.mkOption {
+    type = lib.types.lazyAttrsOf lib.types.raw;
+    default = { };
+    internal = true;
+    visible = false;
+    description = "Selected python package records for this evaluation.";
+  };
+
   config = lib.mkMerge (
     map (
       version:
       lib.mkIf (builtins.elem version selected) (
-        (import ./implementation.nix version) { inherit config lib pkgs; }
+        (import ./implementation.nix version) {
+          inherit
+            config
+            lib
+            pkgs
+            pinned
+            ;
+        }
       )
     ) (builtins.attrNames releases)
   );

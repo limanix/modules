@@ -1,7 +1,7 @@
 # Posting
 
-Installs Posting, a terminal client for HTTP APIs, with Catppuccin Mocha as its
-default theme.
+Installs Posting, a terminal client for HTTP APIs, and sets `POSTING_THEME` to
+`catppuccin-mocha` by default.
 
 ```toml
 [nixos]
@@ -59,7 +59,8 @@ configuration.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Installs the base Nixpkgs Posting package | `check.nix` |
-| Uses Catppuccin Mocha by default and respects a personal YAML theme | `check.nix`, `smoke.nix`: theme |
+| The module installs the base Posting package and its config-location command runs | `eval.defaults`, `run.commands` |
+| POSTING_THEME defaults to catppuccin-mocha | `eval.defaults` |
+| An ordinary assignment can replace POSTING_THEME | `eval.themeOverride` |

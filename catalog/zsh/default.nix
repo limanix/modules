@@ -5,7 +5,7 @@
 }:
 let
   carapaceInit =
-    pkgs.runCommand "carapace-init.zsh"
+    pkgs.runCommandLocal "carapace-init.zsh"
       {
         nativeBuildInputs = [ pkgs.buildPackages.carapace ];
       }

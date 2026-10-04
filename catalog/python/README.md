@@ -105,13 +105,12 @@ it.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs the selected Python interpreter and virtualenv; `python-LINE` selects that interpreter | `check.nix`, `smoke.nix`: commands |
-| Keeps the pinned interpreter runtime and omits its implicit HTML documentation output | `tests.nix`: runtimeOutputSelection |
-| Both venv and virtualenv create isolated environments with pip | `smoke.nix`: commands |
-| Selected lines coexist and the newest supplies ordinary commands outside an activated environment | `tests.nix`: coexistence, `smoke.nix`: coexistence |
-| Declares Python parser support and the Pyright package, command, arguments, and language without enabling an editor | `check.nix`, `tests.nix`: providerSelection |
-| A user tool declaration overrides the complete Pyright declaration and installed package | `tests.nix`: userOverride, forceOverride; `smoke.nix`: providerOverride |
-| The declared Pyright command starts and answers an LSP initialization request | `smoke.nix`: languageServer |
+| Interpreter and virtualenv versions, the parser and end-of-life warnings match the selected line | `eval.line-3.12`, `eval.line-3.13`, `eval.line-3.14` |
+| Installed interpreters retain their identity and priority without implicit HTML documentation | `eval.runtimeOutputSelection` |
+| Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
+| The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
+| Each interpreter creates working venv and offline virtualenv environments with pip | `run.commands-3.12`, `run.commands-3.13`, `run.commands-3.14` |
+| Installing this module does not enable an editor | `eval.allLines` |
+| The declared and user-supplied servers answer an LSP initialization request | `run.languageServer`, `run.userOverride` |

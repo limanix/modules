@@ -1,84 +1,112 @@
 name: PR flow
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
 
+# A new push cancels the previous run of the same pull request. Runs on main
+# get their own group: each one tests and caches its changed modules.
 concurrency:
-  group: pr-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  markdown:
-    name: Markdown formatting
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: ci/markdown-fmt
-
-  nix:
-    needs: plan
-    if: ${{ needs.plan.outputs.readme-only != 'true' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [ci/nixos-fmt, ci/nixos-lint]
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: ${{ matrix.task }}
-
   plan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     outputs:
       chunks: ${{ steps.plan.outputs.chunks }}
       has-modules: ${{ steps.plan.outputs.has-modules }}
-      readme-only: ${{ steps.plan.outputs.readme-only }}
+      common: ${{ steps.plan.outputs.common }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Plan module checks
-        id: plan
+          persist-credentials: false
+
+      - name: Select changed modules
+        id: changes
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.sha }}
         run: |
-          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+          if [ "$EVENT_NAME" = workflow_dispatch ] ||
+             [ -z "$BASE_SHA" ] ||
+             [ "$BASE_SHA" = 0000000000000000000000000000000000000000 ] ||
+             ! git --no-optional-locks cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
             plan=$(python3 -B scripts/plan_checks.py --all)
           else
             plan=$(python3 -B scripts/plan_checks.py --base "$BASE_SHA" --head "$HEAD_SHA")
           fi
+          mkdir -p build
+          printf '%s\n' "$plan" > build/check-plan.json
+          printf 'needs-dependencies=%s\n' "$(jq -r '.needs_dependencies' <<< "$plan")" >> "$GITHUB_OUTPUT"
+
+      # Consumers of changed modules come from the evaluated import graph.
+      # If discovery fails, the plan falls back to the full catalog.
+      - name: Read x86 module dependencies
+        if: ${{ steps.changes.outputs.needs-dependencies == 'true' }}
+        continue-on-error: true
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/plan/dependencies SYSTEM=x86_64-linux OUTPUT=build/dependencies-x86.json
+
+      - name: Read ARM module dependencies
+        if: ${{ steps.changes.outputs.needs-dependencies == 'true' }}
+        continue-on-error: true
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/plan/dependencies SYSTEM=aarch64-linux OUTPUT=build/dependencies-arm.json
+
+      - name: Plan checks
+        id: plan
+        shell: bash
+        env:
+          NEEDS_DEPENDENCIES: ${{ steps.changes.outputs.needs-dependencies }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          plan=$(cat build/check-plan.json)
+          if [ "$NEEDS_DEPENDENCIES" = true ]; then
+            if jq -es 'all(.[]; type == "object")' build/dependencies-x86.json build/dependencies-arm.json >/dev/null 2>&1 &&
+               jq -s 'reduce .[] as $graph ({}; reduce ($graph | keys[]) as $name (.; .[$name] = ((.[$name] // []) + $graph[$name] | unique)))' \
+                 build/dependencies-x86.json build/dependencies-arm.json > build/dependencies.json; then
+              plan=$(python3 -B scripts/plan_checks.py --base "$BASE_SHA" --head "$HEAD_SHA" --dependencies build/dependencies.json)
+            else
+              printf 'Dependency discovery unavailable; checking the full catalog.\n' >&2
+            fi
+          fi
           {
             printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")"
             printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")"
-            printf 'readme-only=%s\n' "$(jq -r '.readme_only' <<< "$plan")"
+            printf 'common=%s\n' "$(jq -r '.common' <<< "$plan")"
           } >> "$GITHUB_OUTPUT"
-          printf '### Module runtime scope\n\n| Module | Profile | Additional lines |\n| --- | --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
-          jq -r '.chunks[] | "| \(.modules) | \(.runtime_profile) | \(.runtime_versions // "") |"' <<< "$plan" >> "$GITHUB_STEP_SUMMARY"
-      - name: Test runner and change planning
-        run: python3 -B -m unittest discover -s scripts/tests
+          {
+            printf '### Checks\n\n'
+            printf -- '- Common (_shared and harness): %s\n' "$(jq -r 'if .common then "yes" else "no" end' <<< "$plan")"
+            printf -- '- Modules (x86_64 and aarch64, eval then run): %s\n' "$(jq -r 'if (.modules | length) > 0 then (.modules | join(", ")) else "none" end' <<< "$plan")"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/lint
 
   test:
-    name: Modules (${{ matrix.runner }}, ${{ matrix.chunk.id }})
+    name: Test ${{ matrix.chunk.id }} (${{ matrix.runner }})
     needs: plan
     if: ${{ needs.plan.outputs.has-modules == 'true' }}
     strategy:
@@ -88,69 +116,39 @@ jobs:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
     uses: ./.github/workflows/nix-tests.yml
     with:
-      task: ci/test
       runner: ${{ matrix.runner }}
+      suite: module
+      mode: check
       modules: ${{ matrix.chunk.modules }}
-      cache-id: modules-${{ matrix.chunk.id }}
-      runtime-profile: ${{ matrix.chunk.runtime_profile }}
-      runtime-versions: ${{ matrix.chunk.runtime_versions }}
 
   common:
     name: Common (${{ matrix.runner }})
     needs: plan
+    if: ${{ needs.plan.outputs.common == 'true' }}
     strategy:
       fail-fast: false
       matrix:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
     uses: ./.github/workflows/nix-tests.yml
     with:
-      task: ci/common
       runner: ${{ matrix.runner }}
-      mode: pr
-      cache-id: common-pr
-
-  pkgs:
-    name: Check Nixpkgs updates
-    needs: plan
-    if: ${{ needs.plan.outputs.readme-only != 'true' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    continue-on-error: true
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-      - name: Prepare lock file permissions
-        run: sudo chown 0:0 flake.lock
-      - name: Check for Nixpkgs updates
-        id: update
-        continue-on-error: true
-        timeout-minutes: 5
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with: { command: nixpkgs/update }
-      - name: Restore lock file ownership
-        if: always()
-        run: |
-          if [ -f flake.lock ]; then
-            sudo chown "$(id -u):$(id -g)" flake.lock
-          fi
-      - name: Write update summary
-        if: always()
-        shell: bash
-        env:
-          UPDATE_OUTCOME: ${{ steps.update.outcome }}
-        run: python3 scripts/summarize_nixpkgs_updates.py
+      suite: common
+      mode: check
 
   gate:
     if: always()
-    needs: [markdown, nix, plan, test, common]
+    needs: [plan, lint, test, common]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      contents: read
     steps:
-      - uses: actions/checkout@v6
-      - uses: mr-chelyshkin/actions/check-job-results@v1
-        with:
-          results: ${{ toJSON(needs) }}
-          skipped: ${{ needs.plan.result == 'success' && needs.plan.outputs.readme-only == 'true' && 'nix test' || (needs.plan.outputs.has-modules == 'false' && 'test' || '') }}
+      - name: Require every selected check
+        shell: bash
+        env:
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -e '
+            .plan.result == "success" and .lint.result == "success"
+            and (if .plan.outputs["has-modules"] == "true"
+                 then .test.result == "success" else .test.result == "skipped" end)
+            and (if .plan.outputs.common == "true"
+                 then .common.result == "success" else .common.result == "skipped" end)
+          ' <<< "$JOB_RESULTS"

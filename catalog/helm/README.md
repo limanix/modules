@@ -82,9 +82,8 @@ helm-4.3 version --short
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs the pinned Helm line and its `helm-LINE` command | `check.nix`, `smoke.nix`: commands |
-| Selected lines coexist and the newest supplies `helm` | `tests.nix`: coexistence, `smoke.nix`: coexistence |
-| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |
+| Each Helm line installs its package and expected EOL warning | `eval.line-3.20`, `eval.line-4.2`, `eval.line-4.3` |
+| Selected lines coexist; the newest package supplies `helm` | `eval.allLines`, `run.allLines` |
+| Versioned commands lint a local chart and render its supplied values without a cluster | `run.commands-3.20`, `run.commands-4.2`, `run.commands-4.3` |

@@ -67,8 +67,8 @@ The package is configurable with `programs.lazygit.package`.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Installs Lazygit and enables Git | `check.nix` |
-| Selecting Git again preserves the system and public settings | `tests.nix`: composition |
-| Mocha is the managed default; ordinary settings and personal XDG configuration override it | `tests.nix`: theme; `smoke.nix`: theme |
+| Lazygit and Git are enabled and their installed commands run | `eval.defaults`, `run.commands` |
+| All managed theme and author colors use the Mocha palette | `eval.defaults` |
+| An ordinary user setting replaces a managed theme color | `eval.themeOverride` |

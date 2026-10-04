@@ -367,11 +367,14 @@ old databases.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs the selected PostgreSQL tools and version-suffixed wrappers for all their executables | `check.nix`, `smoke.nix`: commands |
-| Supplies each line's `pg_config-LINE`; the newest selected line supplies ordinary `pg_config` | `check.nix`; `smoke.nix`: commands, coexistence |
-| Links PostgreSQL shared data into the profile | `check.nix`, `smoke.nix`: commands |
-| Selected lines coexist; the newest supplies ordinary commands ahead of a separately enabled service package | `tests.nix`: coexistence, servicePackagePrecedence; `smoke.nix`: coexistence |
-| Selecting this module alone does not enable a database service or initialize a data directory | `tests.nix` |
+| Each line installs its server, matching `pg_config`, shared data and expected EOL warning | `eval.line-16`, `eval.line-17`, `eval.line-18` |
+| Selected lines retain their commands; the newest server and `pg_config` supply ordinary commands | `eval.allLines`, `run.allLines` |
+| Selection leaves the PostgreSQL service disabled and declares no PostgreSQL unit | `eval.noService` |
+| Catalog commands outrank an independently configured service package | `eval.servicePackagePrecedence` |
+| Versioned commands execute and report real header, library and PGXS paths for their line | `run.commands-16`, `run.commands-17`, `run.commands-18` |
+| The default line initializes, queries and stops a temporary database without root | `run.lifecycle` |
+
+`run.lifecycle` uses an isolated temporary data directory and Unix socket. It
+does not test the independent NixOS service described above.

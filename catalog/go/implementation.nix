@@ -1,34 +1,52 @@
 version:
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  pinned,
+  ...
+}:
 let
   tools = import ./packages.nix {
-    inherit version;
-    inherit (pkgs.stdenv.hostPlatform) system;
+    inherit version pinned;
   };
 
-  releases = builtins.attrValues (import ./releases.nix).versions;
+  catalog = import ./releases.nix;
+  source = catalog.sources.${catalog.versions.${version}.source};
+  releases = builtins.attrValues catalog.versions;
   olderReleases = builtins.filter (
     release: lib.versionOlder release.version tools.go.version
   ) releases;
   rank = builtins.length olderReleases;
   priority = lib.meta.defaultPriority - rank;
 
-  versionedGo = pkgs.runCommand "go-${version}-command" { } ''
+  versionedGo = pkgs.runCommandLocal "go-${version}-command" { } ''
     mkdir -p "$out/bin"
     ln -s "${tools.go}/bin/go" "$out/bin/go-${version}"
   '';
 in
 {
-  lmx.capabilities.languageSupport = {
-    languages.go.parsers = [
-      "go"
-      "gomod"
-      "gosum"
-    ];
-    tools.gopls = lib.mkOverride (1000 - rank) {
-      package = lib.setPrio priority tools.gopls;
-      command = "${tools.gopls}/bin/gopls";
-      languages = [ "go" ];
+  assertions = [
+    {
+      assertion = rank >= 0 && rank < 100;
+      message = "go: provider recommendation rank must be between 0 and 99";
+    }
+  ];
+
+  lmx = {
+    pins.${source.rev} = source.sha256;
+    internal.go.packages.${version} = tools;
+
+    capabilities.languageSupport = {
+      languages.go.parsers = [
+        "go"
+        "gomod"
+        "gosum"
+      ];
+      tools.gopls = lib.mkOverride (1000 - rank) {
+        package = lib.setPrio priority tools.gopls;
+        command = "${tools.gopls}/bin/gopls";
+        languages = [ "go" ];
+      };
     };
   };
 

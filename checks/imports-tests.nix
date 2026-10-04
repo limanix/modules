@@ -7,11 +7,7 @@ let
         inherit name;
         directory = root + "/${name}";
         path = directory + "/default.nix";
-        variants = lib.optional (name == "aggregate") {
-          inherit directory;
-          name = "aggregate-1";
-          path = directory + "/versions/1.nix";
-        };
+        lines = lib.optional (name == "aggregate") "1";
       })
       [
         "aggregate"
@@ -52,4 +48,16 @@ assert check [
 ];
 assert rejects [ (node component [ (node (root + "/leaf") [ ]) ]) ];
 assert rejects [ (node component [ (node (root + "/aggregate/private.nix") [ ]) ]) ];
+assert check [ (node component [ (node (root + "/_shared/capability.nix") [ ]) ]) ];
+assert rejects [ (node component [ (node (root + "/_shared/test.nix") [ ]) ]) ];
+assert rejects [ (node component [ (node (root + "/_shared/lib/private.nix") [ ]) ]) ];
+assert rejects [
+  (node (root + "/_shared/capability.nix") [ (node (root + "/_shared/lib/private.nix") [ ]) ])
+];
+assert rejects [ (node (root + "/_shared/capability.nix") [ (node component [ ]) ]) ];
+assert rejects [
+  (node (toString component + ":anon-1") [
+    (node (toString component + ":anon-1:anon-2") [ (node (root + "/aggregate/private.nix") [ ]) ])
+  ])
+];
 true

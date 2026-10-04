@@ -13,11 +13,88 @@ includes:
     internal: true
 
 vars:
-  markdown_paths: README.md catalog guides checks/fixtures
+  NIX_VERSION: '2.35.2'
+  markdown_paths: README.md catalog guides
+
+  nix_build_caps: >-
+    --cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER
+    --cap-add=SETUID --cap-add=SETGID --cap-add=KILL
+
+  nix_cache_env: XDG_CACHE_HOME=/workspace/.cache
 
 tasks:
-  ci/markdown-fmt:
-    desc: Check source Markdown formatting without modifying files
+  ci/lint:
+    desc: Run static checks
+    cmds:
+      - task: lint/nix
+      - task: lint/markdown
+
+  ci/test/modules:
+    desc: >-
+      Test catalog modules. MODULES="go docker" (default: all, one after another);
+      MODE=check (eval, then run; default), eval, run or vm (needs CONTAINER_RUN_ARGS=--device=/dev/kvm)
+    cmds:
+      - task: _nix/check
+        vars:
+          CMD: >-
+            bash scripts/run_checks.sh module {{.MODE | default "check" | shellQuote}}
+            {{.MODULES | default "" | shellQuote}}
+
+  ci/test/common:
+    desc: >-
+      Test the shared layer (_shared/test.nix) and the harness (checks/).
+      SUITE=common (both; default), shared or platform; MODE=check (default), eval or run (eval and run need SUITE=shared or platform)
+    cmds:
+      - task: _nix/check
+        vars:
+          CMD: >-
+            bash scripts/run_checks.sh {{.SUITE | default "common" | shellQuote}}
+            {{.MODE | default "check" | shellQuote}}
+
+  ci/plan/dependencies:
+    desc: >-
+      Write the module import graph used to select consumers of changed modules.
+      OUTPUT=build/dependencies.json (default); SYSTEM=x86_64-linux|aarch64-linux (default: native)
+    cmds:
+      - task: _nix/export
+        vars:
+          ATTRIBUTE: dependencies
+          OUTPUT: '{{.OUTPUT | default "build/dependencies.json"}}'
+
+  ci/plan/vm-modules:
+    desc: >-
+      Write the list of modules that export VM tests.
+      OUTPUT=build/vm-modules.json (default); SYSTEM=x86_64-linux|aarch64-linux (default: native)
+    cmds:
+      - task: _nix/export
+        vars:
+          ATTRIBUTE: vmModules
+          OUTPUT: '{{.OUTPUT | default "build/vm-modules.json"}}'
+
+  lint/nix:
+    desc: Check Nix formatting
+    cmds:
+      - task: nix:_nix/tool
+        vars:
+          CMD: >-
+            bash -c 'status=0;
+            find . \( -path ./.git -o -path ./.cache -o -path ./.task -o -path ./build \) -prune
+            -o -type f -name "*.nix" -exec nixfmt --check {} + || status=1;
+            statix check . || status=1;
+            deadnix --fail . || status=1;
+            exit "$status"'
+          TASK_CONTEXT:
+            ref: 'merge (dict) (dict "CONTAINER_MOUNT_MODE" "ro" "CONTAINER_USER" "host") (.TASK_CONTEXT | default .)'
+
+  lint/nix/fix:
+    desc: Format Nix files in place
+    cmds:
+      - task: nix:nixfmt
+        vars:
+          FMT_ARGS: ''
+
+  lint/markdown:
+    desc: Check Markdown formatting
     cmds:
       - task: markdown:fmt
         vars:
@@ -25,21 +102,24 @@ tasks:
           TASK_CONTEXT:
             ref: 'merge (dict) (dict "CONTAINER_MOUNT_MODE" "ro") (.TASK_CONTEXT | default .)'
 
-  markdown/fix:
-    desc: Format source Markdown with the same settings used in CI
+  lint/markdown/fix:
+    desc: Format Markdown in place
     cmds:
       - task: markdown:fmt/fix
         vars:
           FMT_PATHS: '{{.markdown_paths}}'
-  ci/scripts:
-    desc: Test change planning, diagnostics and runner limits
+
+  nixpkgs/update:
+    desc: Update the pinned Nixpkgs revision in flake.lock
     cmds:
-      - task: python:_uv/tool
+      - task: nix:_nix/tool
         vars:
-          CMD: python -B -m unittest discover -s scripts/tests
+          CMD: nix flake update nixpkgs --flake path:.
 
   docs/prepare:
-    desc: Build docs for the LimaNix site
+    desc: >-
+      Prepare this repository's pages for the LimaNix site in build/docs.
+      MODULES_REF=<tag or commit> (default: HEAD). The docs repository calls this task by name
     vars:
       modules_ref:
         sh: |
@@ -53,42 +133,29 @@ tasks:
         vars:
           CMD: python scripts/build_docs.py --ref {{.modules_ref | shellQuote}}
 
-  nixpkgs/update:
-    desc: Update the Nixpkgs revision
+  _nix/check:
+    internal: true
+    requires:
+      vars: [ CMD ]
     cmds:
       - task: nix:_nix/tool
         vars:
-          CMD: nix flake update nixpkgs --flake path:.
+          CMD: '{{.CMD}}'
+          TASK_CONTEXT:
+            ref: >-
+              merge (dict) (.TASK_CONTEXT | default .) (dict
+              "CONTAINER_RUN_ARGS" (printf "%s %s" .nix_build_caps (.CONTAINER_RUN_ARGS | default ""))
+              "CONTAINER_ENVS" (printf "%s %s" .nix_cache_env (.CONTAINER_ENVS | default "")))
 
-  ci/nixos-fmt:
-    desc: Check Nix formatting
+  _nix/export:
+    internal: true
+    requires:
+      vars: [ATTRIBUTE, OUTPUT]
     cmds:
-      - task: nix:nixfmt
-
-  ci/nixos-lint:
-    desc: Lint Nix modules and checks
-    cmds:
-      - task: nix:statix
-      - task: nix:deadnix
-
-  ci/test:
-    desc: Run complete native checks; RUNTIME_PROFILE=pr selects current and requested runtime lines
-    cmds:
-      - task: nix:_nix/tool
+      - task: _nix/check
         vars:
           CMD: >-
-            {{if or .RUNTIME_PROFILE .RUNTIME_VERSIONS}}env NIX_RUNTIME_PROFILE={{.RUNTIME_PROFILE | default "all" | shellQuote}} NIX_RUNTIME_VERSIONS={{.RUNTIME_VERSIONS | default "" | shellQuote}}{{end}}
-            bash scripts/run_checks.sh modules {{.MODULES | default "" | shellQuote}}
-          TASK_CONTEXT:
-            ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER --cap-add=SETUID --cap-add=SETGID --cap-add=KILL %s" (.CONTAINER_RUN_ARGS | default "")))'
-
-  ci/common:
-    desc: Run shared contracts; INTEGRATION_GROUP selects a deep evaluation group
-    cmds:
-      - task: nix:_nix/tool
-        vars:
-          CMD: >-
-            {{if .INTEGRATION_GROUP}}env NIX_INTEGRATION_GROUP={{.INTEGRATION_GROUP | shellQuote}}{{end}}
-            bash scripts/run_checks.sh common {{.MODE | default "pr" | shellQuote}}
-          TASK_CONTEXT:
-            ref: 'merge (dict) (.TASK_CONTEXT | default .) (dict "CONTAINER_RUN_ARGS" (printf "--cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER --cap-add=SETUID --cap-add=SETGID --cap-add=KILL %s" (.CONTAINER_RUN_ARGS | default "")))'
+            bash -c 'output=$1; shift; mkdir -p "$(dirname "$output")";
+            exec nix-instantiate --eval --strict --json checks/modules.nix --attr "$@" > "$output"' bash
+            {{.OUTPUT | shellQuote}} {{.ATTRIBUTE | shellQuote}}
+            {{if .SYSTEM}}--argstr system {{.SYSTEM | shellQuote}}{{end}}

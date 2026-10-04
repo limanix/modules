@@ -1,9 +1,11 @@
 # Write a module
 
-Start with a `default.nix` that adds packages, then extend it with program
-settings, services, or native libraries as needed. A custom module needs no
-catalog metadata and no flake. If you want to contribute it to this repository,
-continue with [Add to the catalog](#add-to-the-catalog); that step is optional.
+Start with a NixOS entry point that adds packages, then extend it with program
+settings, services or native libraries. A project-local module can be imported
+without catalog metadata or a flake. A catalog module also needs metadata, tests
+and a README under the public contract. If you want to add it to this
+repository, continue with [Add to the catalog](#add-to-the-catalog); that step
+is optional.
 
 [Concepts](concepts.md) explains the NixOS configuration model. This guide
 introduces the Nix syntax through examples.
@@ -13,6 +15,10 @@ introduces the Nix syntax through examples.
 | Write a custom module | [Create a module](#create-a-module) |
 | Add or maintain a catalog module | [Catalog contract](catalog-contract.md), then [Add to the catalog](#add-to-the-catalog) |
 | Understand required tests | [Required checks](catalog-contract.md#required-checks-for-every-module) |
+
+Keep module-owned packages, settings and tests in the module directory. Use
+public entry points and capabilities when connecting modules; the
+[catalog contract](catalog-contract.md#ownership) defines these boundaries.
 
 ## Create a module
 
@@ -130,12 +136,18 @@ through `config` instead of hard-coding values such as the user name `dev`:
 | `limanix.user.home` | string, read-only | Guest home directory supplied by the client |
 | `limanix.user.shell` | shell package | Login shell; Bash by default, or Zsh with `lmx:zsh` |
 
+The platform supplies `name` and `home` once. Modules read them; they do not
+redeclare the account identity. For a module-owned VM test, select its account
+through the
+[fixture parameters](catalog-contract.md#shared-helpers-and-vm-tests).
+
 These three options are declared in the shared `interface.nix` at the catalog
-repository root. The client supplies the account identity and applies the
-selected shell to the account. Modules that use these options depend on this
-interface rather than the client's internal VM data layout. Their names, types
-and meanings form the public contract; changing that contract requires a
-compatibility decision.
+repository root, together with the
+[session options](catalog-contract.md#option-classes-and-availability). The
+client supplies the account identity and applies the selected shell to the
+account. Modules that use these options depend on this interface rather than the
+client's internal VM data layout. Their names, types and meanings form the
+public contract; changing that contract requires a compatibility decision.
 
 Select another login shell in a custom module:
 
@@ -183,8 +195,8 @@ the firewall port lists can contain ports added by services as well as those
 configured through the client.
 
 Standard NixOS arguments such as `config`, `lib`, `pkgs` and `modulesPath`
-remain available. The generated root flake imports Lima itself; module code does
-not receive the root flake's `inputs` set.
+remain available. The generated root flake imports the nixos-lima module itself;
+module code does not receive the root flake's `inputs` set.
 
 ### Enable a service
 
@@ -272,7 +284,7 @@ NixOS merges your module with the rest of the system configuration:
 | Definitions in different modules | Result |
 | -- | -- |
 | Lists, such as `environment.systemPackages` | Combined |
-| Two different values for a string option, at the same priority | The build stops with a `conflicting definition values` error |
+| Two different values for a string option, at the same priority | Evaluation fails with a `conflicting definition values` error |
 | A value wrapped in `lib.mkDefault`, and an ordinary value | The ordinary value wins |
 | A value wrapped in `lib.mkForce` | Replaces definitions with weaker priority, including ordinary values and `lib.mkDefault` |
 
@@ -291,9 +303,8 @@ conflicting option values. Use `lib.mkForce` for intentional replacement; for
 list options, it replaces entire lists from weaker definitions. Definitions with
 the same priority still merge or conflict.
 
-When two packages provide the same command, NixOS keeps one of them on `PATH`
-and the build succeeds. To choose which one, raise the priority of the package
-you want:
+When packages provide the same command, select its owner with an explicit
+package priority. For example:
 
 ```nix
 { lib, pkgs, ... }:
@@ -302,20 +313,16 @@ you want:
 }
 ```
 
-The platform sorts final profile inputs by store path, then package priority for
-identical paths. It preserves duplicates, contextual store paths and user list
-replacements. The pinned NixOS profile keeps `ignoreCollisions = true`.
+The platform sorts final profile inputs by store path, then by ascending package
+priority for identical paths. It preserves values, duplicates and user list
+replacements. Do not rely on import order or `lib.mkBefore` to choose a command.
+Package-file priority is separate from the option-definition priority used by
+`mkDefault` and `mkForce`.
 
-| Corner case | Result |
-| -- | -- |
-| Different files at the same profile path and package priority | Canonical store-path order resolves the tie; use explicit `meta.priority`, such as `lib.hiPrio`, when a particular command must win |
-
-Do not rely on module import order or `lib.mkBefore` to select a binary
-provider.
-
-Catalog modules that support side-by-side versions already set package
-priorities. Their newest selected line supplies the ordinary commands. Inside
-the VM, `readlink -f "$(command -v nc)"` shows which package provides a command.
+For modules with several lines, follow their documented command names and
+selection policy. The contract does not require a particular suffix or the
+newest ordinary command. Inside the VM, `readlink -f "$(command -v nc)"` shows
+which package provides `nc`.
 
 To give a module its own settings, such as an `enable` switch, see
 [option declarations](https://nixos.org/manual/nixos/stable/#sec-option-declarations)
@@ -392,11 +399,23 @@ With the module applied, check inside the VM that pkg-config finds a library:
 pkg-config --cflags --libs openssl
 ```
 
-The command prints compiler and linker flags with paths under `/nix/store`. For
-a library without `.pc` files, pass its include and library directories as its
-build instructions describe. The Nix toolchain records runtime paths for
-libraries passed to the linker; libraries loaded later can still need a search
-path, as described below.
+The command prints compiler and linker flags with paths under `/nix/store`.
+Build systems that query pkg-config use these flags automatically. The compiler
+itself does not search the system profile for headers or libraries, so a build
+that includes `zlib.h` without asking pkg-config still fails with
+`No such file or directory`. Point the compiler to the library for that command
+only:
+
+```console
+CPATH="$(pkg-config --variable=includedir zlib)" LIBRARY_PATH="$(pkg-config --variable=libdir zlib)" pip install .
+```
+
+Replace `zlib` with the missing library and `pip install .` with the failing
+command. Both variables accept several directories separated by `:`. For a
+library without `.pc` files, use its include and library directories under
+`/nix/store` the same way. The Nix toolchain records runtime paths for libraries
+passed to the linker; libraries loaded later can still need a search path, as
+described below.
 
 ### Downloaded programs
 
@@ -448,7 +467,7 @@ explains this distinction.
 - Use a Nixpkgs package when the tool can use an installed program instead of
   downloading its own binary.
 - Use
-  [`python3.withPackages`](https://nixos.org/manual/nixpkgs/stable/#python.withPackages)
+  [`python3.withPackages`](https://nixos.org/manual/nixpkgs/stable/#python.withpackages-function)
   for a Nixpkgs interpreter with its Python dependencies; this is separate from
   pip virtual environments.
 - Run the tool in a supported Linux distribution's container with the
@@ -456,394 +475,296 @@ explains this distinction.
 
 ## Add to the catalog
 
-The module is usable without becoming a catalog entry. Continue here only if you
-want to contribute it to the shared catalog in this repository. Every catalog
-entry follows the [catalog contract](catalog-contract.md), including its
-documentation and testing requirements.
+A custom module can remain private to its project. To contribute it to the
+catalog, place the [minimal example](#create-a-module) in `catalog/dev-tools/`
+and add its public metadata, tests and README. Keep this order:
 
-Place the minimal `dev-tools` example from [Create a module](#create-a-module)
-in `catalog/dev-tools/`, keeping its `default.nix`. The directory name
-identifies the entry and gives it the selector `lmx:dev-tools`. Add the
-remaining files:
-
-| File | Purpose |
+| Step | Result |
 | -- | -- |
-| `default.nix` | The module's entry point; the existing example installs `jq` and `ripgrep` |
-| `module.toml` | The catalog description and optional version lines |
-| `check.nix` | Checks what the module adds to the evaluated NixOS configuration |
-| `README.md` | The entry's documentation page, including its Guarantees section |
-| `smoke.nix` | Build and behavior checks when required by the [contract](catalog-contract.md#required-checks-for-every-module) |
-| `tests.nix` | Optional additional configuration assertions and expected diagnostics for the module |
+| Define the promise | A user action and expected result for the README |
+| Write the entry point | Self-contained implementation behind `default.nix` |
+| Add metadata | Discovery through `module.toml` |
+| Export checks | Public `test.nix`, private fixtures under `test/` |
+| Write the page | Selectors, settings, corner cases and exact guarantee keys |
+| Validate | Selected `eval` and `run`; `vm.activation` when activation is promised |
 
-For `catalog/dev-tools/module.toml`, a description is enough:
+```text
+catalog/dev-tools/
+├── default.nix
+├── module.toml
+├── test.nix
+├── test/
+│   └── commands.nix
+└── README.md
+```
+
+For this entry, `module.toml` needs only a description:
 
 ```toml
 description = "jq and ripgrep for inspecting project data."
 ```
 
-This entry uses the base Nixpkgs packages and needs no version lines. Its
-package-only behavior needs `check.nix`; it introduces no custom build or
-startup behavior requiring a separate smoke check.
+It uses base packages and has no version lines. The public test entry checks
+configuration and commands; its private implementation remains under `test/`.
 
 ### Write the result check
 
-For this two-package example, `catalog/dev-tools/check.nix` checks for both:
+Save this as `catalog/dev-tools/test.nix`:
 
 ```nix
-{ pkgs, hasPackage, ... }:
-hasPackage pkgs.jq && hasPackage pkgs.ripgrep
+{ evalSystem, pkgs, lib }:
+let
+  helpers = import ../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
+  configuration = helpers.evaluate [ ./default.nix ];
+in
+{
+  eval.packages = builtins.all (helpers.installed configuration) [
+    pkgs.jq
+    pkgs.ripgrep
+  ];
+  run.commands = import ./test/commands.nix {
+    inherit pkgs;
+    profile = helpers.profileFor configuration;
+  };
+}
 ```
 
-The [module test runner](../checks/module.nix) discovers each selected entry's
-`check.nix` and calls it with these arguments:
+Save its native fixture as `catalog/dev-tools/test/commands.nix`:
 
-| Argument | Value |
+```nix
+{ pkgs, profile }:
+pkgs.runCommand "dev-tools-commands" { nativeBuildInputs = [ profile ]; } ''
+  export HOME="$TMPDIR/home"
+  mkdir -p "$HOME"
+  printf '{"ready":true}\n' | jq -e .ready
+  printf 'module command check\n' > fixture.txt
+  rg --fixed-strings 'module command check' fixture.txt
+  touch "$out"
+''
+```
+
+The fixture uses the evaluated system profile and temporary state. Merely
+printing its derivation path does not run it. The harness calls only
+`test.nix { evalSystem, pkgs, lib }`; it does not discover private check files.
+
+| Export | Use it for |
 | -- | -- |
-| `config` | The evaluated NixOS configuration |
-| `pkgs` | The configuration's package set |
-| `version` | The selected version line, or `null` for an entry without version lines |
-| `userName` | The fixture's configured user name |
-| `hasPackage` | Checks whether `config.environment.systemPackages` contains a package with the same store path |
+| `eval` | Configuration properties; every value must be Boolean `true` |
+| `fails` | Expected refusal with `modules` and a diagnostic `message` |
+| `run` | Native command, wrapper, patch or integration behavior |
+| `builds` | Exact artifact build permissions; not test evidence |
+| `vm` | Real activation through `pkgs.testers.runNixOSTest` |
 
-The check must return `true`; accept unused arguments with `...`. For a service,
-check its configuration options rather than only its package membership. For
-separately pinned packages, load the package for `version` as
-[Go's check](../catalog/go/check.nix) does.
+Choose the cheapest level that proves the promise. A configured value uses
+`eval`; reading that value in a real application needs `run`; login, boot and
+NixOS activation need `vm`. An incompatible public selection uses `fails` with
+the module's own diagnostic.
 
-This check verifies the evaluated result only. Custom builds and runtime
-integration require `smoke.nix` under the
-[smoke requirements](catalog-contract.md#required-checks-for-every-module).
-Every such check must be discovered, built, and executed in its applicable
-blocking catalog CI profile.
+Keep ordinary NixOS merge and upstream algorithm tests out of module fixtures.
+Test the behavior your module adds. Reuse one evaluated configuration for
+related assertions. Own integration scenarios can import dependencies' public
+entry points, but cannot read their private packages or tests.
 
-Keep additional module-specific assertions in an optional `tests.nix`, as
-[tmux's checks](../catalog/tmux/tests.nix) do. The runner passes the memoized
-default, individual-version, and coexisting-version configurations from
-[checks/module.nix](../checks/module.nix). The file can return `evaluation`
-assertions, `diagnostics` with expected messages and failing expressions, and
-named `configurations` reused by its smoke checks. For smaller PR smoke
-fixtures, it may also return a `runtimeConfigurationsFor` function. The function
-receives one `selected` catalog record with `name`, `path` and `version`: the
-default entry or a requested version line. It must return an attribute set of
-named configurations and any private metadata used by `smoke.nix`. Only PR smoke
-calls it and passes that result as `configurations`; full runtime and every
-compatibility assertion keep the canonical map. Without the function, PR smoke
-uses the canonical map. Build scoped fixtures from `selected.path` rather than
-every historical variant; see [Go's provider fixture](../catalog/go/tests.nix).
-This test context belongs to the repository's checks; it does not change the
-module arguments supplied by the client. The
-[smoke runner](../checks/module-smoke.nix) discovers the derivations returned by
-`smoke.nix` and checks their target system before building them. The full
-runtime profile runs each real version's commands and module-wide coexistence or
-provider-override scenarios. The PR profile keeps current/default startup and
-provider overrides, skips the named historical `coexistence` check, and adds
-requested version-line checks. Equivalent default entry points share runtime
-checks after their configuration equivalence is verified. K9s retains a separate
-check for its default recommendation.
+For private helpers, the
+[shared API](catalog-contract.md#shared-helpers-and-vm-tests) offers
+configuration records, installed-package predicates and lazy line fixtures. Do
+not extend the public three-argument invocation with extra context.
 
 ### Follow the metadata rules
 
-Catalog entries must follow these structural rules; see the
-[validator](../checks/catalog.nix). The [catalog contract](catalog-contract.md)
-also requires README guarantees and applicable smoke checks.
-
 | Item | Rule |
 | -- | -- |
-| Directory name | Up to 63 characters: lowercase letters, digits, and single hyphens between groups, starting with a letter |
-| Reserved names | `capabilities` and `internal` cannot be module names; `_shared` is reserved for shared declarations |
-| `default.nix`, `module.toml`, `check.nix` | Required regular files |
-| `module.toml` keys | Only `description`, `versions`, and `default` |
-| `description` | A string that is not empty or only whitespace |
-| `versions` | An optional list of unique version lines: up to 63 characters of digits separated by dots |
-| `default` | One of `versions`; empty or omitted when there are no versions |
-| `versions/<line>.nix` | A regular file for every version line |
+| Directory name | Up to 63 characters; `[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*` |
+| Reserved names | `_shared`, `internal`, `capabilities`, `pins` |
+| Public files | `default.nix`, `module.toml`, `test.nix`, `README.md` |
+| Metadata keys | Only `description`, `versions`, `default` |
+| `description` | Nonempty string |
+| `versions` | Optional unique numeric dotted strings, at most 63 characters each |
+| `default` | A member of nonempty `versions`; absent for an unversioned entry |
+| Version entries | `versions/<line>.nix` for every declared line |
+| `README.md` | Contains a `## Guarantees` heading |
 
-Every directory directly under `catalog/` must be an entry, except the reserved
-`_shared` directory. Use `_shared/internal/` for private declarations imported
-by multiple catalog modules. Public declarations belong in `_shared/<area>.nix`
-and are loaded by the client, including `_shared/languageSupport.nix` for
-`lmx.capabilities.languageSupport.*`. Provider and consumer modules use these
-public options without importing their declaration files. The `_shared`
-directory has no selector or module metadata and is excluded from generated
-module documentation. The client preserves its files in the catalog source tree.
-All other directory names remain subject to the module rules, and a catalog
-containing only `_shared` is invalid. For example, `dev-tools` is a valid name
-and `3.14` is a valid version line; `my_module` and `v3.14` are not.
+Each name segment begins with a letter. `dev-tools` is valid; `tools-2`,
+`my_module` and `v3.14` as a version line are invalid. This makes the numeric
+line suffix in `lmx:<name>-<line>` unambiguous.
 
-```{warning}
-Keep selectors unique across the catalog.
-An entry `tools` with version line `2` and an entry named `tools-2` both provide `lmx:tools-2`.
-The validator rejects this collision.
-```
+Root `_shared/*.nix` declares generic schemas and infrastructure; the reserved
+`_shared/test.nix` is its test export. Pure helpers use `_shared/lib/`, test
+helpers use `_shared/test/`, and common data can use non-Nix files. The shared
+layer knows no application names or private release pins.
 
 ### Write the entry's page
 
-The entry's `README.md` becomes its page on the documentation site and on
-GitHub. Follow the existing pages:
-
 | Part | Content |
 | -- | -- |
-| Title and summary | The tool's name and what the module installs or configures |
-| Selector | The entry's default selector and a link to the client guide for applying it |
-| `Versions` | Selectors and exact package versions, marking default and end-of-life lines; for an entry without lines, explain where its package comes from |
-| `Use` | The first commands to run inside the VM and what they show |
-| `Guarantees` | The stable behavior promised by the module, with the checks that cover it |
-| Additional sections | Entry-specific details such as permissions, native dependencies, or editor support |
+| Summary and selector | What the user gets and how to select it |
+| Versions | Selectors, exact package versions, default and support status |
+| Use | First commands and their expected result |
+| Configuration and integration | Public options, dependencies, capabilities, files and services |
+| Corner cases | Limitations, conflicting choices and persistent data |
+| Guarantees | Observable promises linked to exact public tests |
 
-Use this structure for the `Guarantees` section, with observable behavior and
-the checks that cover it. The following editor and language examples illustrate
-the required format:
+For the example:
 
 ```markdown
 ## Guarantees
 
-| Guarantee | Covered by |
-|---|---|
-| `nvim` opens AstroNvim when neither personal `init.lua` nor `init.vim` exists | `smoke.nix`: startup |
-| Selecting `lmx:go` installs and declares `gopls` | `check.nix` |
-| Selecting AstroNvim together with Go configures the declared `gopls` | `checks/integration.nix`, `catalog/astronvim/integration.nix`: release |
+| Guarantee | Checked by |
+| -- | -- |
+| Installs jq and ripgrep | `eval.packages` |
+| The selected system-profile commands process local input | `run.commands` |
 ```
 
-Write guarantees for the entry being documented and reference the checks that
-verify each guarantee. Describe the module's behavior, without repeating client
-instructions. Add its row to the table in [Catalog](catalog.md).
+Use existing `eval`, `fails`, `run` or `vm` keys. Build permissions are not
+evidence; explain them separately when needed. Configuration does not prove
+execution, and a native fixture does not prove login or NixOS activation. Avoid
+a separate generic Tests section. Add the entry to [Catalog](catalog.md).
 
 ### Check the result
 
-With Task and Docker installed, run the tasks defined in the repository's
-[Taskfile](../Taskfile.yml) from the repository root:
+With Task and Docker installed, run from the repository root:
 
 ```console
-task --yes ci/test
+task --yes ci/lint
+task --yes ci/test/modules MODULES=dev-tools
 ```
 
-Check Markdown with `task --yes ci/markdown-fmt`, or apply the same style with
-`task --yes markdown/fix`. These commands cover `README.md`, `catalog`,
-`guides`, and `checks/fixtures`; generated documentation and caches are outside
-this scope. Mdformat wraps prose at 80 characters and keeps table spacing
-compact. The PR gate includes this check, including README-only changes.
+`ci/test/modules` runs `eval`, then `run`. Omitting `MODULES` selects all
+catalog modules. Names select whole modules, not private recipes or test
+policies. Each selected module runs both stages in its own evaluator. CI uses
+one module per job on each native architecture. The module's public export
+defines its checks, including those of every declared line.
 
-Repository checks must meet the
-[catalog contract](catalog-contract.md#required-checks-for-every-module):
-
-| Task | Coverage |
+| Command | Coverage |
 | -- | -- |
-| `ci/nixos-fmt` | Nix formatting with nixfmt |
-| `ci/nixos-lint` | Nix code with statix and deadnix |
-| `ci/test` | Complete selected-module compatibility evaluation and profile-selected native smoke; full runtime is the local default |
-| `ci/common` | Catalog metadata, shared declarations, ownership, and capability-schema fixtures; `MODE=release` also checks all compatible defaults, intermodule configuration, and AstroNvim LSP runtime |
+| `ci/lint` | Nixfmt, Statix, Deadnix and source Markdown formatting |
+| `ci/test/modules MODULES=dev-tools` | All evaluation and native checks for the selected module |
+| `ci/test/modules MODE=eval MODULES=dev-tools` | Public structure, entry points, recommendation, `eval` and `fails` |
+| `ci/test/modules MODE=run MODULES=dev-tools` | Declared native checks and local-build dry-run |
+| `ci/test/modules MODE=vm MODULES=dev-tools` | Declared activation checks on native Linux with KVM |
+| `ci/test/common` | Shared and platform evaluation and native checks together |
+| `ci/test/common SUITE=shared MODE=eval` | Shared infrastructure assertions and diagnostics |
+| `ci/test/common SUITE=platform MODE=run` | Native builder-permission regression |
 
-Select modules by their directory names:
-
-```console
-task --yes ci/test MODULES="go rust"
-```
-
-Omitting `MODULES` selects every catalog module. Each invocation checks the
-container's native Linux system, reported as `aarch64-linux` or `x86_64-linux`.
-Module evaluation and smoke share the same memoized configurations during
-`ci/test`. Module checks cover every supported version, repeated entry points,
-import-order equivalence, supported overrides and expected incompatible
-selections in every runtime profile. Local and release checks use
-`RUNTIME_PROFILE=all` by default. For current runtime checks during development,
-use:
+The same runner can be used directly on native Linux:
 
 ```console
-task --yes ci/test MODULES=go RUNTIME_PROFILE=pr
+bash scripts/run_checks.sh module check dev-tools
+bash scripts/run_checks.sh common check
+bash scripts/run_checks.sh module eval dev-tools
 ```
 
-To add a specific supported line to that runtime scope:
+For a declared VM check, use a native Linux host with an accessible `/dev/kvm`
+and pass the device into the Task container:
 
 ```console
-task --yes ci/test MODULES=go RUNTIME_PROFILE=pr RUNTIME_VERSIONS="1.26"
+task --yes ci/test/modules MODE=vm MODULES=dev-tools CONTAINER_RUN_ARGS=--device=/dev/kvm
 ```
 
-| Task argument | Runner environment | Contract |
-| -- | -- | -- |
-| `RUNTIME_PROFILE` | `NIX_RUNTIME_PROFILE` | `all` preserves full runtime; `pr` selects current/default checks and requested lines |
-| `RUNTIME_VERSIONS` | `NIX_RUNTIME_VERSIONS` | Space-separated declared numeric lines; requires `pr` and exactly one selected module |
+This example applies only if the module exports `vm.activation`. Native checks
+in a container do not establish activation. Missing required features,
+interrupted runs and skipped checks must be reported separately; they do not
+become passes.
 
-Unknown or duplicate requested lines fail explicitly. The PR planner adds
-changed declared `versions/<numeric>.nix` lines automatically. Private or nested
-files under `versions/` are source helpers and require full runtime. Every other
-non-document module change, including metadata, release maps, helpers and smoke
-tests, requires full runtime for the module and its transitive consumers.
-Changes to `interface.nix`, `flake.nix`, `flake.lock`, or non-document files
-under `checks/` or `catalog/_shared/` require full runtime throughout the
-catalog, apart from the palette-only case below. Workflow-only changes select
-every module's current runtime. Palette-only changes use current runtime only
-when every `_shared` reference is a direct palette read by the known unversioned
-LazyGit, tmux, Yazi and Zsh modules. Unknown or computed references and shared
-Nix data readers require full runtime. The named historical `coexistence`
-runtime check runs in `all`; complete coexistence evaluation still runs in `pr`.
-Local module evaluation is serial by default; read
-[Validation memory](troubleshooting.md#validation-memory) before running full
-suites or increasing concurrency. `ci/common` uses `MODE=pr` by default and
-checks the shared contract through small fixtures. Release validation runs every
-module with `ci/test` and the common task in release mode:
+Each stage has a duration target per module; see
+[Cost and reports](catalog-contract.md#cost-and-reports) for the targets and
+what a report records.
 
-```console
-task --yes ci/common MODE=release
-```
-
-Release mode adds the full-catalog configuration checks in
-[checks/integration.nix](../checks/integration.nix) and the
-[AstroNvim LSP runtime scenarios](../catalog/astronvim/integration.nix). Release
-CI runs `MODE=release-eval` groups and independent `MODE=release-smoke` jobs on
-both native architectures. Local `MODE=release-eval` checks all integration
-groups by default. To repeat a narrower evaluation, pass `INTEGRATION_GROUP`:
-
-```console
-task --yes ci/common MODE=release-eval INTEGRATION_GROUP=versions
-```
-
-| Group | Evaluation coverage |
-| -- | -- |
-| `base` | Shared contracts, full-catalog defaults, capability consumers and expected integration failures |
-| `compositions` | Cozy with explicit component selectors in both import orders |
-| `versions` | Cozy with explicit tool versions in both import orders |
-
-Release CI requires every group and the runtime smoke; selecting a local group
-does not replace complete release validation. Run `ci/scripts` for
-change-planner, runner and documentation-builder regression tests. Every
-applicable `smoke.nix` must be discovered, built, and executed by blocking
-catalog CI using the module's actual packages and generated configuration.
-Catalog evaluation uses the public interface with test account values;
-client/catalog compatibility checks must evaluate real `Prepare()` output to
-verify the client's values. Reports must distinguish evaluation, build, runtime,
-and full-VM checks, and identify the architecture verified at each level.
-
-Also test the applied module in a VM by running the commands documented in its
-README. Keep evaluation results and runtime results distinct. Manual VM checks
-complement the required automated checks; they do not satisfy the CI requirement
-by themselves.
+Follow [Catalog checks](troubleshooting.md#catalog-checks) when a stage fails.
+Manual use in a VM complements the automated checks.
 
 ## Support multiple versions
 
-Version lines are optional, even for a catalog entry. Use them when users need a
-choice of tool versions or an incompatible change requires a new supported
-contract line. Document the relationship between a selector, its upstream
-versions, and its
-[compatibility guarantees](catalog-contract.md#guarantees-and-version-lines).
-The [Go entry](../catalog/go/README.md) is a working example. Its `module.toml`
-adds the lines and default alongside its description:
+Version lines are optional. Add them when users need a supported choice; each
+line is a numeric public selector suffix, not necessarily an exact upstream
+patch version. A generic versioned entry declares:
 
 ```toml
-versions = ["1.24", "1.25", "1.26", "1.27"]
-default = "1.27"
+description = "Example tool with two supported lines."
+versions = ["1", "2"]
+default = "2"
 ```
 
-Its `default.nix` recommends that line through private selection state:
-
-```{code-block} nix
-:linenos:
-:name: catalog-default-version
-:class: code-example
-
-{ lib, ... }:
-let
-  metadata = builtins.fromTOML (builtins.readFile ./module.toml);
-in
-{
-  imports = [ ./selection.nix ];
-  lmx.internal.go.versions = lib.mkDefault [ metadata.default ];
-}
-```
-
-| Code | Purpose |
+| Entry | Required behavior |
 | -- | -- |
-| [3](#catalog-default-version.3){.external .code-lines} | Reads `module.toml` and parses its fields into `metadata` |
-| [5–8](#catalog-default-version.5-8){.external .code-lines} | Imports the private selection module and supplies a weak default recommendation |
+| `default.nix` | Only recommends line 2 with `lib.mkDefault` |
+| `versions/1.nix` | Explicitly selects line 1 |
+| `versions/2.nix` | Explicitly selects line 2 |
+| Both explicit lines | Documented coexistence or a meaningful assertion |
 
-Each line's file, such as `versions/1.27.nix`, passes its version to a shared
-module:
+Private selection options belong to `lmx.internal.<name>`. Generate packages
+after the selected values have merged. Keep a default recommendation separate
+from explicit selections. Several explicit lines either coexist as documented or
+trigger the module's own assertion; command names remain module policy. Do not
+force `config` while discovering the structure of module definitions; use normal
+NixOS assertions and `mkIf`.
 
-```nix
-import ../module.nix "1.27"
-```
+The harness already checks the default recommendation in both import orders. The
+module owns line behavior, command aliases, capability ranking and conflicts:
 
-The Go `module.nix` imports the same private selection module and contributes
-the explicit line with ordinary priority. Explicit choices replace the weak
-recommendation before packages and capabilities are generated. Multiple explicit
-lines merge, then the implementation ranks the ordinary commands and complete
-tool declarations consistently. This private state is not a user-facing option;
-selectors are the public version interface. Other versioned tool modules use the
-same recommendation policy; K9s and AstroNvim keep their own documented
-selection implementations.
-
-The versioned entries share these conventions, which the validator does not
-require:
-
-| File | Contents |
+| Public key | Meaning |
 | -- | -- |
-| `releases.nix` | Pinned Nixpkgs revisions and hashes, package attributes, expected versions, and an `endOfLife` value for every line |
-| `packages.nix` | Loads the line's packages and asserts their expected versions |
-| `module.nix` | Selects a line or configures it directly according to the entry's policy |
+| `eval.line-1`, `eval.line-2` | Each line's own configuration |
+| `eval.allLines` | Supported coexistence and own package/provider priority |
+| `fails.twoLines` | Unsupported combination with its specific diagnostic |
+| `run.commands-1`, `run.commands-2` | Actual commands for each line |
+| `run.allLines` | Ordinary command resolution for supported coexistence |
 
-Entries using recommendation selection also keep `selection.nix` and
-`implementation.nix` inside their own directory. The former merges selected
-lines; the latter owns their packages and services. Entries supporting
-side-by-side versions add package priorities and versioned commands. Set
-`endOfLife` from the upstream project's maintenance policy:
+Use [the lazy line helper](../catalog/_shared/test/lines.nix) to create these
+per-line fixtures. It does not choose coexistence policy or expose private
+package loaders. Keep additional scenarios in your own `test/`.
 
-| Value | Meaning | EOL warning |
-| -- | -- | -- |
-| `true` | Upstream support for the line has ended | Yes |
-| `false` | The line is supported under the upstream policy | No |
-| `null` | The line's support status has not been confirmed | No |
+Keep a default fixture, one per needed line and one per different scenario.
+Reuse each configuration for related assertions. Coverage follows the promises
+and regression risks; there is no hard fixture-count limit.
 
-Export the value from `packages.nix` with `inherit (release) endOfLife;`. In the
-module's implementation, use `lib.optional (tools.endOfLife == true)` for the
-warning so an unknown status is accepted. Mark EOL lines and unknown statuses in
-the README, and cite the upstream policy used to determine support. Review the
-value when maintaining the catalog; the build does not update it automatically.
-Keep the [release map](../catalog/go/releases.nix),
-[package loader](../catalog/go/packages.nix), metadata, and README consistent
-when updating a tool. Test each version line's documented commands in addition
-to the catalog checks.
+Base packages come from the locked `pkgs`. For an additional Nixpkgs revision,
+declare `lmx.pins.<revision> = <hash>` in the module and consume
+`pinned.<revision>` in configuration values. Do not fetch/import another Nixpkgs
+package set in a module-private package helper. Keep release maps and package
+helpers module-local; neither naming convention is public ABI.
+
+| Support status | README and warning |
+| -- | -- |
+| End of life | Cite the upstream policy and emit the module's warning |
+| Supported | Record the policy used; no EOL warning |
+| Unconfirmed | Say unknown; do not invent support dates |
+
+Check support status during maintenance. Selecting a line does not update that
+status automatically. A catalog release announces default changes and line
+removals; removal needs a migration and link to the previous release.
 
 ## Catalog maintenance
 
-These repository-wide tasks are separate from writing an individual module.
-
 ### Update the NixOS base
 
-The root `flake.nix` selects the NixOS release, and `flake.lock` fixes its
-Nixpkgs revision. An entry's `releases.nix` pins its own packages separately. To
-update the base revision within the selected release, run:
+The root `flake.nix` selects the NixOS release; `flake.lock` fixes its revision.
+To update the revision within that release:
 
 ```console
 task --yes nixpkgs/update
 ```
 
-The task runs Nix in Docker; no local Nix installation is needed. To change the
-NixOS release, edit `inputs.nixpkgs.url` in `flake.nix` first. Review the
-resulting `flake.lock` change, update the release named in
-[Concepts](concepts.md#nixos-version-and-package-pins), and run `ci/test`.
-Before releasing the change, verify the catalog in a VM as well.
+To change the release, update `inputs.nixpkgs.url` first. Review the lock
+change, update [Concepts](concepts.md#nixos-version-and-package-pins), and
+validate module/shared eval and run stages. Perform the required activation
+tests before release. Module-local additional pins remain separate from this
+base update.
 
 ### Prepare the documentation
-
-The documentation site consumes a prepared copy of `guides/`, every entry's
-README and its subordinate Markdown guides:
 
 ```console
 task --yes docs/prepare
 ```
 
-The task replaces the ignored `build/docs/` directory with the pages, examples,
-and navigation. Links to referenced Nix source files and the Taskfile point at
-the current commit; add `MODULES_REF=v4` to use a release tag instead. Edit the
-sources, not `build/docs/`.
-
-This task does not render HTML or check the complete site. The
-[docs repository](https://github.com/limanix/docs) builds and previews the site
-from this output.
+This prepares `build/docs/` from guide and module sources; it does not render
+HTML. Edit sources, not that generated directory. `MODULES_REF=v4` selects a
+release tag for source links. The
+[docs repository](https://github.com/limanix/docs) builds the site from this
+output.
 
 ## Next steps
 
-- [Nix language basics](https://nix.dev/tutorials/nix-language.html): learn more
-  of the language used in module files.
-- [Writing NixOS modules](https://nixos.org/manual/nixos/stable/#sec-writing-modules):
-  explore the full module system.
-- [Troubleshooting](troubleshooting.md): fix errors that a module causes.
+- [Concepts](concepts.md): configuration and package pins.
+- [Catalog contract](catalog-contract.md): complete public interface.
+- [Troubleshooting](troubleshooting.md): inspect failed evaluation or execution.

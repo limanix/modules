@@ -1,4 +1,10 @@
-"""Prepare this repository's Markdown section for the LimaNix documentation site."""
+#!/usr/bin/env python3
+"""Prepare module Markdown for the LimaNix documentation site.
+
+Validate source documents before replacing build/docs, rewrite site-relative
+links, and connect module guides through Sphinx toctrees. This tool does not
+render the site or evaluate Nix modules.
+"""
 
 from __future__ import annotations
 
@@ -10,24 +16,37 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_LINK = re.compile(
-    r"\]\(\.\./((?:checks|catalog|scripts)/[^)]*?\.(?:nix|py|sh)|Taskfile\.yml)(#[^)]*)?\)"
+    r"\]\(\.\./((?:checks|catalog|scripts)/[^)]*?\.(?:nix|py|sh)"
+    r"|Taskfile\.yml)(#[^)]*)?\)"
 )
+NESTED_GUIDE_LINK = re.compile(r"\]\(((?:\.\./)+)guides/")
 
 
-def prepare(root: Path, ref: str) -> Path:
-    if not re.fullmatch(r"v[1-9][0-9]*|[0-9a-f]{40}", ref):
-        raise ValueError(
-            "MODULES_REF must be a release tag such as v4 or a full commit SHA"
-        )
-
+def read_guides(root: Path) -> dict[Path, str]:
+    """Read guide Markdown and reject links that copytree would follow."""
     guides = root / "guides"
+    if guides.is_symlink():
+        raise ValueError("guides/ must not be a symlink")
     for name in ("index.md", "catalog.md"):
         if not (guides / name).is_file():
             raise ValueError(f"Missing guide: guides/{name}")
+    documents = {}
+    for source in sorted(guides.rglob("*")):
+        if source.is_symlink():
+            raise ValueError(f"guide source must not be a symlink: {source}")
+        if source.is_file() and source.suffix == ".md":
+            documents[source.relative_to(guides)] = source.read_text(encoding="utf-8")
+    return documents
 
+
+def read_module_documents(root: Path) -> dict[Path, dict[Path, str]]:
+    """Collect module README files and subordinate Markdown before writing."""
+    catalog = root / "catalog"
+    if not catalog.is_dir():
+        raise ValueError("Missing module directory: catalog/")
     modules = sorted(
         path
-        for path in (root / "catalog").iterdir()
+        for path in catalog.iterdir()
         if path.is_dir() and not (path.name == "_shared" and not path.is_symlink())
     )
     if not modules:
@@ -41,46 +60,51 @@ def prepare(root: Path, ref: str) -> Path:
             raise ValueError(
                 f"Missing module documentation: catalog/{module.name}/README.md"
             )
-        documents[module] = sorted(
-            path for path in module.rglob("*.md") if path != readme
-        )
-        for document in documents[module]:
+        sources = {}
+        for document in sorted(module.rglob("*.md")):
             if document.is_symlink():
                 raise ValueError(
                     f"module documentation must not be a symlink: {document}"
                 )
+            sources[document.relative_to(module)] = document.read_text(encoding="utf-8")
+        documents[module] = sources
+    return documents
 
+
+def prepare(root: Path, ref: str) -> Path:
+    if not re.fullmatch(r"v[1-9][0-9]*|[0-9a-f]{40}", ref):
+        raise ValueError(
+            "MODULES_REF must be a release tag such as v4 or a full commit SHA"
+        )
+
+    guides = read_guides(root)
+    modules = read_module_documents(root)
     output = root / "build" / "docs"
     if output.parent.is_symlink() or output.is_symlink():
         raise ValueError("build/ and build/docs/ must not be symlinks")
     if output.exists():
         shutil.rmtree(output)
-    shutil.copytree(guides, output)
+    shutil.copytree(root / "guides", output)
 
     source_url = f"https://github.com/limanix/modules/blob/{ref}/"
-    for guide in output.rglob("*.md"):
-        text = guide.read_text(encoding="utf-8")
+    for relative, text in guides.items():
         text = SOURCE_LINK.sub(
             lambda match: f"]({source_url}{match[1]}{match[2] or ''})", text
         )
         text = text.replace("](../catalog/", "](modules/")
-        guide.write_text(text, encoding="utf-8")
+        (output / relative).write_text(text, encoding="utf-8")
 
-    for module in modules:
+    for module, documents in modules.items():
         target = output / "modules" / module.name / "README.md"
         target.parent.mkdir(parents=True)
-        text = (module / "README.md").read_text(encoding="utf-8")
-        nested = documents[module]
+        text = documents[Path("README.md")]
         entries = []
-        for document in nested:
-            relative = document.relative_to(module)
+        for relative, nested_text in documents.items():
+            if relative == Path("README.md"):
+                continue
             nested_target = target.parent / relative
             nested_target.parent.mkdir(parents=True, exist_ok=True)
-            nested_text = re.sub(
-                r"\]\(((?:\.\./)+)guides/",
-                r"](\1",
-                document.read_text(encoding="utf-8"),
-            )
+            nested_text = NESTED_GUIDE_LINK.sub(r"](\1", nested_text)
             nested_target.write_text(nested_text, encoding="utf-8")
             entries.append(relative.with_suffix("").as_posix())
         if entries:
@@ -89,22 +113,29 @@ def prepare(root: Path, ref: str) -> Path:
 
     with (output / "catalog.md").open("a", encoding="utf-8") as catalog:
         catalog.write("\n```{toctree}\n:hidden:\n:glob:\n\nmodules/*/README\n```\n")
-
     return output
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--root", type=Path, default=ROOT, help="Modules repository directory"
+    )
     parser.add_argument(
         "--ref", required=True, help="Release tag or commit SHA for source links"
     )
-    args = parser.parse_args()
-
+    args = parser.parse_args(argv)
     try:
-        output = prepare(ROOT, args.ref)
-    except (OSError, ValueError) as error:
+        output = prepare(args.root, args.ref)
+    except ValueError as error:
+        print(f"docs/prepare: {error}", file=sys.stderr)
+        return 2
+    except OSError as error:
         print(f"docs/prepare: {error}", file=sys.stderr)
         return 1
+    except KeyboardInterrupt:
+        print("docs/prepare: interrupted", file=sys.stderr)
+        return 130
     print(f"Prepared documentation in {output}")
     return 0
 

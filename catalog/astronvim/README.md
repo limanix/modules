@@ -26,8 +26,9 @@ records its EOL status as unknown.
 The unversioned selector follows the catalog default. Use `lmx:astronvim-6` to
 stay on the 6.x line when the catalog default changes. Minor and patch releases
 within that line may change in later catalog releases. Only one AstroNvim line
-can configure the editor; selecting two different lines is an error. An explicit
-line overrides the recommendation included by Console:
+can configure the editor. Selecting two different supported lines fails with
+`astronvim: select one line`. An explicit line overrides the recommendation
+included by Console:
 
 ```toml
 [nixos]
@@ -117,9 +118,10 @@ return {
 
 ## Save and resume a project
 
-Normal editor exit with project file buffers automatically saves the last
-session and a snapshot for the project directory. After starting a new `nvim`
-process, resume the last session with:
+AstroNvim's bundled Resession plugin provides session saving and loading. Normal
+editor exit with project file buffers automatically saves the last session and a
+snapshot for the project directory. After starting a new `nvim` process, resume
+the last session with:
 
 ```vim
 :lua require("resession").load("Last Session", { reset = true })
@@ -165,26 +167,23 @@ usage.
 | Existing init file | Your `init.lua` or `init.vim` replaces the bundled startup; remove it only when you choose to use the catalog setup |
 | Missing language server | Select a provider or declare the tool through the public capability; a binary on PATH alone is insufficient |
 | Foreign plugin or Mason tool | Extra tools may need libraries or interpreters even with nix-ld enabled |
-| Two AstroNvim lines | Choose one line; several different lines cannot configure the same editor |
+| Two AstroNvim lines | Choose one line; different supported lines fail with `astronvim: select one line` |
 | Unsaved edits or running terminal jobs | Save edits and finish jobs; restoring a session restores layout and file positions rather than unsaved contents or processes |
 | Resume a saved session | Save current edits first; the example above replaces the current editor layout |
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| The default and explicit `6` selector install the pinned AstroNvim line with Neovim and Lazygit | `check.nix`, `tests.nix`: defaultEntryPoint, dependencies |
-| Console recommends the default line; an explicit line wins independently of import order | `checks/integration.nix`: console.astronvimVersionSelection |
-| An existing XDG Neovim `init.lua` or `init.vim` takes precedence; otherwise the bundled setup starts | `smoke.nix`: startup, personalLua, personalVim |
-| Personal `lua/polish.lua` runs after bundled setup | `smoke.nix`: polish |
-| Personal Lazy specifications under the XDG Neovim `lua/plugins/` directory extend bundled setup | `smoke.nix`: personalPlugins |
-| Bundled startup disables automatic plugin installation and update checking | `smoke.nix`: startup |
-| Bundled Lazy plugins receive their configured setup when loaded on demand | `smoke.nix`: startup, sessions |
-| Normal project exit saves sessions; another editor process restores the directory, file buffers, splits and cursors, and later exits update the snapshot | `smoke.nix`: sessions |
-| The tested project save/resume lifecycle completes its exit callbacks without hidden errors | `smoke.nix`: sessions |
-| Lua buffers receive active bundled Tree-sitter highlighting; language declarations add their parsers | `smoke.nix`: startup; `integration.nix`: lsp |
-| Catppuccin Mocha is bundled; personal AstroUI colorscheme settings override it | `smoke.nix`: startup, personalPlugins |
-| Declared Go, Rust, Python and JavaScript/TypeScript servers attach using their final command; providers remain optional | `tests.nix`, `checks/integration.nix`, `integration.nix`: lsp |
-| Third-party declarations and user overrides supply the LSP executable and its arguments | `checks/integration.nix`, `integration.nix`: thirdParty, userOverride |
-| Leader explorer/search/Git bindings and Ctrl/Alt navigation are configured | `smoke.nix`: startup |
-| Users may override `programs.neovim.defaultEditor` and disable `programs.nix-ld.enable` | `tests.nix` |
+| The configured editor, Git and Lazygit are installed | `eval.line-6` |
+| Editor and compatibility-loader preferences accept ordinary settings | `eval.preferences` |
+| Language providers remain optional; catalog and third-party declarations are accepted | `eval.optionalProviders`, `eval.catalogProvider`, `eval.thirdPartyProvider` |
+| Rust and TypeScript server names are translated; other identities are preserved | `eval.serverNames` |
+| Bundled startup loads Mocha, key bindings and Lua highlighting from immutable plugin sources | `run.commands-6` |
+| Personal init files replace bundled startup and remain unchanged | `run.personalLua`, `run.personalVim` |
+| Personal polish and plugin specifications extend the bundled setup | `run.polish`, `run.personalPlugins` |
+| A catalog Rust server and a guarded third-party Go server attach with the declared command, arguments and highlighting | `run.languageServer` |
+
+Removing this module removes its declarations and bundled store packages when no
+other selected module imports it. It does not delete personal Neovim files,
+Mason tools, session snapshots or other XDG state.

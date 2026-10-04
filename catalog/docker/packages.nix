@@ -1,12 +1,9 @@
-{ version, system }:
+{ version, pinned, ... }:
 let
   releases = import ./releases.nix;
   release = releases.versions.${version};
   source = releases.sources.${release.source};
-  packages = import (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/${source.rev}.tar.gz";
-    inherit (source) sha256;
-  }) { inherit system; };
+  packages = pinned.${source.rev};
   docker = packages.${release.package};
 in
 assert docker.version == release.version;

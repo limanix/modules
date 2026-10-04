@@ -100,12 +100,10 @@ and the
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs the selected Rust toolchain, GCC, pkg-config and GDB; supplies the documented versioned commands | `check.nix`, `smoke.nix`: commands |
-| Versioned Cargo runs build, test, fmt and clippy with its matching toolchain by default | `smoke.nix`: commands |
-| Declares the Rust parser and consumer-independent `rust-analyzer` tool with its package and command | `check.nix`, `tests.nix` |
-| The newest selected line supplies ordinary commands; a user tool declaration overrides the complete analyzer declaration and installed package | `tests.nix`, `smoke.nix`: coexistence, providerOverride |
-| Installing Rust does not activate an editor | `tests.nix` |
-| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |
+| The toolchain, native build tools, parser and end-of-life warnings match the selected line | `eval.line-1.95`, `eval.line-1.96`, `eval.line-1.97`, `eval.line-1.98` |
+| Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
+| The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
+| Each versioned Cargo builds and tests offline, then runs fmt and Clippy | `run.commands-1.95`, `run.commands-1.96`, `run.commands-1.97`, `run.commands-1.98` |
+| Installing this module does not enable an editor | `eval.allLines` |

@@ -106,13 +106,11 @@ selected line.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs each selected Node.js line with npm, npx and their versioned commands | `check.nix`, `smoke.nix`: commands |
-| Versioned npm and npx scripts use the matching Node.js interpreter by default | `smoke.nix`: commands |
-| Selected lines coexist and the newest supplies unqualified commands | `tests.nix`: coexistence, `smoke.nix`: coexistence |
-| Declares JavaScript/TypeScript/TSX parsers and the TypeScript language server package, command, arguments, and languages without enabling an editor | `check.nix`, `tests.nix`: providerSelection |
-| A user tool declaration overrides the complete server declaration and installed package | `tests.nix`: userOverride, forceOverride; `smoke.nix`: providerOverride |
-| The declared TypeScript language server starts and answers an LSP initialization request | `smoke.nix`: languageServer |
-| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |
+| The Node.js version, language server, parsers and end-of-life warnings match the selected line | `eval.line-23`, `eval.line-24`, `eval.line-25`, `eval.line-26` |
+| Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
+| The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
+| Versioned npm and npx scripts use their matching Node.js interpreter | `run.commands-23`, `run.commands-24`, `run.commands-25`, `run.commands-26` |
+| Installing this module does not enable an editor | `eval.allLines` |
+| The declared and user-supplied servers answer an LSP initialization request | `run.languageServer`, `run.userOverride` |

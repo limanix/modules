@@ -109,12 +109,10 @@ and the [gopls editor setup](https://go.dev/gopls/#editors).
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Installs the selected Go toolchain, Delve and GCC; `go-LINE` uses that line | `check.nix`, `smoke.nix`: commands |
-| The installed Go toolchain builds and tests cgo code with the race detector | `smoke.nix`: commands |
-| Declares Go/gomod/gosum parsers and the selected `gopls` package, command and language under `lmx.capabilities.languageSupport` | `check.nix`, `tests.nix` |
-| The newest selected line supplies the ordinary tools; a user tool declaration overrides the complete gopls declaration and installed package | `tests.nix`, `smoke.nix`: coexistence, providerOverride |
-| Installing Go does not activate an editor | `tests.nix` |
-| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |
+| Go, gopls and Delve versions, parsers and end-of-life warnings match the selected line | `eval.line-1.24`, `eval.line-1.25`, `eval.line-1.26`, `eval.line-1.27` |
+| Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
+| The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
+| Each versioned Go command compiles a cgo package and passes its race-enabled test | `run.commands-1.24`, `run.commands-1.25`, `run.commands-1.26`, `run.commands-1.27` |
+| Installing this module does not enable an editor | `eval.allLines` |

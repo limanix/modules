@@ -68,7 +68,12 @@ options.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Enables Neovim and installs the configured NixOS editor package | `check.nix` |
-| Leaves the default-editor setting overridable through `programs.neovim.defaultEditor` | `tests.nix` |
+| Neovim and its vi/vim aliases are installed and runnable | `eval.defaults`, `run.commands` |
+| An ordinary setting can make Neovim the default editor | `eval.defaultEditor` |
+| The module declares no language providers | `eval.optionalProviders` |
+
+Removing this module removes its declarations when no other selected module
+imports it. Personal configuration and XDG data, state and cache directories
+remain user-owned and are not deleted.

@@ -5,7 +5,8 @@
   ../go/default.nix
   ../nodejs/default.nix
   ../python/default.nix
-  ../cloud-tools/default.nix
+  ../aws/default.nix
+  ../gcloud/default.nix
   ../posting/default.nix
   ../harlequin/default.nix
   ./workspace.nix

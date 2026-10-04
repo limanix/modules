@@ -52,7 +52,8 @@ The interface shows containers and their logs, images, and volumes.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Installs the base Nixpkgs package providing `lazydocker` | `check.nix` |
-| Selecting Lazydocker alone does not enable Docker Engine | `tests.nix` |
+| Installs the base Nixpkgs Lazydocker package | `eval.package` |
+| Standalone selection leaves Docker Engine disabled | `eval.noDocker` |
+| The system-profile command prints its version and help without an engine | `run.commands` |

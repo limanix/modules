@@ -1,23 +1,32 @@
 version:
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  pinned,
+  ...
+}:
 let
+  releases = import ./releases.nix;
+  source = releases.sources.${releases.versions.${version}.source};
   tools = import ./packages.nix {
-    inherit version;
-    inherit (pkgs.stdenv.hostPlatform) system;
+    inherit version pinned;
   };
 
-  releases = builtins.attrValues (import ./releases.nix).versions;
+  releaseValues = builtins.attrValues releases.versions;
   olderReleases = builtins.filter (
     release: lib.versionOlder release.version tools.helm.version
-  ) releases;
+  ) releaseValues;
   priority = lib.meta.defaultPriority - builtins.length olderReleases;
 
-  versionedHelm = pkgs.runCommand "helm-${version}-command" { } ''
+  versionedHelm = pkgs.runCommandLocal "helm-${version}-command" { } ''
     mkdir -p "$out/bin"
     ln -s "${tools.helm}/bin/helm" "$out/bin/helm-${version}"
   '';
 in
 {
+  lmx.pins.${source.rev} = source.sha256;
+  lmx.internal.helm.packages.${version} = tools;
+
   environment.systemPackages = [
     (lib.setPrio priority tools.helm)
     versionedHelm

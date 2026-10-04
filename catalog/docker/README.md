@@ -29,7 +29,7 @@ Select only one line per VM. Both lines configure the same Docker service.
 Selecting two of them stops the build with this error:
 
 ```text
-The option `virtualisation.docker.package' is defined multiple times while it's expected to be unique.
+docker: select one line
 ```
 
 Both lines keep their containers, images, and volumes in the same storage in the
@@ -106,11 +106,9 @@ as to any other service in the VM. For details, see Docker's guides to
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| An explicit version replaces the default recommendation independently of import order | `checks/module.nix`: recommendation |
-| Enables the selected Docker Engine service and installs its CLI, Compose plugin, and Lazydocker | `check.nix`, `smoke.nix`: commands |
-| Adds the configured development account to the Docker group | `check.nix` |
-| Only one Docker line may configure the service; conflicting lines report the package conflict | `tests.nix`: versionConflict |
-| Selecting Lazydocker again preserves the system and public settings | `tests.nix`: composition |
-| Selecting a line recorded as end-of-life emits its version-specific warning | `check.nix` |
+| Each Engine line selects its CLI, Compose and Lazydocker, account group, socket and EOL warning | `eval.line-28`, `eval.line-29` |
+| Two explicit Engine lines fail with `docker: select one line` | `fails.twoLines` |
+| Both Engine lines execute Docker and Compose from the selected profile | `run.commands-28`, `run.commands-29` |
+| The default Engine boots; the development account runs an offline container and Compose service | `vm.activation` |

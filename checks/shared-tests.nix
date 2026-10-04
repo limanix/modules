@@ -1,29 +1,26 @@
-{
-  nixpkgs,
-  system,
-}:
+{ pkgs, lib }:
 let
-  pkgs = import nixpkgs { inherit system; };
-  inherit (pkgs) lib;
   check = modules: import ./shared-declarations.nix { inherit lib pkgs modules; };
   rejects = modules: !(builtins.tryEval (check modules)).success;
-  publicFile = toString ../catalog/_shared/languageSupport.nix;
-  privateFile = toString ../catalog/_shared/internal/example.nix;
   declaration = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     default = [ ];
   };
-in
-assert check [
-  {
-    _file = publicFile;
+  publicFile = toString ../catalog/_shared/languageSupport.nix;
+  pinsFile = toString ../catalog/_shared/pins.nix;
+  module = file: {
+    _file = file;
     options.lmx.capabilities.languageSupport.example = declaration;
-  }
-];
+  };
+in
+assert check [ (module publicFile) ];
 assert check [
   {
-    _file = privateFile;
-    options.lmx.internal.example = declaration;
+    _file = pinsFile;
+    options.lmx.pins = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+    };
   }
 ];
 assert rejects [
@@ -34,19 +31,15 @@ assert rejects [
 ];
 assert rejects [
   {
-    _file = privateFile;
-    config.services.openssh.enable = true;
+    _file = publicFile;
+    imports = [ (module (toString ../catalog/_shared/test/helpers.nix)) ];
   }
 ];
 assert rejects [
   {
     _file = publicFile;
-    imports = [
-      {
-        _file = toString ../catalog/tmux/default.nix;
-        options.lmx.tmux.example = declaration;
-      }
-    ];
+    imports = [ (module "/third-party/default.nix") ];
   }
 ];
+assert rejects [ (module (toString ../catalog/_shared/test.nix)) ];
 true

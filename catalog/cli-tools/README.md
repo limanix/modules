@@ -80,9 +80,8 @@ configuration can override them.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Installs every command listed in Use and enables Git | `check.nix` |
-| Generated Git settings select delta for paging and interactive diff filtering | `check.nix`, `smoke.nix`: gitConfig |
-| Users may replace the pager/filter defaults through NixOS settings or personal Git configuration | `tests.nix`, `smoke.nix`: gitConfig |
-| Selecting Git again preserves the system and public settings | `tests.nix`: composition |
+| Installs the listed tools, enables Git and runs their commands | `eval.packages`, `run.commands` |
+| Generated Git settings select delta for paging and interactive diffs | `eval.gitDefaults`, `run.gitConfig` |
+| Ordinary NixOS and personal Git settings can replace the pager defaults | `eval.gitOverrides`, `run.gitConfig` |

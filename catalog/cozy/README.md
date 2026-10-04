@@ -12,7 +12,8 @@ and SQL interfaces. Its components remain separately selectable.
 | [Go](../go/README.md) | Go, gopls, Delve and GCC |
 | [Python](../python/README.md) | Python, virtual environments and Pyright |
 | [Node.js](../nodejs/README.md) | Node.js, npm, npx and JavaScript/TypeScript LSP |
-| [Cloud tools](../cloud-tools/README.md) | AWS CLI v2 and Google Cloud CLI |
+| [AWS CLI](../aws/README.md) | AWS CLI v2 |
+| [Google Cloud CLI](../gcloud/README.md) | Google Cloud CLI |
 | [Posting](../posting/README.md) | Saved HTTP requests in a terminal interface |
 | [Harlequin](../harlequin/README.md) | SQL interface with the Postgres adapter |
 
@@ -95,20 +96,23 @@ the catalog release.
 
 | Case | Behavior or next step |
 | -- | -- |
-| Missing project directory | Pass an existing mounted directory or run from it |
+| Missing project directory | Pass an existing mounted directory or run from it; the command exits with status 1 |
 | Two projects share a basename | Physical-path session identity keeps them separate; symlink aliases reuse the same physical project |
 | Git or Docker view is empty | The workspace does not create a repository or start containers |
-| Reopening a workspace | Existing windows and processes are preserved rather than reset |
+| Reopening a workspace | Existing windows and processes are preserved |
 | VM restart | Save editor files and tmux layout first; snapshot restoration does not resume processes |
+| Piped command without a terminal | Run `tmux-project` in an interactive terminal; attaching requires a terminal |
+| More than one directory argument | The command prints usage and exits with status 64 |
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Imports the component entry points listed above, with Docker user access and declared Go/Python/Node.js language support | `components.nix`, `check.nix` |
-| Repeated component imports preserve the system and public settings | `tests.nix`: composition |
-| `tmux-project [directory]` dispatches four project windows and reuses the physical-path session | `smoke.nix`: project |
-| Tool windows remain available as shells after a tool exits, fails or is unavailable | `smoke.nix`: project |
-| Project paths are passed literally and sessions can be selected from inside tmux | `smoke.nix`: project |
-| Installs development tools without bundled example applications | `tests.nix`: noExamples |
-| Component configuration, themes and language integration remain owned by their modules | Component checks and `checks/integration.nix` |
+| Go, Python and JavaScript/TypeScript providers publish and install language support | `eval.languageSupport` |
+| Enables Docker Engine and adds the VM user to its access group | `eval.dockerAccess` |
+| Installs the project-workspace command | `eval.workspace` |
+| Development and cloud commands run from the selected system profile | `run.commands` |
+| Real project windows preserve literal paths and physical identity, support reattachment and client switching | `run.workspace` |
+| Real editor, Git and container windows retain a shell after application exit | `run.workspace` |
+| Invalid arguments fail without changing existing sessions | `run.workspace` |
+| Installs no bundled example applications | `eval.noExamples` |

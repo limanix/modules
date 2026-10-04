@@ -31,21 +31,6 @@ Add the selector to your VM's `nixos.modules` list and
 | VM restart | Restore the saved layout; interrupted processes and unsaved buffers are not restored |
 | Custom status line | Keep continuum's status hook when changing it |
 
-## Guarantees
-
-| Guarantee | Covered by |
-| -- | -- |
-| `tmux` and the resurrect/continuum plugins are installed; vi mode, `tmux-256color`, and a 10 ms escape delay are defaults | `check.nix`, `smoke.nix`: configuration |
-| Ordinary assignments can replace `programs.tmux.keyMode`, `programs.tmux.terminal`, and `programs.tmux.escapeTime` | `tests.nix`: preferences; `smoke.nix`: configuration |
-| Catppuccin Mocha styles the status line, active pane border, and copy mode; ordinary `programs.tmux.extraConfig` settings can replace these styles | `smoke.nix`: configuration |
-| Ctrl/Alt-H/J/K/L move and resize panes; prefix followed by Ctrl-H/J/K/L forwards the control key; panes marked by smart-splits receive their navigation keys | `smoke.nix`: configuration |
-| `lmx.tmux.navigation.enable = false` removes the custom navigation and forwarding bindings while retaining mouse, clipboard, copy mode, and restoration plugins | `tests.nix`: navigation; `smoke.nix`: configuration |
-| In vi copy mode, `v` begins a selection and `y` copies it; tmux emits OSC 52 clipboard output for supported terminals | `smoke.nix`: configuration |
-| Ctrl-B, Ctrl-S saves sessions, panes and working directories under `~/.tmux/resurrect/`; Ctrl-B, Ctrl-R and continuum restore the saved layout | `smoke.nix`: configuration |
-| Continuum is configured to save every 15 minutes through its status-line hook | `smoke.nix`: configuration |
-| Selecting `lmx:tmux` provides named sessions for `limanix shell --session` without attaching ordinary shells | `check.nix`, `smoke.nix`: sessions |
-| The session provider creates a session, reattaches to it, and preserves accepted literal names without executing their contents | `smoke.nix`: sessions |
-
 ## Versions
 
 Tmux and its plugins come from the catalog's
@@ -159,3 +144,18 @@ See
 
 Personal overrides belong in `~/.tmux.conf` inside the VM. Keep the status line
 enabled and preserve continuum's `status-right` hook if you customize it.
+
+## Guarantees
+
+| Guarantee | Checked by |
+| -- | -- |
+| `tmux` and the resurrect/continuum plugins are installed; vi mode, `tmux-256color`, and a 10 ms escape delay are defaults | `eval.defaults`, `run.terminalFeatures` |
+| Ordinary assignments can replace `programs.tmux.keyMode`, `programs.tmux.terminal`, and `programs.tmux.escapeTime` | `eval.preferences`, `run.terminalFeatures` |
+| Catppuccin Mocha styles the status line, active pane border, and copy mode; ordinary `programs.tmux.extraConfig` settings can replace these styles | `run.terminalFeatures` |
+| Ctrl/Alt-H/J/K/L move and resize panes; prefix followed by Ctrl-H/J/K/L forwards the control key; panes marked by smart-splits receive their navigation keys | `run.terminalFeatures` |
+| `lmx.tmux.navigation.enable = false` removes the custom navigation and forwarding bindings while retaining mouse, clipboard, copy mode, and restoration plugins | `eval.navigation`, `run.terminalFeatures` |
+| In vi copy mode, `v` begins a selection and `y` copies it; tmux emits OSC 52 clipboard output for supported terminals | `run.terminalFeatures` |
+| Patched restoration plugins load their save/restore bindings and keep continuum's status-line hook | `run.terminalFeatures` |
+| Continuum is configured to save every 15 minutes through its status-line hook | `run.terminalFeatures` |
+| Selecting `lmx:tmux` provides named sessions for `limanix shell --session` without attaching ordinary shells | `eval.defaults`, `run.sessionProvider` |
+| The session provider creates a session, reattaches to it, and preserves accepted literal names without executing their contents | `run.sessionProvider` |

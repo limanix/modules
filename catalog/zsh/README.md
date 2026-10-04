@@ -112,14 +112,13 @@ command-line tools.
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Makes Zsh the suggested login shell; an ordinary `limanix.user.shell` assignment can choose another shell | `check.nix`, `tests.nix`: shell |
-| Loads Oh My Zsh while preserving Tab completion, Atuin Ctrl-R and the Starship prompt | `check.nix`, `smoke.nix`: startup |
-| Generates and sources Carapace initialization, fzf-tab, autosuggestions and highlighting | `check.nix`, `smoke.nix`: startup |
-| Ctrl-R is assigned to Atuin; fzf path selection and zoxide/direnv hooks are available | `smoke.nix`: startup |
-| Starship shows the hostname and failed status; Atuin synchronization and update checks default off and accept ordinary overrides | `check.nix`, `tests.nix`, `smoke.nix`: startup |
-| The prompt uses Catppuccin Mocha; managed palette and styles accept ordinary overrides | `tests.nix`: preferences; `smoke.nix`: startup |
-| Personal `.zshrc` settings remain available after system startup | `smoke.nix`: startup |
-| Fresh login starts quietly without the automatic wizard or creation of personal startup files | `smoke.nix`: startup |
-| Personal startup files, custom `ZDOTDIR` and an existing new-user handler are preserved | `smoke.nix`: startup |
+| Suggests Zsh as the account shell; an ordinary `limanix.user.shell` assignment can choose another shell | `eval.defaults`, `eval.shell` |
+| Managed startup loads Oh My Zsh, Carapace, fzf-tab, autosuggestions and highlighting | `eval.defaults`, `run.startup` |
+| Managed startup keeps Tab completion, Atuin Ctrl-R, fzf Ctrl-T, zoxide and direnv hooks available together | `run.startup`, `vm.activation` |
+| Managed Starship settings use Mocha, show the hostname and failed status, and accept ordinary overrides | `eval.preferences`, `run.startup` |
+| Atuin synchronization and update checks default off and accept ordinary overrides | `eval.defaults`, `eval.preferences`, `run.startup` |
+| Fresh and repeat logins skip the automatic wizard without creating personal startup files | `run.startup`, `vm.activation` |
+| Personal startup settings, custom `ZDOTDIR` and an existing new-user handler remain unchanged | `run.startup`, `vm.activation` |
+| The activated account uses Zsh and reads its installed global startup files | `vm.activation` |

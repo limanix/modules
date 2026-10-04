@@ -3,75 +3,79 @@ name: Native Nix tests
 on:
   workflow_call:
     inputs:
-      task:
-        description: Taskfile check task to run
-        type: string
-        required: true
       runner:
         description: Native Linux runner
         type: string
         required: true
-      modules:
-        description: Space-separated module names for ci/test
+      suite:
+        description: module (catalog modules) or common (_shared and the harness)
         type: string
-        default: ''
+        default: module
       mode:
-        description: Shared check depth for ci/common
+        description: check (eval, then run) or vm (activation tests; needs KVM)
         type: string
-        default: pr
-      integration-group:
-        description: Integration evaluation group; all keeps the local complete profile
-        type: string
-        default: all
-      runtime-profile:
-        description: Module runtime scope; all retains every line, pr selects current and requested lines
-        type: string
-        default: all
-      runtime-versions:
-        description: Additional space-separated module version lines for the pr runtime scope
+        default: check
+      modules:
+        description: Space-separated module names for the module suite
         type: string
         default: ''
-      cache-id:
-        description: Module chunk or check suite identifier
-        type: string
-        required: true
 
 permissions:
   contents: read
 
+env:
+  # Runs on main publish caches; pull requests and tags only read them.
+  PUBLISH_CACHE: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+
 jobs:
   test:
-    name: ${{ inputs.cache-id }}
+    name: ${{ inputs.suite == 'module' && inputs.modules || inputs.suite }} ${{ inputs.mode }}
     runs-on: ${{ inputs.runner }}
-    timeout-minutes: 45
+    env:
+      TARGET: ${{ inputs.suite == 'module' && inputs.modules || inputs.suite }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # One cache per target and architecture: downloaded sources and the
+      # outputs the target builds locally. Prefix restore reuses the previous
+      # snapshot; runs on main prune it to what they needed before saving.
       - name: Restore Nix sources and local builds
-        id: nix-cache
+        id: cache
+        continue-on-error: true
+        timeout-minutes: 2
         uses: actions/cache/restore@v5
         with:
           path: |
             .cache/nix
             .cache/nix-binary
-          # Keep the suite before the pin hash: an unrelated pin update must not
-          # replace this module's completed closures with another module's cache.
-          # V2 scope prefixes are ambiguous for hyphenated names; migrate cold.
-          key: nix-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-id }}--${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}-${{ github.sha }}-${{ github.run_attempt }}
+          key: nix-v7-${{ runner.arch }}-${{ env.TARGET }}-${{ hashFiles('flake.lock', 'flake.nix', 'interface.nix', 'catalog/**', 'checks/**', 'scripts/run_checks.sh', 'scripts/cache_nix_build.sh', 'scripts/prune_nix_cache.sh') }}
           restore-keys: |
-            nix-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-id }}--${{ hashFiles('flake.lock', 'catalog/**/releases.nix') }}-
-            nix-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-id }}--
+            nix-v7-${{ runner.arch }}-${{ env.TARGET }}-
+
       - name: Prepare Nix cache permissions
         run: |
           mkdir -p .cache/nix .cache/nix-binary
           sudo chown -R 0:0 .cache/nix .cache/nix-binary
+
+      - name: Require KVM
+        if: ${{ inputs.mode == 'vm' }}
+        run: |
+          if [ ! -c /dev/kvm ]; then
+            printf 'VM checks require a native Linux runner with KVM.\n' >&2
+            exit 1
+          fi
+
       - name: Run Nix checks
-        timeout-minutes: 40
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
           command: >-
-            ${{ inputs.task }}
-            ${{ inputs.task == 'ci/test' && format('MODULES="{0}" RUNTIME_PROFILE={1} RUNTIME_VERSIONS="{2}"', inputs.modules, inputs.runtime-profile, inputs.runtime-versions) || format('MODE={0}', inputs.mode) }}
-            'CONTAINER_ENVS=XDG_CACHE_HOME=/workspace/.cache NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=${{ inputs.task == 'ci/test' && 1 || 2 }} NIX_CHECK_BATCH_SIZE=1 NIX_CHECK_TIMEOUT=1800 NIX_CHECK_TARGET_SECONDS=600 NIX_INTEGRATION_GROUP=${{ inputs.integration-group }}'
+            ${{ inputs.suite == 'module' && 'ci/test/modules' || 'ci/test/common' }}
+            'SUITE=${{ inputs.suite }}' 'MODE=${{ inputs.mode }}' 'MODULES=${{ inputs.modules }}'
+            ${{ inputs.mode == 'vm' && 'CONTAINER_RUN_ARGS=--device=/dev/kvm' || '' }}
+            'CONTAINER_ENVS=NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=1 NIX_BUILD_CORES=0${{ env.PUBLISH_CACHE == 'true' && steps.cache.outputs.cache-hit != 'true' && ' NIX_BUILD_CACHE_HOOK=/workspace/scripts/cache_nix_build.sh' || '' }}'
+
       - name: Restore Nix cache ownership
         if: always()
         run: |
@@ -80,11 +84,26 @@ jobs:
               sudo chown -R "$(id -u):$(id -g)" "$directory"
             fi
           done
-      - name: Save Nix sources and completed builds
-        if: ${{ always() && !cancelled() && steps.nix-cache.outputs.cache-hit != 'true' }}
+
+      # Saved narinfo lookups could hide pruned or newly added paths from the
+      # next run, so each run starts with an empty lookup cache.
+      - name: Prune Nix build cache
+        id: prune
+        if: ${{ success() && env.PUBLISH_CACHE == 'true' && steps.cache.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          pruned=$(bash scripts/prune_nix_cache.sh .cache/nix-binary)
+          rm -f .cache/nix/binary-cache-v*.sqlite*
+          printf '### Nix cache\n\n%s\n\n```\n%s\n```\n' "$pruned" "$(du -sh .cache/nix .cache/nix-binary)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save Nix sources and local builds
+        if: ${{ success() && env.PUBLISH_CACHE == 'true' && steps.cache.outputs.cache-hit != 'true' && steps.prune.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 2
         uses: actions/cache/save@v5
         with:
           path: |
             .cache/nix
             .cache/nix-binary
-          key: ${{ steps.nix-cache.outputs.cache-primary-key }}
+          key: ${{ steps.cache.outputs.cache-primary-key }}

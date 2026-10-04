@@ -1,27 +1,24 @@
-{
-  nixpkgs,
-  system,
-}:
+{ lib }:
 let
-  pkgs = import nixpkgs { inherit system; };
-  inherit (pkgs) lib;
   check =
     modules:
-    let
-      evaluated = lib.evalModules { inherit modules; };
-    in
     import ./ownership.nix {
       inherit lib;
-      inherit (evaluated) options;
+      inherit (lib.evalModules { inherit modules; }) options;
     };
   rejects = modules: !(builtins.tryEval (check modules)).success;
   scalar = lib.mkOption { type = lib.types.str; };
-  tmuxFile = toString ../catalog/tmux/default.nix;
-  zshFile = toString ../catalog/zsh/default.nix;
-  languageSupportFile = toString ../catalog/_shared/languageSupport.nix;
-  nested = file: childFile: {
+  ownFile = toString ../catalog/owner/default.nix;
+  otherFile = toString ../catalog/other/default.nix;
+  sharedFile = toString ../catalog/_shared/languageSupport.nix;
+  pinFile = toString ../catalog/_shared/pins.nix;
+  declare = file: path: {
     _file = file;
-    options.lmx.tmux.example = lib.mkOption {
+    options = lib.setAttrByPath path scalar;
+  };
+  nested = childFile: {
+    _file = ownFile;
+    options.lmx.owner.example = lib.mkOption {
       type = lib.types.attrsOf (
         lib.types.submodule {
           _file = childFile;
@@ -30,79 +27,143 @@ let
       );
     };
   };
-  valid = {
-    _file = tmuxFile;
-    options.lmx.tmux.example = scalar;
-  };
 in
-assert check [ valid ];
 assert check [
-  valid
-  {
-    _file = zshFile;
-    config.lmx.tmux.example = "A public assignment does not transfer declaration ownership.";
-  }
-];
-assert check [ (nested tmuxFile tmuxFile) ];
-assert rejects [ (nested tmuxFile zshFile) ];
-assert rejects [
-  {
-    _file = zshFile;
-    options.lmx.tmux.example = scalar;
-  }
-];
-assert rejects [
-  {
-    _file = tmuxFile;
-    options.services.example = scalar;
-  }
-];
-assert rejects [
-  {
-    _file = languageSupportFile;
-    options.lmx.editor.example = scalar;
-  }
-];
-assert rejects [
-  {
-    _file = tmuxFile;
-    options.lmx.capabilities.languageSupport.example = scalar;
-  }
-];
-assert rejects [
-  {
-    _file = toString ../catalog/_shared/internal/example.nix;
-    options.lmx.tmux.example = scalar;
-  }
-];
-assert rejects [
-  {
-    _file = "/third-party/default.nix";
-    options.limanix.example = scalar;
-  }
-];
-assert rejects [
-  {
-    _file = "/third-party/default.nix";
-    options.lmx.internal.example = scalar;
-  }
-];
-assert rejects [
-  {
-    _file = "/third-party/default.nix";
-    options.lmx.tmux.example = scalar;
-  }
+  (declare ownFile [
+    "lmx"
+    "owner"
+    "example"
+  ])
 ];
 assert check [
-  {
-    _file = toString ../interface.nix;
-    options.limanix.example = scalar;
-  }
+  (declare ownFile [
+    "lmx"
+    "internal"
+    "owner"
+    "example"
+  ])
 ];
 assert check [
+  (declare pinFile [
+    "lmx"
+    "pins"
+  ])
+];
+assert check [
+  (declare sharedFile [
+    "lmx"
+    "capabilities"
+    "languageSupport"
+    "example"
+  ])
+];
+assert check [
+  (declare (toString ../interface.nix) [
+    "limanix"
+    "example"
+  ])
+];
+assert check [
+  (declare (toString ../catalog/_shared/test/platform.nix) [
+    "environment"
+    "systemPackages"
+  ])
+];
+assert check [ (nested ownFile) ];
+assert check [
+  (declare ownFile [
+    "lmx"
+    "owner"
+    "example"
+  ])
   {
-    _file = toString ../catalog/_shared/internal/example.nix;
-    options.lmx.internal.example = scalar;
+    _file = otherFile;
+    config.lmx.owner.example = "public assignment";
   }
+];
+assert rejects [ (nested otherFile) ];
+assert rejects [
+  (declare otherFile [
+    "lmx"
+    "owner"
+    "example"
+  ])
+];
+assert rejects [
+  (declare otherFile [
+    "lmx"
+    "internal"
+    "owner"
+    "example"
+  ])
+];
+assert rejects [
+  (declare ownFile [
+    "services"
+    "example"
+  ])
+];
+assert rejects [
+  (declare ownFile [
+    "lmx"
+    "capabilities"
+    "languageSupport"
+    "example"
+  ])
+];
+assert rejects [
+  (declare ownFile [
+    "lmx"
+    "pins"
+  ])
+];
+assert rejects [
+  (declare pinFile [
+    "lmx"
+    "capabilities"
+    "pins"
+    "example"
+  ])
+];
+assert rejects [
+  (declare sharedFile [
+    "lmx"
+    "internal"
+    "example"
+  ])
+];
+assert rejects [
+  (declare (toString ../catalog/_shared/lib/example.nix) [
+    "lmx"
+    "internal"
+    "example"
+  ])
+];
+assert rejects [
+  (declare (toString ../catalog/_shared/test.nix) [
+    "lmx"
+    "capabilities"
+    "test"
+    "example"
+  ])
+];
+assert rejects [
+  (declare "/third-party/default.nix" [
+    "limanix"
+    "example"
+  ])
+];
+assert rejects [
+  (declare "/third-party/default.nix" [
+    "lmx"
+    "owner"
+    "example"
+  ])
+];
+assert check [
+  (declare "/third-party/default.nix" [
+    "services"
+    "example"
+  ])
 ];
 true

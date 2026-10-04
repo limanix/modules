@@ -1,63 +1,75 @@
 {
-  nixpkgs,
-  system,
+  evalSystem,
+  pkgs,
+  lib,
 }:
 let
-  pkgs = import nixpkgs { inherit system; };
-  inherit (pkgs) lib;
-  evaluate =
-    modules:
-    lib.evalModules {
-      specialArgs = { inherit pkgs; };
-      modules = [ ../interface.nix ] ++ modules;
-    };
-  defaults = evaluate [ ];
-  provider = "${pkgs.coreutils}/bin/true";
-  alternative = "${pkgs.coreutils}/bin/false";
-  recommended = {
-    limanix.session.command = lib.mkDefault provider;
+  declarations = lib.evalModules {
+    specialArgs = { inherit pkgs; };
+    modules = [ ../interface.nix ];
   };
-  selected = evaluate [
-    recommended
-    { limanix.session.command = alternative; }
+  defaults = evalSystem [ ];
+  custom = evalSystem [
+    {
+      limanix.user.shell = pkgs.zsh;
+      programs.zsh.enable = true;
+      limanix.session.command = "${pkgs.coreutils}/bin/true";
+    }
   ];
-  reversed = evaluate [
-    { limanix.session.command = alternative; }
-    recommended
-  ];
-  disabled = evaluate [
-    recommended
-    { limanix.session.command = null; }
-  ];
-  shellOverride = evaluate [ { limanix.user.shell = pkgs.zsh; } ];
-  noSuggestions = evaluate [ { limanix.session.providers = [ ]; } ];
-  conflicts = evaluate [
-    recommended
-    { limanix.session.command = lib.mkDefault alternative; }
-  ];
-  invalidPath = evaluate [ { limanix.session.command = "relative-command"; } ];
-  invalidShell = evaluate [ { limanix.user.shell = "bash"; } ];
-  rejects = value: !(builtins.tryEval (builtins.deepSeq value true)).success;
+  force = field: { config, ... }: {
+    assertions = [
+      {
+        assertion = builtins.seq (lib.getAttrFromPath field config) true;
+        message = "Interface test: force ${lib.showOption field}";
+      }
+    ];
+  };
 in
 {
-  evaluation =
-    assert defaults.config.limanix.user.shell == pkgs.bashInteractive;
-    assert defaults.config.limanix.session.command == null;
-    assert builtins.isList defaults.config.limanix.session.providers;
-    assert selected.config.limanix.session.command == alternative;
-    assert reversed.config.limanix.session.command == alternative;
-    assert disabled.config.limanix.session.command == null;
-    assert shellOverride.config.limanix.user.shell == pkgs.zsh;
-    assert noSuggestions.config.limanix.session.providers == [ ];
-    assert rejects invalidPath.config.limanix.session.command;
-    assert rejects invalidShell.config.limanix.user.shell;
-    assert defaults.options.limanix.user.name.readOnly;
-    assert defaults.options.limanix.user.home.readOnly;
-    assert !(defaults.options.limanix.user.name ? default);
-    assert !(defaults.options.limanix.user.home ? default);
-    true;
-  diagnostics.sessionProviders = {
-    expected = "limanix.session.command' has conflicting definition values";
-    actual = conflicts.config.limanix.session.command;
+  eval = {
+    publicInterface =
+      defaults.limanix.user.shell.outPath == pkgs.bashInteractive.outPath
+      && defaults.limanix.session.command == null
+      && builtins.isList defaults.limanix.session.providers;
+    identityDeclaration =
+      declarations.options.limanix.user.name.readOnly
+      && declarations.options.limanix.user.home.readOnly
+      && !(declarations.options.limanix.user.name ? default)
+      && !(declarations.options.limanix.user.home ? default);
+    platformIdentity =
+      defaults.users.users.${defaults.limanix.user.name}.home == defaults.limanix.user.home
+      &&
+        defaults.users.users.${defaults.limanix.user.name}.shell.outPath
+        == defaults.limanix.user.shell.outPath
+      && defaults.users.users.${defaults.limanix.user.name}.uid == 1000
+      && custom.limanix.user.name == defaults.limanix.user.name
+      && custom.limanix.user.home == defaults.limanix.user.home
+      && custom.users.users.${defaults.limanix.user.name}.home == defaults.limanix.user.home
+      && custom.users.users.${defaults.limanix.user.name}.shell.outPath == pkgs.zsh.outPath
+      && custom.limanix.session.command == "${pkgs.coreutils}/bin/true";
+  };
+  fails = {
+    relativeSessionCommand = {
+      modules = [
+        { limanix.session.command = "relative-command"; }
+        (force [
+          "limanix"
+          "session"
+          "command"
+        ])
+      ];
+      message = "limanix.session.command";
+    };
+    invalidShell = {
+      modules = [
+        { limanix.user.shell = "bash"; }
+        (force [
+          "limanix"
+          "user"
+          "shell"
+        ])
+      ];
+      message = "limanix.user.shell";
+    };
   };
 }

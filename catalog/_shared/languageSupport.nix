@@ -1,3 +1,12 @@
+# Identity: tool keys are stable tool identities, independent of provider
+# modules, package versions and consumer-specific configuration names. Language
+# keys identify languages; their parser keys identify the requested grammars.
+# Merge: definition priority selects a complete tool declaration. Optional
+# fields are normalized before comparing declarations at the winning priority.
+# Equal complete declarations agree; language parser lists add and deduplicate.
+# Conflict: different normalized tool declarations at the same winning priority
+# raise the NixOS conflicting-definitions error. Required fields must be present.
+# Consumers read the final declaration; providers install its selected package.
 { lib, ... }:
 let
   # Compare complete declarations after priority selection and submodule defaults.

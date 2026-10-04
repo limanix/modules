@@ -52,6 +52,7 @@ command. See the
 
 ## Guarantees
 
-| Guarantee | Covered by |
+| Guarantee | Checked by |
 | -- | -- |
-| Installs the base Nixpkgs GitHub CLI package providing `gh` | `check.nix` |
+| Installs the base Nixpkgs GitHub CLI package | `eval.package` |
+| The system-profile command prints its version and offline pull-request help | `run.commands` |
