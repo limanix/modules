@@ -57,6 +57,8 @@ shows a complete workbench configuration.
 | [Git](../catalog/git/README.md) | `lmx:git` | Git |
 | [Lazygit](../catalog/lazygit/README.md) | `lmx:lazygit` | Git terminal interface |
 | [GitHub CLI](../catalog/gh/README.md) | `lmx:gh` | GitHub repositories, pull requests and workflow runs |
+| [Codex CLI](../catalog/codex/README.md) | `lmx:codex` | OpenAI coding agent in the terminal |
+| [Claude Code](../catalog/claude/README.md) | `lmx:claude` | Anthropic coding agent in the terminal |
 | [Yazi](../catalog/yazi/README.md) | `lmx:yazi` | Terminal file manager |
 | [Posting](../catalog/posting/README.md) | `lmx:posting` | Saved HTTP requests in the terminal |
 | [Harlequin](../catalog/harlequin/README.md) | `lmx:harlequin` | SQL terminal interface with the Postgres adapter |
