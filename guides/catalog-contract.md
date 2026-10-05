@@ -292,10 +292,10 @@ runtime dry-run.
 | `run` | Changed modules, both native Linux architectures | 5 minutes with prepared cache |
 | `vm` | Manual execution on native Linux with KVM | 15 minutes |
 
-PR and release workflows run `eval`, `fails` and `run`. VM exports remain part
-of the module test interface and run manually on native Linux with KVM. A green
-CI run does not establish activation; record VM checks as not run unless a
-separate execution supplies evidence.
+The PR flow runs `eval`, `fails` and `run`; the release flow runs no tests. VM
+exports remain part of the module test interface and run manually on native
+Linux with KVM. A green CI run does not establish activation; record VM checks
+as not run unless a separate execution supplies evidence.
 
 Reuse one default fixture, one per needed line and one for each different
 scenario. Fixture counts guide cost; they are not hard limits on correctness.
@@ -308,10 +308,11 @@ and VM status. They separate newly executed checks from reused results where
 known; unknown cache state stays unknown. A cancelled or interrupted run is
 incomplete evidence.
 
-Changed modules include consumers of their public imports. Changes to `_shared`,
-`interface.nix` or `flake.lock` affect every module. Platform `eval` and `run`
-check the generic harness and base interface, including its builder permissions.
-Required compositions belong in their own module tests.
+The PR flow checks changed modules, not the consumers of their public imports.
+Changes to `_shared`, `interface.nix`, the flake or the harness check every
+module. Platform `eval` and `run` check the generic harness and base interface,
+including its builder permissions. Required compositions belong in their own
+module tests.
 
 ## README guarantees
 

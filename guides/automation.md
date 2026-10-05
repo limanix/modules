@@ -7,7 +7,6 @@ package maps or choose module-specific test scenarios.
 | -- | -- |
 | Workflow | Events, change selection, native matrices, cache restore/save and the required gate |
 | Taskfile | The same explicit commands for local use and CI |
-| `plan_checks.py` | Git diff to modules, public-import consumers and the common flag |
 | `run_checks.sh` | Contract validation, stage execution and build permission |
 | `cache_nix_build.sh` | Post-build hook exporting local builds with their runtime closure |
 | `prune_nix_cache.sh` | Removal of cached builds the last run did not need |
@@ -17,56 +16,49 @@ runner implements their common calling and result contract.
 
 ## PR flow
 
-Pull requests and pushes to `main` use the same check flow:
+Pull requests to `main` run the check flow. Pushes to `main` and tags run no
+tests: a merged change was checked in its pull request.
 
 ```mermaid
 flowchart LR
-    plan[Plan modules] --> test[Test: module × architecture]
-    plan --> common[Common: architecture]
+    plan[Plan targets] --> test[Test: target × architecture]
     lint[Lint] --> gate[Required gate]
     test --> gate
-    common --> gate
 ```
 
 | Job | Work | Selection |
 | -- | -- | -- |
-| `plan` | Git diff and public dependency discovery | Every run |
+| `plan` | Git diff to test targets | Every run |
 | `lint` | Nixfmt, Statix, Deadnix and source Markdown formatting | Every run |
-| `test` | One module: `eval`, then `run` | Changed modules and their consumers, on x86 and ARM |
-| `common` | Shared and platform `eval`/`run` | Evaluation input or Task configuration changes, on x86 and ARM |
+| `test` | One target: `eval`, then `run` | Selected targets, on x86 and ARM |
 | `gate` | Require all selected jobs to succeed | Every run |
 
-There is no barrier between all module evaluations and all native runs. Each
-module job completes its own cycle. A new push cancels the previous run of the
-same pull request. Runs on `main` are never cancelled, so each one tests and
-caches its own changes.
+A target is a catalog module or `common`, the shared and platform suites; the
+name `common` is therefore reserved. There is no barrier between all module
+evaluations and all native runs. Each target job completes its own cycle. A new
+push cancels the previous run of the same pull request.
 
-The full catalog runs only when a change affects every module evaluation:
+The plan compares the pull request's merge commit with its base. The full
+catalog runs only when a change affects every module evaluation:
 
 | Changed path | Modules | Common |
 | -- | -- | -- |
-| `catalog/<module>/**` | That module and its public-import consumers | No |
-| An edited existing `README.md` in a module or `_shared` | None | Yes |
+| `catalog/<module>/**` | That module | No |
 | An evaluation input | Full catalog | Yes |
-| `Taskfile.yml`, `.taskrc.yml` | None | Yes |
+| `Taskfile.yml`, `.taskrc.yml`, `.github/workflows/pr.yml`, the two cache scripts | None | Yes |
 | Any other file | None | No |
 
-Evaluation inputs are every file under `catalog/` outside a module directory,
-including `catalog/_shared/**`, as well as `interface.nix`, `flake.nix`,
-`flake.lock`, `checks/**`, `scripts/run_checks.sh` and
-`.github/workflows/nix-tests.yml`.
+Evaluation inputs are `catalog/_shared/**`, `interface.nix`, `flake.nix`,
+`flake.lock`, `checks/**` and `scripts/run_checks.sh`.
 
-Lint runs for every change. Editing an existing `README.md` runs no module
-tests; the common suite still validates that every module page keeps its
-`## Guarantees` heading. Adding or removing a module's README changes its
-structure and counts as a change to that module; in `_shared`, it is an
-evaluation input.
+Lint runs for every change. A module's `README.md` belongs to that module: its
+job validates the catalog structure, including each page's `## Guarantees`
+heading. A removed module selects nothing.
 
-The planner discovers module directories. Contract validation belongs to the
-harness. Dependency discovery evaluates public default and version entry points
-for both architectures. It does not run module tests or infer imports by reading
-private files. If discovery is unavailable or a changed module was removed, the
-planner selects the full catalog.
+The plan does not add consumers of a changed module. When a change alters a
+public entry point that other modules import, run their checks locally or start
+the flow manually on the branch: a manual run checks the full catalog and the
+common suite.
 
 ## Run locally
 
@@ -87,7 +79,7 @@ shared, then platform checks.
 `ci/test/modules` defaults to `MODE=check`. `ci/test/common` defaults to
 `SUITE=common` and `MODE=check`; `MODE=eval` and `MODE=run` need `SUITE=shared`
 or `SUITE=platform`. Select an individual suite or stage when diagnosing a
-failure or running release checks:
+failure:
 
 | Task | Result |
 | -- | -- |
@@ -104,7 +96,7 @@ bash scripts/run_checks.sh common check
 ```
 
 A manual activation check needs native Linux and `/dev/kvm` access for the Nix
-build user:
+build user. CI has no KVM runners, so activation checks run only locally:
 
 ```console
 task --yes ci/test/modules MODE=vm MODULES=dev-tools CONTAINER_RUN_ARGS=--device=/dev/kvm
@@ -112,31 +104,27 @@ task --yes ci/test/modules MODE=vm MODULES=dev-tools CONTAINER_RUN_ARGS=--device
 
 A container without KVM cannot prove activation.
 
-Discovery commands:
-
-```console
-task --yes ci/plan/dependencies SYSTEM=aarch64-linux OUTPUT=build/dependencies.json
-task --yes ci/plan/vm-modules SYSTEM=aarch64-linux OUTPUT=build/vm-modules.json
-```
-
-`SYSTEM` also accepts `x86_64-linux`; omitted values use the native runner.
-
 ## Caches
 
 Each native job restores one cache for its target (a module or the common suite)
 and architecture. It holds downloaded sources in `.cache/nix` and the target's
-own local builds in `.cache/nix-binary`. Successful runs on `main`, whether
-pushed or started manually, save it when no archive with the exact key exists;
-pull requests, tags and other branches only restore it. Cache failures do not
-replace check results.
+own local builds in `.cache/nix-binary`. A successful job saves it when no
+archive with the exact key exists. GitHub scopes a cache saved in a pull request
+to that pull request: its later pushes and reruns restore it, while a new pull
+request starts without one and rebuilds what its checks need. Cache failures do
+not replace check results.
 
 The key combines the architecture, the target and a hash of `flake.lock`,
-`flake.nix`, `interface.nix`, `catalog/**`, `checks/**` and the three cache and
-runner scripts. Restore tries the exact key first, then the newest cache for the
-same architecture and target. Parallel jobs with the same key do not merge their
-archives. An existing exact archive is read without adding another export.
+`flake.nix`, `interface.nix`, `catalog/_shared/**`, the target's own
+`catalog/<module>/**`, `checks/**` and the three cache and runner scripts. A
+push that changes other modules keeps the key, so the job reuses its archive and
+saves nothing. Restore tries the exact key first, then the newest cache for the
+same architecture and target. A change in an imported module does not change the
+key; Nix builds what the archive lacks, and the next change to the target saves
+a new one. Parallel jobs with the same key do not merge their archives. An
+existing exact archive is read without adding another export.
 
-On publishing runs, a post-build hook copies every locally built output into
+Without an exact hit, a post-build hook copies every locally built output into
 `.cache/nix-binary`. Nix requires a binary cache to hold the references of its
 paths, so the copy includes the output's runtime closure, such as glibc;
 build-only tools such as compilers stay out. There is no size limit. Instead,
@@ -172,14 +160,14 @@ the reason for unavailable KVM.
 
 ## Other automation
 
-`build_docs.py` prepares source Markdown for the documentation site. The release
-flow runs lint, documentation preparation and the same `check` cycle for every
-module and the common suite on x86 and ARM. Publication requires these jobs to
-succeed.
+A tag `v<N>` on a commit of `main` starts the release flow. It runs no tests:
+the tagged commit passed its pull request. The flow checks the tag, prepares the
+documentation sources with `build_docs.py`, publishes the GitHub release with
+that archive and notifies the client repository.
 
 PR and release workflows do not run VM tests. Activation checks remain available
 for manual execution on native Linux with KVM; their results are separate from
-the automated release gate.
+CI results.
 
 `nixpkgs/update` is an explicit local command and changes only the base revision
 in `flake.lock`. Additional revisions belong to the modules that declare them in

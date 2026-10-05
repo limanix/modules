@@ -150,7 +150,7 @@ that its dependency failed.
 | Unexpected local build | Reported `.drv` paths and `builds` export | Identify the actual uncached artifact; exact permission does not cover its dependencies |
 | Native command failure | `run.<key>` log and selected profile | Read the command assertion and its temporary fixture; see [Write the result check](writing-modules.md#write-the-result-check) |
 | Wrong architecture | Runner system and derivation system | Use native Linux matching the declared test architecture |
-| KVM unavailable | VM runner features and `/dev/kvm` access | Use a native KVM runner; record the activation test as not run |
+| KVM unavailable | Host virtualization and `/dev/kvm` access | Use native Linux with KVM; record the activation test as not run |
 | Activation assertion | `vm.activation` driver and guest journal | Inspect the module-owned scenario and actual service/login state |
 | `Killed` or status `137` | Runner limits and kernel log | Confirm an OOM kill before attributing it to memory |
 
@@ -182,10 +182,10 @@ task --yes ci/test/common SUITE=platform MODE=run
 suite accepts only `check`. The same CLI on native Linux is
 `bash scripts/run_checks.sh SUITE MODE [module names]`; use `module check` or
 `common check` for the combined checks. A manual activation check uses
-`module vm` and needs KVM. With Task on that native Linux host, pass
-`CONTAINER_RUN_ARGS=--device=/dev/kvm`; the device must exist and be accessible
-to the Nix build user. Native execution does not establish activation. Platform
-`eval`/`run` check the generic harness and base.
+`module vm` and needs KVM; CI does not run it. With Task on that native Linux
+host, pass `CONTAINER_RUN_ARGS=--device=/dev/kvm`; the device must exist and be
+accessible to the Nix build user. Native execution does not establish
+activation. Platform `eval`/`run` check the generic harness and base.
 
 ### Build and cache failures
 
@@ -204,10 +204,11 @@ Permissions from dependencies come from default and individual-line public
 imports; an import made only inside a test fixture does not extend them.
 
 The PR flow restores one cache per target and architecture with fetcher state
-and local builds. Only successful runs on `main` save new archives, pruned to
-the paths that run needed. A PR cache miss can therefore remain until a main run
-publishes the result. The fetcher archive is best effort and does not guarantee
-that all source payloads are available.
+and local builds. A successful job saves a new archive, pruned to the paths that
+run needed; only later runs of the same pull request can restore it. A new pull
+request starts without a cache and rebuilds what its checks need. The fetcher
+archive is best effort and does not guarantee that all source payloads are
+available.
 
 Check local logs and configured cache availability before repeating expensive
 work. Preserve the failed attempt. A changed cache condition or a fixed fixture

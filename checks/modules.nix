@@ -217,8 +217,6 @@ assert require (builtins.all (name: builtins.elem name names) requested) "unknow
 assert require (suite == "module" || requested == [ ]) "only the module suite accepts module names";
 {
   inherit system names evaluation;
-  dependencies = lib.mapAttrs (_: context: context.dependencies) contexts;
-  vmModules = builtins.filter (name: contexts.${name}.test.vm != { }) names;
   selectionManifest.modules = lines selectedNames;
   evalManifest = {
     "results.json" = builtins.toJSON evaluation;
