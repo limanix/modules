@@ -1,7 +1,5 @@
 { evalSystem, lib }:
 let
-  # Use the real loader with a poisoned unused value: forcing it must fail
-  # before any fetch can be attempted. No synthetic source is downloaded.
   loader = import ../lib/pinned.nix;
   empty = loader {
     sources = { };

@@ -1,4 +1,4 @@
-"""Verify generic terminal framing, deadlines and resource ownership."""
+"""Tests of terminal.py: output, deadlines and cleanup."""
 
 import json
 import os
@@ -79,7 +79,7 @@ class TerminalTests(unittest.TestCase):
             terminal.until(lambda: b"ready" in terminal.output)
         self.assertEqual(terminal.poll(), -signal.SIGKILL)
         self.assertLess(time.monotonic() - start, 5)
-        terminal.close()  # Closing an already closed transport is safe.
+        terminal.close()  # A second close does nothing.
 
 
 if __name__ == "__main__":

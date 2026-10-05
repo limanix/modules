@@ -1,8 +1,4 @@
-"""Bounded terminal transport for module-owned interactive checks.
-
-This helper knows only processes and terminals. Callers own fixtures, terminal
-query replies, application commands, conditions, and assertions.
-"""
+"""Run a program in a pseudo-terminal for interactive module checks."""
 
 from __future__ import annotations
 
@@ -20,15 +16,15 @@ from collections.abc import Callable, Mapping, Sequence
 
 
 class TerminalError(RuntimeError):
-    """The terminal closed or its child exited before the requested condition."""
+    """The program exited or the terminal closed before the condition was met."""
 
 
 class TerminalTimeout(TerminalError, TimeoutError):
-    """A terminal operation exceeded its monotonic deadline."""
+    """A terminal operation did not finish before its deadline."""
 
 
 class TerminalProcess:
-    """Run argv in its own controlling terminal and own its bounded lifecycle."""
+    """Run argv in its own terminal; closing stops and reaps the process."""
 
     def __init__(
         self,
@@ -96,7 +92,6 @@ class TerminalProcess:
         return chunk
 
     def drain(self) -> bytes:
-        # Bound each call even when a child continuously writes to the terminal.
         chunks = []
         size = 0
         while size < self.output_limit:
@@ -138,7 +133,7 @@ class TerminalProcess:
         deadline = time.monotonic() + timeout
         while not predicate():
             self.drain()
-            # Recheck before treating a completed child as an early exit.
+
             if predicate():
                 return
             status = self.poll()

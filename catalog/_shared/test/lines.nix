@@ -1,4 +1,3 @@
-# Lazy public-entry fixtures for a module's declared numeric lines.
 {
   evalSystem,
   pkgs,

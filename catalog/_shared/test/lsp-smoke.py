@@ -1,10 +1,4 @@
-"""Check a server's LSP initialization, shutdown and exit without an editor.
-
-Own JSON-RPC framing, request classification and bounded process cleanup. The
-caller supplies the server command; no module or language names belong here.
-Unsupported server requests receive JSON-RPC MethodNotFound. Notifications do
-not need replies. No optional client capabilities are advertised.
-"""
+"""Check that a language server starts and stops cleanly, without an editor."""
 
 from __future__ import annotations
 
@@ -23,11 +17,11 @@ import time
 
 
 class LspError(RuntimeError):
-    """An invalid frame, response or lifecycle transition."""
+    """The server sent an invalid message or broke the start/stop order."""
 
 
 class LspTimeout(LspError, TimeoutError):
-    """The server did not complete an operation before its deadline."""
+    """The server did not reply before the deadline."""
 
 
 class LspProcess:

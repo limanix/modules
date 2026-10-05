@@ -1,4 +1,3 @@
-# Check explicit expected executable paths against the actual selected profile.
 {
   pkgs,
   profile,

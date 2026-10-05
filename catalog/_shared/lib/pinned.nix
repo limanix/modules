@@ -1,5 +1,3 @@
-# Pure loader for one evaluation's declared sources and effective policy.
-# Values stay lazy; selecting one revision does not import the other sources.
 {
   sources,
   system,

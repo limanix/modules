@@ -1,4 +1,3 @@
-# Reserved shared infrastructure test entry; never a root NixOS schema.
 {
   evalSystem,
   pkgs,
