@@ -290,7 +290,12 @@ runtime dry-run.
 | -- | -- | -- |
 | Structure, entry points, recommendation, `eval`, `fails` | Changed modules on PRs | 2 minutes |
 | `run` | Changed modules, both native Linux architectures | 5 minutes with prepared cache |
-| `vm` | Locally, on native Linux with KVM | 15 minutes |
+| `vm` | Manual execution on native Linux with KVM | 15 minutes |
+
+The PR flow runs `eval`, `fails` and `run`; the release flow runs no tests. VM
+exports remain part of the module test interface and run manually on native
+Linux with KVM. A green CI run does not establish activation; record VM checks
+as not run unless a separate execution supplies evidence.
 
 Reuse one default fixture, one per needed line and one for each different
 scenario. Fixture counts guide cost; they are not hard limits on correctness.

@@ -95,8 +95,8 @@ bash scripts/run_checks.sh module check dev-tools
 bash scripts/run_checks.sh common check
 ```
 
-A module's activation check needs native Linux and an accessible `/dev/kvm`. CI
-has no KVM runners, so activation checks run only locally:
+A manual activation check needs native Linux and `/dev/kvm` access for the Nix
+build user. CI has no KVM runners, so activation checks run only locally:
 
 ```console
 task --yes ci/test/modules MODE=vm MODULES=dev-tools CONTAINER_RUN_ARGS=--device=/dev/kvm
@@ -164,6 +164,10 @@ A tag `v<N>` on a commit of `main` starts the release flow. It runs no tests:
 the tagged commit passed its pull request. The flow checks the tag, prepares the
 documentation sources with `build_docs.py`, publishes the GitHub release with
 that archive and notifies the client repository.
+
+PR and release workflows do not run VM tests. Activation checks remain available
+for manual execution on native Linux with KVM; their results are separate from
+CI results.
 
 `nixpkgs/update` is an explicit local command and changes only the base revision
 in `flake.lock`. Additional revisions belong to the modules that declare them in
