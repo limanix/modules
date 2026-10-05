@@ -9,7 +9,6 @@ let
   catalog = map readModule names;
   readModule =
     name:
-    assert require (entries.${name} == "directory") "${name} must be a directory";
     let
       directory = modulesDir + "/${name}";
       files = builtins.readDir directory;

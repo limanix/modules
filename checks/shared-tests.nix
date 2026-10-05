@@ -32,14 +32,14 @@ assert rejects [
 assert rejects [
   {
     _file = publicFile;
-    imports = [ (module (toString ../catalog/_shared/test/helpers.nix)) ];
+    imports = [ { _file = toString ../catalog/_shared/test/helpers.nix; } ];
   }
 ];
 assert rejects [
   {
     _file = publicFile;
-    imports = [ (module "/third-party/default.nix") ];
+    imports = [ { _file = "/third-party/default.nix"; } ];
   }
 ];
-assert rejects [ (module (toString ../catalog/_shared/test.nix)) ];
+assert rejects [ { _file = toString ../catalog/_shared/test.nix; } ];
 true

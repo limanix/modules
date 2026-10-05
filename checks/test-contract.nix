@@ -27,13 +27,13 @@ let
     let
       values = validateKeys "eval" test.eval;
     in
-    assert require (builtins.all (
+    assert builtins.all (
       key:
       let
         value = values.${key};
       in
       require (builtins.isBool value && value) "eval.${key} must be the Boolean true"
-    ) (builtins.attrNames values)) "invalid eval result";
+    ) (builtins.attrNames values);
     values;
   validateFailure =
     key: value:
@@ -53,9 +53,9 @@ let
     let
       values = validateKeys "fails" (groupFor "fails");
     in
-    assert require (builtins.all (key: builtins.seq (validateFailure key values.${key}) true) (
+    assert builtins.all (key: builtins.seq (validateFailure key values.${key}) true) (
       builtins.attrNames values
-    )) "invalid fails result";
+    );
     values;
   validateDerivations =
     group:
@@ -65,7 +65,7 @@ let
     assert require (
       group != "vm" || builtins.all (key: key == "activation") (builtins.attrNames values)
     ) "vm may export only activation";
-    assert require (builtins.all (
+    assert builtins.all (
       key:
       let
         value = values.${key};
@@ -73,7 +73,7 @@ let
       require (
         lib.isDerivation value && (value.system or null) == system
       ) "${group}.${key} must be a derivation for ${system}"
-    ) (builtins.attrNames values)) "invalid derivation group";
+    ) (builtins.attrNames values);
     values;
 in
 assert require (builtins.isAttrs test) "test.nix must return an attribute set";

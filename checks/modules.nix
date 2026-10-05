@@ -17,16 +17,11 @@ let
   base = rawEvaluate [ ];
   inherit (base) pkgs lib;
   require = condition: message: if condition then true else throw "Module checks: ${message}";
-  checkedEvaluate =
-    selected:
+  checkScenario =
+    evaluated:
     let
-      evaluated = rawEvaluate selected;
       failed = builtins.filter (item: !item.assertion) evaluated.config.assertions;
     in
-    assert import ./ownership.nix {
-      inherit lib;
-      inherit (evaluated) options;
-    };
     assert import ./imports.nix {
       inherit catalog;
       inherit (evaluated) graph;
@@ -35,8 +30,8 @@ let
       throw "Module assertions:\n${lib.concatMapStringsSep "\n" (item: item.message) failed}"
     else
       evaluated;
-  # Module tests and generic checks share exact singleton public evaluations.
-  # Inline scenarios keep their own evaluation and cannot acquire a cache key.
+  checkedEvaluate = selected: checkScenario (rawEvaluate selected);
+
   evalSystem =
     selected:
     let
@@ -54,15 +49,25 @@ let
   requested = builtins.fromJSON modules;
   selectedNames = if requested == [ ] then names else lib.unique requested;
   entries = item: [ item.path ] ++ map (line: item.directory + "/versions/${line}.nix") item.lines;
-  entryConfigurations = builtins.listToAttrs (
+
+  rawEntries = builtins.listToAttrs (
     lib.concatMap (
       item:
       map (path: {
         name = toString path;
-        value = checkedEvaluate [ path ];
+        value = rawEvaluate [ path ];
       }) (entries item)
     ) catalog
   );
+
+  entryConfigurations = builtins.mapAttrs (
+    _: evaluated:
+    assert import ./ownership.nix {
+      inherit lib;
+      inherit (evaluated) options;
+    };
+    checkScenario evaluated
+  ) rawEntries;
   entryNames = builtins.listToAttrs (
     lib.concatMap (
       item:
@@ -98,14 +103,15 @@ let
             value = entryConfigurations.${toString (item.directory + "/versions/${line}.nix")};
           }) item.lines
         );
-        # Import once in this evaluator; selected and dependent permissions share it.
         test = validate item.name (
           import (item.directory + "/test.nix") {
             inherit evalSystem pkgs lib;
           }
         );
         dependencies = builtins.filter (name: name != item.name) (
-          lib.unique (lib.concatMap (path: graphDependencies (rawEvaluate [ path ]).graph) (entries item))
+          lib.unique (
+            lib.concatMap (path: graphDependencies rawEntries.${toString path}.graph) (entries item)
+          )
         );
         entryResults = {
           default = defaultConfiguration.config.system.build.toplevel.drvPath;
@@ -178,28 +184,28 @@ let
     target: map (key: "${target}\t${key}") (builtins.attrNames selectedTests.${target}.fails)
   ) (builtins.attrNames selectedTests);
   lines = values: lib.concatStringsSep "\n" values + lib.optionalString (values != [ ]) "\n";
-  runtimeManifest =
-    group:
-    let
-      rows = lib.concatMap (
-        target:
-        lib.mapAttrsToList (key: derivation: {
-          inherit target key;
-          path = derivation.drvPath;
-        }) selectedTests.${target}.${group}
-      ) (builtins.attrNames selectedTests);
-    in
-    {
-      roots = lines (lib.unique (map (row: row.path) rows));
-      cases = lines (map (row: "${row.target}\t${row.key}\t${row.path}") rows);
-      builds = lines (
-        lib.unique (
-          lib.concatMap (test: map (value: value.drvPath) (builtins.attrValues test.builds)) (
-            if group == "run" then permissionTests else [ ]
-          )
+  evalManifest = {
+    "results.json" = builtins.toJSON evaluation;
+    failures = lines failureRows;
+    expected = lib.mapAttrs (_: test: lib.mapAttrs (_: value: value.message) test.fails) selectedTests;
+  };
+  runtimeManifest = group: {
+    roots = lines (
+      lib.unique (
+        lib.concatMap (test: map (derivation: derivation.drvPath) (builtins.attrValues test.${group})) (
+          builtins.attrValues selectedTests
         )
-      );
-    };
+      )
+    );
+    builds = lines (
+      lib.unique (
+        lib.concatMap (test: map (value: value.drvPath) (builtins.attrValues test.builds)) (
+          if group == "run" then permissionTests else [ ]
+        )
+      )
+    );
+  };
+  runManifest = runtimeManifest "run";
 in
 assert require (builtins.elem system [
   "aarch64-linux"
@@ -216,15 +222,20 @@ assert require (
 assert require (builtins.all (name: builtins.elem name names) requested) "unknown module name";
 assert require (suite == "module" || requested == [ ]) "only the module suite accepts module names";
 {
-  inherit system names evaluation;
+  inherit
+    system
+    names
+    evaluation
+    evalManifest
+    runManifest
+    ;
   selectionManifest.modules = lines selectedNames;
-  evalManifest = {
-    "results.json" = builtins.toJSON evaluation;
-    failures = lines failureRows;
-    expected = lib.mapAttrs (_: test: lib.mapAttrs (_: value: value.message) test.fails) selectedTests;
-  };
-  runManifest = runtimeManifest "run";
   vmManifest = runtimeManifest "vm";
+
+  checkManifest = {
+    eval = evalManifest;
+    run = runManifest;
+  };
   failure =
     let
       target = builtins.getEnv "LMX_CHECK_TARGET";

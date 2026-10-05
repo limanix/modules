@@ -73,8 +73,10 @@ task --yes ci/test/common
 `dev-tools` is the illustrative entry in [Write a module](writing-modules.md);
 replace it with a module present in your checkout. `MODULES` accepts
 space-separated directory names. Omitting it selects the full catalog. Selected
-modules run one after another, each in its own evaluator. The common cycle runs
-shared, then platform checks.
+modules run one after another, each in its own evaluator. `MODE=check` evaluates
+both stages in that one evaluator, so each configuration is evaluated once; it
+then checks expected failures and builds the `run` exports. The common cycle
+runs shared, then platform checks.
 
 `ci/test/modules` defaults to `MODE=check`. `ci/test/common` defaults to
 `SUITE=common` and `MODE=check`; `MODE=eval` and `MODE=run` need `SUITE=shared`
@@ -153,10 +155,11 @@ save steps, and each post-build copy into the cache. A hung job runs until
 GitHub's default job limit unless cancelled. CI uses one build job and all
 available cores for that build.
 
-The runner prints the system before each stage and a `RESULT` line with the
-suite, stage, status and duration after it. A cache hit or printed derivation
-path does not prove a fresh run. VM status is passed, failed or not run, with
-the reason for unavailable KVM.
+The runner prints the system before it starts, a `PASS` line with the duration
+of each completed stage and a `RESULT` line with the suite, mode, status and
+total duration at the end. A cache hit or printed derivation path does not prove
+a fresh run. VM status is passed, failed or not run, with the reason for
+unavailable KVM.
 
 ## Other automation
 
