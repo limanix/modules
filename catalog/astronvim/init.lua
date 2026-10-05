@@ -1,6 +1,55 @@
+-- nvim-treesitter counts only parsers in its install_dir as installed, AstroNvim
+-- enables only installed languages, and :TSInstall writes into that directory.
+-- Keep it writable and link the catalog's parsers and queries into it. Links into
+-- an earlier catalog build are replaced or removed; :TSInstall parsers stay.
+local function link_parsers(source, install_dir, treesitter)
+  local uv = vim.uv
+  local function catalog_link(path)
+    local target = uv.fs_readlink(path)
+    return target ~= nil and target:find("-astronvim-parsers/", 1, true) ~= nil
+  end
+  local function revision_file(name) return install_dir .. "/parser-info/" .. vim.fn.fnamemodify(name, ":r") .. ".revision" end
+  local function sync(kind)
+    local from, to = source .. "/" .. kind, install_dir .. "/" .. kind
+    vim.fn.mkdir(to, "p")
+    local wanted = {}
+    for name in vim.fs.dir(from) do
+      local link, target = to .. "/" .. name, from .. "/" .. name
+      wanted[name] = true
+      if catalog_link(link) and uv.fs_readlink(link) ~= target then uv.fs_unlink(link) end
+      if not uv.fs_lstat(link) then uv.fs_symlink(target, link) end
+    end
+    for name in vim.fs.dir(to) do
+      if not wanted[name] and catalog_link(to .. "/" .. name) then
+        uv.fs_unlink(to .. "/" .. name)
+        if kind == "parser" then uv.fs_unlink(revision_file(name)) end
+      end
+    end
+  end
+  sync("parser")
+  sync("queries")
+
+  -- Record the plugin's revision for linked parsers, so :TSUpdate leaves them to the catalog.
+  local ok, parsers = pcall(dofile, treesitter .. "/lua/nvim-treesitter/parsers.lua")
+  if not ok then return end
+  vim.fn.mkdir(install_dir .. "/parser-info", "p")
+  for name in vim.fs.dir(install_dir .. "/parser") do
+    local entry = parsers[vim.fn.fnamemodify(name, ":r")]
+    local revision = entry and entry.install_info and entry.install_info.revision
+    local file = revision_file(name)
+    if revision and catalog_link(install_dir .. "/parser/" .. name)
+      and table.concat(vim.fn.filereadable(file) == 1 and vim.fn.readfile(file, "b") or {}, "\n") ~= revision then
+      -- nvim-treesitter compares the file byte for byte: no trailing newline.
+      vim.fn.writefile({ revision }, file, "b")
+    end
+  end
+end
+
 return function(paths)
   vim.opt.rtp:prepend(paths.lazy)
   vim.fn.mkdir(vim.fn.stdpath("state"), "p")
+  local parser_dir = vim.fn.stdpath("data") .. "/site"
+  link_parsers(paths.parsers, parser_dir, paths.plugins["nvim-treesitter/nvim-treesitter"] or "")
 
   local specs = {
     {
@@ -47,7 +96,7 @@ return function(paths)
         end
       end,
     },
-    { "nvim-treesitter/nvim-treesitter", opts = { install_dir = paths.parsers } },
+    { "nvim-treesitter/nvim-treesitter", opts = { install_dir = parser_dir } },
     { "mrjones2014/smart-splits.nvim", lazy = false },
     { "nvim-mini/mini.icons", lazy = false, priority = 1000 },
     { "mason-org/mason.nvim", lazy = false, opts = { PATH = "append" } },

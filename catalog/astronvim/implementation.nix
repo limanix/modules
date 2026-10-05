@@ -64,7 +64,9 @@ in
     [
       ripgrep
       fd
+      # :TSInstall downloads with curl and compiles with tree-sitter and a C compiler.
       tree-sitter
+      gcc
       curl
       unzip
     ]

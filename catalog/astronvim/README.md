@@ -55,11 +55,21 @@ sessions, and Mason installations remain in your user directories.
 The base parser list is read from the pinned AstroNvim configuration. Selected
 language modules contribute their additional parsers through the NixOS
 configuration. Go adds Go and its module formats; Rust adds Rust; Node.js adds
-JavaScript, TypeScript, and TSX; Python declares Python support. Nix collects
-the parsers and their query dependencies into one directory supplied to
-Tree-sitter through its standard `install_dir` option. Automatic parser
-installation is disabled. The parser and query revisions are selected together
-by Nixpkgs; `:TSUpdate` is not the update mechanism for this bundled set.
+JavaScript, TypeScript, and TSX; Python declares Python support. Nix builds
+these parsers with their queries, and at each start the editor links them into
+Tree-sitter's install directory, `~/.local/share/nvim/site`. Automatic parser
+installation is disabled. A catalog update replaces the links; `:TSUpdate`
+leaves catalog parsers alone.
+
+For another language, run `:TSInstall LANGUAGE`. It downloads and compiles the
+parser into the same directory; the module provides `curl`, the `tree-sitter`
+CLI and a C compiler. Parsers installed this way are yours: `:TSUpdate` updates
+them, and after a catalog update that brings a newer nvim-treesitter, run
+`:TSUpdate` to keep them compatible with it. `:TSInstall! LANGUAGE` replaces a
+catalog parser with your own build; `:TSUninstall LANGUAGE` returns to the
+catalog parser at the next start. To have Nix build and pin an additional parser
+instead, declare it in a custom module, for example
+`lmx.capabilities.languageSupport.languages.zig.parsers = [ "zig" ];`.
 
 ## Language servers
 
@@ -168,6 +178,8 @@ usage.
 | Missing language server | Select a provider or declare the tool through the public capability; a binary on PATH alone is insufficient |
 | Foreign plugin or Mason tool | Extra tools may need libraries or interpreters even with nix-ld enabled |
 | Two AstroNvim lines | Choose one line; different supported lines fail with `astronvim: select one line` |
+| `:TSInstall` for a new language | Downloads the grammar and compiles it in the guest; needs network access |
+| Catalog update with a newer nvim-treesitter | Catalog parsers update with it; run `:TSUpdate` for parsers you installed |
 | Unsaved edits or running terminal jobs | Save edits and finish jobs; restoring a session restores layout and file positions rather than unsaved contents or processes |
 | Resume a saved session | Save current edits first; the example above replaces the current editor layout |
 
@@ -186,4 +198,7 @@ usage.
 
 Removing this module removes its declarations and bundled store packages when no
 other selected module imports it. It does not delete personal Neovim files,
-Mason tools, session snapshots or other XDG state.
+Mason tools, session snapshots or other XDG state. Links to catalog parsers stay
+in `~/.local/share/nvim/site` and break once Nix removes the old packages;
+before using Neovim without this module, delete them with
+`find ~/.local/share/nvim/site -lname '*-astronvim-parsers/*' -delete`.
