@@ -17,7 +17,6 @@ let
   base = rawEvaluate [ ];
   inherit (base) pkgs lib;
   require = condition: message: if condition then true else throw "Module checks: ${message}";
-  # Import boundaries and assertions apply to every evaluation.
   checkScenario =
     evaluated:
     let
@@ -32,8 +31,7 @@ let
     else
       evaluated;
   checkedEvaluate = selected: checkScenario (rawEvaluate selected);
-  # Module tests and generic checks share exact singleton public evaluations.
-  # Inline scenarios keep their own evaluation and cannot acquire a cache key.
+
   evalSystem =
     selected:
     let
@@ -51,7 +49,7 @@ let
   requested = builtins.fromJSON modules;
   selectedNames = if requested == [ ] then names else lib.unique requested;
   entries = item: [ item.path ] ++ map (line: item.directory + "/versions/${line}.nix") item.lines;
-  # One evaluation per entry point serves checks, tests and dependency discovery.
+
   rawEntries = builtins.listToAttrs (
     lib.concatMap (
       item:
@@ -61,8 +59,7 @@ let
       }) (entries item)
     ) catalog
   );
-  # Declared options depend only on the module's files, so ownership walks the
-  # whole option tree once per entry point rather than in every scenario.
+
   entryConfigurations = builtins.mapAttrs (
     _: evaluated:
     assert import ./ownership.nix {
@@ -106,7 +103,6 @@ let
             value = entryConfigurations.${toString (item.directory + "/versions/${line}.nix")};
           }) item.lines
         );
-        # Import once in this evaluator; selected and dependent permissions share it.
         test = validate item.name (
           import (item.directory + "/test.nix") {
             inherit evalSystem pkgs lib;
@@ -235,7 +231,7 @@ assert require (suite == "module" || requested == [ ]) "only the module suite ac
     ;
   selectionManifest.modules = lines selectedNames;
   vmManifest = runtimeManifest "vm";
-  # Both stages from one evaluator: configurations are evaluated once.
+
   checkManifest = {
     eval = evalManifest;
     run = runManifest;

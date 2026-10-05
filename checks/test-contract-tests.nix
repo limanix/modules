@@ -163,7 +163,7 @@ assert builtins.all
     "builds"
     "vm"
   ];
-# Only the chosen group is validated. Derivation payloads remain lazy.
+
 assert forceEval (base // { run = throw "Unselected run group was forced"; });
 assert forceDerivations "run" {
   eval.promise = throw "Unselected eval leaf was forced";

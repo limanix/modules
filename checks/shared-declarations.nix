@@ -27,5 +27,5 @@ assert import ./ownership.nix {
   inherit lib;
   inherit (declarations) options;
 };
-# Only schema options and framework arguments exist in this evaluation.
+
 builtins.seq declarations.config true
