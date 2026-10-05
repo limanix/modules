@@ -4,7 +4,10 @@ let
   inherit (pkgs) google-cloud-sdk;
   inherit (google-cloud-sdk) components;
   extra = [ components.gke-gcloud-auth-plugin ];
-  joined = [ components.alpha components.beta ]
+  joined = [
+    components.alpha
+    components.beta
+  ]
   ++ lib.concatMap (component: [ component ] ++ component.dependencies) extra;
 in
 {
