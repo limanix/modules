@@ -23,7 +23,6 @@ while IFS= read -r path; do
   keep[${name%%-*}]=1
 done < "$live"
 
-kept=0 removed=0
 for narinfo in "$cache"/*.narinfo; do
   hash=${narinfo##*/}
   hash=${hash%.narinfo}
@@ -31,14 +30,11 @@ for narinfo in "$cache"/*.narinfo; do
     while IFS= read -r line; do
       case "$line" in 'URL: '*) nars[${line#URL: }]=1 ;; esac
     done < "$narinfo"
-    kept=$((kept + 1))
   else
     rm -f -- "$narinfo"
-    removed=$((removed + 1))
   fi
 done
 for nar in "$cache"/nar/*; do
   test -n "${nars[nar/${nar##*/}]:-}" || rm -f -- "$nar"
 done
 rm -f -- "$live"
-printf 'Nix build cache: %s paths kept, %s removed\n' "$kept" "$removed"

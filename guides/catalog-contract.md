@@ -244,25 +244,18 @@ activation. Those promises need a VM test.
 
 ## Shared helpers and VM tests
 
-[The line helper](../catalog/_shared/test/lines.nix) receives
-`{ evalSystem, pkgs, lib, moduleDirectory, checkLine, runLine ? null }`.
-Callbacks receive `{ line, configuration }`; a configuration record contains
-`config`, `pkgs` and `lib`. It exports lazy line/default/all configurations,
-`eval.line-<line>` and optional `run.commands-<line>`. The module decides
-whether lines coexist and owns `allLines` or the incompatible-pair case.
+[Shared helpers](../catalog/_shared/README.md) describes the line helper, the
+configuration helpers and the VM platform. They remove repetition; the checks
+remain the module's own:
 
-VM nodes import [the shared foundation](../catalog/_shared/test/vm.nix) and
-their own public entry points. The foundation discovers schemas, excludes the
-shared test export, uses canonical package ordering and creates a test account
-from the final `limanix.user` settings. Its parameters default to
-`userName = "dev"` and `userHome = "/home/<userName>"`; the account uses UID
-1000\. Choose another identity through these parameters. Do not redeclare the
-read-only account name or home in an extra module. `system.stateVersion` follows
-the fixture's NixOS release.
-
-Own VM resources and assertions remain under the module's `test/`. Do not import
-the VM foundation into `evalSystem`, where the platform already exists. Do not
-pass a fourth platform argument to `test.nix`.
+- The line helper checks each line separately. The module decides whether lines
+  coexist and exports `allLines` or the incompatible-pair failure.
+- VM nodes import the shared platform and the module's public entry points.
+  Choose another account through its `userName` and `userHome` parameters; do
+  not redeclare the read-only account name or home in an extra module.
+- VM resources and assertions remain under the module's `test/`. Do not import
+  the VM platform into `evalSystem`, where it already exists, and do not pass a
+  fourth platform argument to `test.nix`.
 
 ## Local builds and runtime
 

@@ -18,8 +18,6 @@
     description = "Nixpkgs revisions and content hashes declared by selected modules.";
   };
 
-  # One lazy map belongs to this evaluated configuration. Consumers select from
-  # its values; they must not use this argument to choose imports or options.
   config._module.args.pinned = import ./lib/pinned.nix {
     sources = config.lmx.pins;
     inherit (pkgs.stdenv.hostPlatform) system;

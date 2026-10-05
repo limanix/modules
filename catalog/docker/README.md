@@ -62,8 +62,9 @@ docker compose up -d
 The module adds the VM's user to the `docker` group to allow Docker commands
 without `sudo`.
 
-> [!WARNING] Membership in the `docker` group is equivalent to root access in
-> the VM.
+> [!WARNING]
+>
+> Membership in the `docker` group is equivalent to root access in the VM.
 
 ## Published ports
 

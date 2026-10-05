@@ -9,8 +9,6 @@
 # Consumers read the final declaration; providers install its selected package.
 { lib, ... }:
 let
-  # Compare complete declarations after priority selection and submodule defaults.
-  # Keep this merge rule when NixOS rebuilds or combines the submodule type.
   toolDeclaration =
     type:
     type
@@ -73,9 +71,8 @@ in
       type = lib.types.attrsOf (
         lib.types.submodule {
           options.parsers = lib.mkOption {
-            type = (lib.types.listOf lib.types.str) // {
-              emptyValue = { };
-            };
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
             apply = lib.unique;
             description = "Parser identities required for this language.";
           };

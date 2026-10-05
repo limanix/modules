@@ -45,7 +45,6 @@ jobs:
           fi
 
           echo "targets=$(jq -cn '$ARGS.positional' --args $targets)" >> "$GITHUB_OUTPUT"
-          echo "Checks on x86_64 and aarch64:" ${targets:-none} >> "$GITHUB_STEP_SUMMARY"
 
   lint:
     runs-on: ubuntu-24.04
@@ -59,7 +58,7 @@ jobs:
 
   test:
     name: Test ${{ matrix.target }} (${{ matrix.runner }})
-    needs: plan
+    needs: [plan, lint]
     if: ${{ needs.plan.outputs.targets != '[]' }}
     strategy:
       fail-fast: false
@@ -82,7 +81,7 @@ jobs:
             .cache/nix-binary
           key: nix-v1.0-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('flake.lock', 'flake.nix', 'interface.nix', 'catalog/_shared/**', format('catalog/{0}/**', matrix.target), 'checks/**', 'scripts/run_checks.sh', 'scripts/cache_nix_build.sh', 'scripts/prune_nix_cache.sh') }}
           restore-keys: |
-            nix-v8-${{ runner.arch }}-${{ matrix.target }}-
+            nix-v1.0-${{ runner.arch }}-${{ matrix.target }}-
 
       - name: Nix cache permissions
         run: |
@@ -111,9 +110,8 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          pruned=$(bash scripts/prune_nix_cache.sh .cache/nix-binary)
+          bash scripts/prune_nix_cache.sh .cache/nix-binary
           rm -f .cache/nix/binary-cache-v*.sqlite*
-          printf '### Nix cache\n\n%s\n\n```\n%s\n```\n' "$pruned" "$(du -sh .cache/nix .cache/nix-binary)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save Nix sources and local builds
         if: ${{ success() && steps.cache.outputs.cache-hit != 'true' && steps.prune.outcome == 'success' }}

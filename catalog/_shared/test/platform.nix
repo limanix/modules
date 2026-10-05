@@ -1,4 +1,4 @@
-# Common public foundation for module-owned VM nodes. No application policy.
+# Common foundation for evalSystem and module-owned VM nodes. No application policy.
 {
   userName ? "dev",
   userHome ? "/home/${userName}",

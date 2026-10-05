@@ -5,7 +5,7 @@
   lib,
 }:
 let
-  language = import ./test/language-support.nix { inherit pkgs lib; };
+  language = import ./test/language-support-tests.nix { inherit pkgs lib; };
   pins = import ./test/pins-tests.nix { inherit evalSystem lib; };
   platform = import ./test/platform-tests.nix { inherit evalSystem pkgs lib; };
   lines = import ./test/lines-tests.nix { inherit pkgs lib; };

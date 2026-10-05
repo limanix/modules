@@ -12,8 +12,6 @@ builtins.mapAttrs (
       url = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
       inherit sha256;
     };
-    # Read the library directly. Resolving it through a configured package set
-    # could make the unfree predicate depend on the package it must validate.
     lib = import (source + "/lib");
   in
   import source {

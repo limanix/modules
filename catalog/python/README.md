@@ -43,9 +43,11 @@ python -m pip install -r requirements.txt
 The environment includes pip. `virtualenv .venv` creates an equivalent
 environment with the virtualenv tool. Run `deactivate` to leave the environment.
 
-> [!NOTE] A virtual environment does not provide system libraries. A pip package
-> that compiles C code or loads a native extension can need build tools or
-> libraries even after it installs; see
+> [!NOTE]
+>
+> A virtual environment does not provide system libraries. A pip package that
+> compiles C code or loads a native extension can need build tools or libraries
+> even after it installs; see
 > [Handle native dependencies](../../guides/writing-modules.md#handle-native-dependencies).
 
 ## Language server

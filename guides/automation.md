@@ -131,9 +131,9 @@ build-only tools such as compilers stay out. There is no size limit. Instead,
 the runner lists the build closure of the checks it ran, and the job removes
 every cached path outside that list before saving. Builds of older versions
 therefore leave the cache, which holds only what the target's current version
-builds locally, with its runtime closure. The step summary reports the size.
-Before saving, the job also deletes Nix's local record of binary-cache lookups,
-so the next run does not reuse stale answers about pruned or newly added paths.
+builds locally, with its runtime closure. Before saving, the job also deletes
+Nix's local record of binary-cache lookups, so the next run does not reuse stale
+answers about pruned or newly added paths.
 
 The module's `builds` export permits exact artifacts. The harness includes
 permissions from selected modules and their default/individual-line public-entry

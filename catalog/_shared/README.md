@@ -1,191 +1,287 @@
-# Shared catalog contracts
+# Shared helpers
 
-`_shared` provides application-independent schemas, data and test helpers. It
-has no selector or module metadata. Each module owns its packages, source pins,
-configuration and application scenarios.
+`_shared` is the toolbox for catalog module authors: two option schemas that let
+modules exchange data, helpers for `test.nix` and common data. It knows no
+module names. Your module's checks and policy stay in your module.
 
-| Path | Role | Loaded by |
-| -- | -- | -- |
-| Root `*.nix`, except `test.nix` | NixOS schemas and infrastructure | Every evaluated system |
-| `languageSupport.nix` | Tool and language capability schema | Every evaluated system |
-| `pins.nix` | Module-declared source registry | Every evaluated system |
-| `test.nix` | Shared infrastructure checks; the standard three-argument test ABI | Once per native architecture |
-| `lib/` | Pure helpers | Explicit imports |
-| `test/` | Generic fixtures and test helpers | Module-owned `test.nix` |
-| `palette.toml` | Common color data | Consumers that need it |
+```mermaid
+flowchart LR
+    subgraph mod[Your module]
+        default[default.nix]
+        test[test.nix]
+    end
+    subgraph shared[_shared]
+        schemas[Schemas: languageSupport, pins]
+        helpers[Test helpers in test/]
+        data[palette.toml]
+    end
+    default -- sets lmx options --> schemas
+    default -. reads .-> data
+    test -- imports --> helpers
+```
 
-See the [module contract](../../guides/catalog-contract.md). Shared code does
-not name modules, choose their lines or reconstruct their private scenarios.
+Every evaluated system loads the root `*.nix` schemas; `test.nix` is the shared
+layer's own test export. Everything else is used only through an explicit
+import.
 
-## Declared package sets
+## Find what you need
 
-`lmx.pins` maps Nixpkgs revisions to content hashes. Modules supply ordinary
-constant values. Do not apply `mkDefault`, `mkOverride` or `mkForce` to the
-registry, an entry or an enclosing declaration. Equal ordinary hash declarations
-for one revision agree; different ordinary hashes fail the string merge. The
-schema retains standard NixOS priority handling; using these wrappers violates
-the catalog contract. The registry contains no fixed revision or application
-policy.
-
-`pins.nix` supplies `_module.args.pinned`. Within one evaluated system,
-`pinned.<revision>` is a shared lazy package set. An empty registry imports no
-additional source. Inspecting its keys does not resolve its package sets.
-
-| Input to `lib/pinned.nix` | Meaning |
+| I want to | Use |
 | -- | -- |
-| `sources` | Revision-to-hash attribute set |
-| `system` | Effective NixOS host platform |
-| `unfreePackages` | Allowed package names; default `[]` |
+| Check that my module installs a package or sets an option | [`test/helpers.nix`](#check-a-configuration) |
+| Check each version line of my module | [`test/lines.nix`](#test-version-lines) |
+| Check which line's executable a command runs | [`test/profile-commands.nix`](#check-profile-commands) |
+| Take packages from another Nixpkgs revision | [`lmx.pins` and `pinned`](#use-another-nixpkgs-revision) |
+| Offer a language server or parsers to editors | [`languageSupport`](#share-language-tools) |
+| Prove activation in a NixOS VM | [`test/platform.nix`](#write-a-vm-test) |
+| Use the catalog's theme colors | [`palette.toml`](#theme-colors) |
+| Drive a terminal program or a language server in `run` | [Process helpers](#drive-processes) |
 
-Each imported value receives the supplied platform, `overlays = []` and unfree
-policy. The policy reads that system's final
-`nixpkgs.config.allowUnfreePackages` list and compares names using the imported
-source's `lib.getName`. Separate evaluations keep separate registries and may
-allow different names.
+## Check a configuration
 
-Use `pinned` only in configuration values. It cannot determine `imports` or the
-structure of `options`, which resolve before module arguments. Declare unfree
-names as constants. Let NixOS create the base package set from the final
-configuration; do not supply a ready-made `nixpkgs.pkgs` that bypasses policy.
-Source sharing does not guarantee a binary-cache hit. Unfree permission and
-local-build permission are separate rules.
+[test/helpers.nix](test/helpers.nix) evaluates public entry points and checks
+the result:
 
-## Language support
+```nix
+{ evalSystem, pkgs, lib }:
+let
+  helpers = import ../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
+  configuration = helpers.evaluate [ ./default.nix ];
+in
+{
+  eval.package = helpers.installed configuration pkgs.gh;
+  run.commands = import ./test/run.nix {
+    inherit pkgs;
+    profile = helpers.profileFor configuration;
+  };
+}
+```
 
-`lmx.capabilities.languageSupport.tools.<identity>` declares one complete tool:
+| Helper | Result |
+| -- | -- |
+| `evaluate modules` | Configuration record `{ config; pkgs; lib; }` |
+| `installed configuration package` | `true` when `systemPackages` contains the package |
+| `installedAsDeclared configuration package` | The same, with the package's declared priority |
+| `selectedPackage configuration package` | `true` when the package beats others with the same name |
+| `packagePriority package` | The package's priority; `5` by default |
+| `profileFor configuration` | The system profile for `run` checks |
+| `verify label value configuration` | `true`, or an error naming `label` when `value` is not `true` |
 
-| Field | Type | Meaning |
-| -- | -- | -- |
-| `package` | package, required | Package supplying the executable |
-| `command` | string, required | Executable to launch |
-| `args` | list of strings; default `[]` | Arguments |
-| `languages` | list of strings; default `[]` | Language identities |
+A profile is the evaluated `config.system.path`. Running it proves commands, not
+activation.
 
-A tool key identifies the tool independently of provider modules and versions.
-Providers apply `lib.mkOverride (1000 - rank)` to the complete record, with
-`0 <= rank < 100`. Ordinary user declarations and `mkForce` are stronger.
+## Test version lines
 
-The schema fills optional defaults before comparing equal-priority records.
-Equal records agree; different records fail. A stronger record replaces all
-fields, including optional values. Providers install the selected package;
-consumers map its command and arguments to their own application settings.
-
-`lmx.capabilities.languageSupport.languages.<language>.parsers` is a required
-list. Contributions add and deduplicate. Parser declarations do not require a
-tool. Empty schemas install no application.
-
-## Version-line fixtures
-
-Import [test/lines.nix](test/lines.nix) from a module's public `test.nix`:
+For a module with `versions` in `module.toml`, [test/lines.nix](test/lines.nix)
+evaluates each line's public entry and calls your callbacks:
 
 ```nix
 lineTests = import ../_shared/test/lines.nix {
   inherit evalSystem pkgs lib;
   moduleDirectory = ./.;
-  checkLine = import ./test/check-line.nix;
-  runLine = import ./test/commands.nix;
+  checkLine = { line, configuration }: import ./test/check.nix { inherit line configuration; };
+  runLine = { line, configuration }: import ./test/smoke.nix { inherit line configuration; };
 };
 ```
 
-The example callbacks are functions owned by the module. `checkLine` is required
-and must return a Boolean. `runLine` is optional; its default is `null`. Each
-callback receives the numeric line string and a record `{ config; pkgs; lib; }`.
-`config` comes from `evalSystem` of that line's public entry point. The other
-fields are the supplied native package set and library.
+`checkLine` returns a Boolean; `runLine` is optional and returns a derivation.
+Export `inherit (lineTests) eval run;` to get `eval."line-<line>"` and
+`run."commands-<line>"`. The helper checks lines one by one. Whether several
+lines work together is your module's decision: export your own `eval.allLines`
+or an expected failure such as `fails.twoLines`.
+
+<details>
+<summary>Other results and laziness</summary>
 
 | Result | Value |
 | -- | -- |
-| `metadata` | Parsed module `module.toml` |
-| `lines` | Numeric version order, for example `1.9`, `1.10` |
-| `configurations.<line>` | Lazy record for `versions/<line>.nix` |
-| `defaultConfiguration` | Separate lazy record for `default.nix` |
-| `allConfiguration` | Separate lazy record importing all public line entries |
-| `eval."line-<line>"` | Callback predicate; returns `true` or fails |
-| `run."commands-<line>"` | Callback derivation; absent when `runLine = null` |
+| `lines` | Declared lines in numeric order, for example `1.9`, `1.10` |
+| `metadata` | Parsed `module.toml` |
+| `configurations.<line>` | Configuration record for `versions/<line>.nix` |
+| `defaultConfiguration` | Configuration record for `default.nix` |
+| `allConfiguration` | Configuration record importing every line |
 
-Reading metadata does not evaluate a system. Each demanded configuration is
-shared by callbacks that use it. The helper does not export `allLines`, impose
-coexistence or choose command priorities. A module exports its own combination
-check or expected failure. Modules without numeric lines provide their own
-nonempty `eval` checks.
+Reading `lines` or `metadata` evaluates no system. Each configuration is
+evaluated once and shared by the callbacks that use it.
 
-## Native and VM foundations
+</details>
 
-[test/helpers.nix](test/helpers.nix) supplies `evaluate`, `profileFor`,
-`verify`, `installed`, `installedAsDeclared`, `selectedPackage` and
-`packagePriority`. Configuration records are `{ config; pkgs; lib; }`.
-`verify label predicate configuration` accepts only a true Boolean. Profile
-checks use the evaluated `config.system.path`; they do not prove activation.
+## Check profile commands
 
-A VM node imports [test/vm.nix](test/vm.nix) with optional `userName` and
-`userHome`, plus the module's public entry point. Defaults are `dev` and
-`/home/<userName>`. The wrapper uses [test/platform.nix](test/platform.nix) as
-its single common foundation:
+When several lines install the same command,
+[test/profile-commands.nix](test/profile-commands.nix) checks which executable
+the profile runs:
 
-```text
-module-owned VM node
-  ├─ shared VM foundation
-  │    ├─ interface.nix and discovered root schemas, excluding test.nix
-  │    ├─ canonical systemPackages ordering
-  │    └─ account following final limanix.user fields; UID 1000
-  └─ module's public entry point and own activation assertions
+```nix
+run.newestCommand = import ../_shared/test/profile-commands.nix {
+  inherit pkgs;
+  profile = helpers.profileFor lineTests.allConfiguration;
+  expectedCommands.helm = "${newestHelm}/bin/helm";
+};
 ```
 
-The account uses the final configured name, home and shell rather than the
-helper's default parameters. `system.stateVersion` follows the fixture's Nixpkgs
-release. Each node gets packages from its effective NixOS policy. Import this
-foundation into `runNixOSTest`, not into `evalSystem`, which already has a
-platform. VM resources and application assertions remain in the module.
+> [!TIP]
+>
+> The platform sorts `systemPackages` by store path and then priority, so import
+> order never decides a collision. Give colliding commands explicit priorities
+> with `lib.setPrio`.
 
-The production platform and VM foundation order packages after option merging:
-`toString package`, then numeric package priority for identical paths. Sorting
-preserves original records, contextual strings, duplicates and priorities. It
-does not change `mkForce` or deduplicate user packages. Give colliding commands
-explicit package priorities rather than relying on import order.
+## Use another Nixpkgs revision
 
-## Process helpers
+Declare the revision and its hash in `lmx.pins`, then read packages from the
+`pinned` module argument:
 
-[test/terminal.py](test/terminal.py) provides a bounded PTY process:
+```nix
+{ pinned, ... }:
+{
+  lmx.pins."<revision>" = "<sha256>";
+  environment.systemPackages = [ pinned."<revision>".go_1_22 ];
+}
+```
+
+- Write the hash as a plain constant, without `mkDefault` or `mkForce`. Modules
+  that declare the same revision with the same hash agree; different hashes
+  fail.
+- Use `pinned` only in configuration values, never in `imports` or option
+  declarations.
+- An unfree package needs its name in `nixpkgs.config.allowUnfreePackages`;
+  pinned package sets follow that list.
+
+<details>
+<summary>How pinned package sets are built</summary>
+
+Each revision is imported lazily, once per evaluated system, for the system's
+platform and without overlays. An unused revision is never downloaded. The
+unfree check compares names with the pinned source's own `lib.getName`. A shared
+source does not guarantee a binary-cache hit; local builds follow the
+[local-build policy](../../guides/catalog-contract.md#local-builds-and-runtime).
+
+</details>
+
+## Share language tools
+
+Language modules publish their tools and parsers; editor modules read the final
+result:
+
+```mermaid
+flowchart LR
+    go[go module] -- tools.gopls, languages.go --> cap[languageSupport]
+    python[python module] -- tools.pyright, languages.python --> cap
+    cap -- final tools and parsers --> editor[Editor module]
+```
+
+A provider declares a complete tool record:
+
+```nix
+lmx.capabilities.languageSupport = {
+  languages.go.parsers = [ "go" "gomod" ];
+  tools.gopls = lib.mkOverride (1000 - rank) {
+    package = tools.gopls;
+    command = "${tools.gopls}/bin/gopls";
+    languages = [ "go" ];
+  };
+};
+```
+
+- A tool record is replaced as a whole: the strongest priority wins with all its
+  fields. Use `lib.mkOverride (1000 - rank)` with `0 <= rank < 100` so a newer
+  line wins. A user's ordinary definition or `mkForce` still overrides it.
+- Equal records at the same priority agree; different records fail evaluation.
+- The provider installs the winning `package`. A consumer maps `command` and
+  `args` into its own settings.
+- Parser lists from all modules add up without duplicates and need no tool.
+
+<details>
+<summary>Fields</summary>
+
+| Field | Type |
+| -- | -- |
+| `tools.<identity>.package` | Package; required |
+| `tools.<identity>.command` | Executable path; required |
+| `tools.<identity>.args` | List of strings; default `[]` |
+| `tools.<identity>.languages` | List of language names; default `[]` |
+| `languages.<language>.parsers` | List of parser names; default `[]` |
+
+The tool identity names the tool itself, such as `gopls`, not the module that
+provides it.
+
+</details>
+
+## Write a VM test
+
+[test/platform.nix](test/platform.nix) is the platform for a `runNixOSTest`
+node. Import it with your module's public entry:
+
+```nix
+pkgs.testers.runNixOSTest {
+  name = "zsh-activation";
+  nodes.machine.imports = [
+    (import ../../_shared/test/platform.nix { userName = "tester"; })
+    ../default.nix
+  ];
+  testScript = ''
+    machine.wait_for_unit("multi-user.target")
+  '';
+}
+```
+
+The platform adds `interface.nix`, the shared schemas and a user account with
+UID 1000. The account is named `dev` with home `/home/<name>` unless you pass
+`userName` or `userHome`; it follows the final `limanix.user` settings, such as
+a shell chosen by your module.
+
+- Import it only into VM nodes. `evalSystem` already contains this platform.
+- Choose the account through the parameters, not by redefining the read-only
+  `limanix.user.name` or `limanix.user.home`.
+- VM tests run locally on Linux with KVM; see
+  [Automation](../../guides/automation.md#run-locally).
+
+## Drive processes
+
+[test/terminal.py](test/terminal.py) runs a command in a pseudo-terminal with
+deadlines and bounded output. Add `PYTHONPATH = ../../_shared/test;` to the
+`runCommand` environment:
 
 ```python
 from terminal import TerminalProcess
 
-with TerminalProcess(argv, env=environment, cwd=directory) as process:
+with TerminalProcess([program], env=environment) as process:
     process.until(lambda: b"ready" in process.output, timeout=5)
-    process.send(b"input\n")
+    process.send(b"q")
 ```
 
-It keeps a bounded output tail and closes, terminates and reaps the process.
-Callers own their application scenarios and deadlines. The helper also accepts
-terminal `rows`, `columns` and `output_limit`.
+[test/lsp-smoke.py](test/lsp-smoke.py) starts a language server and checks that
+it initializes and shuts down:
 
-[test/lsp-smoke.py](test/lsp-smoke.py) checks a server's initialize response and
-shutdown over framed JSON-RPC. It handles unrelated messages and server
-requests. Module-owned runtime checks supply the actual server command. Shared
-unit checks use local fake processes and no network.
+```sh
+python ${../../_shared/test/lsp-smoke.py} --timeout 10 ${profile}/bin/gopls
+```
 
-## Corner cases
+## Theme colors
 
-| Case | Result |
-| -- | -- |
-| Empty pin registry | No additional source import |
-| Equal ordinary hashes for one revision | One declaration |
-| Different ordinary hashes for one revision | Evaluation error |
-| Inspecting unused pin names | Package sets remain lazy |
-| Equal-priority unequal tool records | Evaluation error |
-| Stronger complete tool record | All fields change together; omitted optional fields reset |
-| Parser-only contribution | Accepted without a tool declaration |
-| Metadata-only line inspection | No `evalSystem` call |
-| Forbidden line combination | Module owns the diagnostic; helper does not hide it |
-| User changes VM identity | Fixture account follows final name, home and shell |
-| Contextual strings or `__toString` packages | Values and priorities survive canonical ordering |
+[palette.toml](palette.toml) holds the Catppuccin Mocha colors:
+
+```nix
+inherit (builtins.fromTOML (builtins.readFile ../_shared/palette.toml)) mocha;
+# mocha.blue == "#89b4fa"
+```
+
+## Change `_shared`
+
+> [!IMPORTANT]
+>
+> Shared code never names a module, chooses its lines or rebuilds its test
+> scenarios. A change under `_shared` makes CI check the whole catalog.
+
+Add code here only when several modules need it without module policy. A root
+`*.nix` file is an option schema that every system loads; pure functions belong
+in `lib/` and test helpers in `test/`. Each promise below needs an exact key in
+`_shared/test.nix`.
 
 ## Guarantees
 
-`Checked by` names exact exports from the shared `test.nix`. Native fake-process
-checks cover helper behavior; module checks cover integration with real tools.
-Pin checks exercise the current loader's empty/lazy paths and argument wiring;
-they do not download a source to prove architecture or unfree policy.
+`Checked by` names exports of `_shared/test.nix`. Fake-process checks cover the
+helpers; module checks cover real tools. Pin checks do not download a source.
 
 | Guarantee | Checked by |
 | -- | -- |
@@ -194,11 +290,11 @@ they do not download a source to prove architecture or unfree policy.
 | Tool records select atomically, including omitted optional fields | `eval.atomicDeclaration` |
 | Parser contributions add and deduplicate independently of tools | `eval.parserContributions` |
 | Unequal command, argument or language declarations fail | `fails.conflictingCommands`, `fails.conflictingArgs`, `fails.conflictingLanguages` |
-| Required tool fields and parser lists cannot be omitted | `fails.missingToolCommand`, `fails.missingToolPackage`, `fails.missingParserList` |
+| Required tool fields cannot be omitted | `fails.missingToolCommand`, `fails.missingToolPackage` |
 | Empty and unused pin values stay lazy in the actual loader | `eval.emptyPins`, `eval.lazyPins` |
 | Equal ordinary pin hashes agree; different ordinary hashes fail | `eval.pinDeclarations`, `fails.conflictingPins` |
 | Empty registry reaches the actual `pinned` module argument | `eval.pinWiring` |
-| VM foundation loads public schemas, excludes test export and follows configured identity | `eval.vmPlatform` |
+| VM platform loads public schemas, excludes the test export and follows the configured account | `eval.vmPlatform` |
 | Package ordering preserves values, context, duplicates and replacement semantics | `eval.canonicalPackages`, `eval.packageValues` |
 | Canonical profile retains the explicit package-priority winner | `run.packagePriority` |
 | Lines sort numerically and callbacks receive their public entry records | `eval.numericLines`, `eval.lineCallbacks` |
