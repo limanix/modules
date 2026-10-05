@@ -171,8 +171,8 @@ flowchart LR
 ```
 
 A provider declares a complete tool record. Its module computes `rank` as the
-number of declared releases older than the selected release; newer releases
-get a larger rank and a lower, stronger `mkOverride` priority:
+number of declared releases older than the selected release; newer releases get
+a larger rank and a lower, stronger `mkOverride` priority:
 
 ```nix
 lmx.capabilities.languageSupport = {
