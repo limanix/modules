@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare module Markdown for the LimaNix documentation site.
-
-Validate source documents before replacing build/docs, rewrite site-relative
-links, and connect module guides through Sphinx toctrees. This tool does not
-render the site or evaluate Nix modules.
-"""
+"""Prepare module Markdown for the LimaNix documentation site."""
 
 from __future__ import annotations
 
@@ -112,7 +107,6 @@ def prepare(root: Path, ref: str) -> Path:
             text += "\n```{toctree}\n:hidden:\n\n" + "\n".join(entries) + "\n```\n"
         target.write_text(text.replace("](../../guides/", "](../../"), encoding="utf-8")
 
-    # _shared is a page for module authors, not a catalog entry.
     with (output / "catalog.md").open("a", encoding="utf-8") as catalog:
         catalog.write(
             "\n```{toctree}\n:hidden:\n:glob:\n\nmodules/[!_]*/README\n```\n"

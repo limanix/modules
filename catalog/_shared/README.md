@@ -110,7 +110,7 @@ evaluated once and shared by the callbacks that use it.
 
 When several lines install the same command,
 [test/profile-commands.nix](test/profile-commands.nix) checks which executable
-the profile runs:
+the profile resolves to:
 
 ```nix
 run.newestCommand = import ../_shared/test/profile-commands.nix {
@@ -170,7 +170,9 @@ flowchart LR
     cap -- final tools and parsers --> editor[Editor module]
 ```
 
-A provider declares a complete tool record:
+A provider declares a complete tool record. Its module computes `rank` as the
+number of declared releases older than the selected release; newer releases
+get a larger rank and a lower, stronger `mkOverride` priority:
 
 ```nix
 lmx.capabilities.languageSupport = {
