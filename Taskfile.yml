@@ -51,26 +51,6 @@ tasks:
             bash scripts/run_checks.sh {{.SUITE | default "common" | shellQuote}}
             {{.MODE | default "check" | shellQuote}}
 
-  ci/plan/dependencies:
-    desc: >-
-      Write the module import graph used to select consumers of changed modules.
-      OUTPUT=build/dependencies.json (default); SYSTEM=x86_64-linux|aarch64-linux (default: native)
-    cmds:
-      - task: _nix/export
-        vars:
-          ATTRIBUTE: dependencies
-          OUTPUT: '{{.OUTPUT | default "build/dependencies.json"}}'
-
-  ci/plan/vm-modules:
-    desc: >-
-      Write the list of modules that export VM tests.
-      OUTPUT=build/vm-modules.json (default); SYSTEM=x86_64-linux|aarch64-linux (default: native)
-    cmds:
-      - task: _nix/export
-        vars:
-          ATTRIBUTE: vmModules
-          OUTPUT: '{{.OUTPUT | default "build/vm-modules.json"}}'
-
   lint/nix:
     desc: Check Nix formatting
     cmds:
@@ -146,16 +126,3 @@ tasks:
               merge (dict) (.TASK_CONTEXT | default .) (dict
               "CONTAINER_RUN_ARGS" (printf "%s %s" .nix_build_caps (.CONTAINER_RUN_ARGS | default ""))
               "CONTAINER_ENVS" (printf "%s %s" .nix_cache_env (.CONTAINER_ENVS | default "")))
-
-  _nix/export:
-    internal: true
-    requires:
-      vars: [ATTRIBUTE, OUTPUT]
-    cmds:
-      - task: _nix/check
-        vars:
-          CMD: >-
-            bash -c 'output=$1; shift; mkdir -p "$(dirname "$output")";
-            exec nix-instantiate --eval --strict --json checks/modules.nix --attr "$@" > "$output"' bash
-            {{.OUTPUT | shellQuote}} {{.ATTRIBUTE | shellQuote}}
-            {{if .SYSTEM}}--argstr system {{.SYSTEM | shellQuote}}{{end}}

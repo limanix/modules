@@ -1,17 +1,13 @@
 name: PR flow
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
 
-# A new push cancels the previous run of the same pull request. Runs on main
-# get their own group: each one tests and caches its changed modules.
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  group: pr-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 permissions:
@@ -21,79 +17,35 @@ jobs:
   plan:
     runs-on: ubuntu-24.04
     outputs:
-      chunks: ${{ steps.plan.outputs.chunks }}
-      has-modules: ${{ steps.plan.outputs.has-modules }}
-      common: ${{ steps.plan.outputs.common }}
+      targets: ${{ steps.plan.outputs.targets }}
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 2
           persist-credentials: false
 
-      - name: Select changed modules
-        id: changes
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
-        run: |
-          if [ "$EVENT_NAME" = workflow_dispatch ] ||
-             [ -z "$BASE_SHA" ] ||
-             [ "$BASE_SHA" = 0000000000000000000000000000000000000000 ] ||
-             ! git --no-optional-locks cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
-            plan=$(python3 -B scripts/plan_checks.py --all)
-          else
-            plan=$(python3 -B scripts/plan_checks.py --base "$BASE_SHA" --head "$HEAD_SHA")
-          fi
-          mkdir -p build
-          printf '%s\n' "$plan" > build/check-plan.json
-          printf 'needs-dependencies=%s\n' "$(jq -r '.needs_dependencies' <<< "$plan")" >> "$GITHUB_OUTPUT"
-
-      # Consumers of changed modules come from the evaluated import graph.
-      # If discovery fails, the plan falls back to the full catalog.
-      - name: Read x86 module dependencies
-        if: ${{ steps.changes.outputs.needs-dependencies == 'true' }}
-        continue-on-error: true
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: ci/plan/dependencies SYSTEM=x86_64-linux OUTPUT=build/dependencies-x86.json
-
-      - name: Read ARM module dependencies
-        if: ${{ steps.changes.outputs.needs-dependencies == 'true' }}
-        continue-on-error: true
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: ci/plan/dependencies SYSTEM=aarch64-linux OUTPUT=build/dependencies-arm.json
-
-      - name: Plan checks
+      - name: Select targets
         id: plan
         shell: bash
         env:
-          NEEDS_DEPENDENCIES: ${{ steps.changes.outputs.needs-dependencies }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          plan=$(cat build/check-plan.json)
-          if [ "$NEEDS_DEPENDENCIES" = true ]; then
-            if jq -es 'all(.[]; type == "object")' build/dependencies-x86.json build/dependencies-arm.json >/dev/null 2>&1 &&
-               jq -s 'reduce .[] as $graph ({}; reduce ($graph | keys[]) as $name (.; .[$name] = ((.[$name] // []) + $graph[$name] | unique)))' \
-                 build/dependencies-x86.json build/dependencies-arm.json > build/dependencies.json; then
-              plan=$(python3 -B scripts/plan_checks.py --base "$BASE_SHA" --head "$HEAD_SHA" --dependencies build/dependencies.json)
-            else
-              printf 'Dependency discovery unavailable; checking the full catalog.\n' >&2
-            fi
+          set -euo pipefail
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          modules=$(ls catalog | grep -vx _shared)
+
+          every='^(catalog/_shared/|checks/|flake\.nix$|flake\.lock$|interface\.nix$|scripts/run_checks\.sh$)'
+          plumbing='^(Taskfile\.yml|\.taskrc\.yml|\.github/workflows/pr\.yml|scripts/cache_nix_build\.sh|scripts/prune_nix_cache\.sh)$'
+
+          if [ "$EVENT_NAME" = workflow_dispatch ] || grep -qE "$every" <<< "$changed"; then
+            targets="$modules common"
+          else
+            targets=$(grep -oE '^catalog/[^/]+/' <<< "$changed" | cut -d/ -f2 | grep -Fx "$modules" | sort -u || true)
+            if grep -qE "$plumbing" <<< "$changed"; then targets="$targets common"; fi
           fi
-          {
-            printf 'chunks=%s\n' "$(jq -c '.chunks' <<< "$plan")"
-            printf 'has-modules=%s\n' "$(jq -r '.modules | length > 0' <<< "$plan")"
-            printf 'common=%s\n' "$(jq -r '.common' <<< "$plan")"
-          } >> "$GITHUB_OUTPUT"
-          {
-            printf '### Checks\n\n'
-            printf -- '- Common (_shared and harness): %s\n' "$(jq -r 'if .common then "yes" else "no" end' <<< "$plan")"
-            printf -- '- Modules (x86_64 and aarch64, eval then run): %s\n' "$(jq -r 'if (.modules | length) > 0 then (.modules | join(", ")) else "none" end' <<< "$plan")"
-          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "targets=$(jq -cn '$ARGS.positional' --args $targets)" >> "$GITHUB_OUTPUT"
+          echo "Checks on x86_64 and aarch64:" ${targets:-none} >> "$GITHUB_STEP_SUMMARY"
 
   lint:
     runs-on: ubuntu-24.04
@@ -106,38 +58,77 @@ jobs:
           command: ci/lint
 
   test:
-    name: Test ${{ matrix.chunk.id }} (${{ matrix.runner }})
+    name: Test ${{ matrix.target }} (${{ matrix.runner }})
     needs: plan
-    if: ${{ needs.plan.outputs.has-modules == 'true' }}
+    if: ${{ needs.plan.outputs.targets != '[]' }}
     strategy:
       fail-fast: false
       matrix:
-        chunk: ${{ fromJSON(needs.plan.outputs.chunks) }}
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
-    uses: ./.github/workflows/nix-tests.yml
-    with:
-      runner: ${{ matrix.runner }}
-      suite: module
-      mode: check
-      modules: ${{ matrix.chunk.modules }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
-  common:
-    name: Common (${{ matrix.runner }})
-    needs: plan
-    if: ${{ needs.plan.outputs.common == 'true' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
-    uses: ./.github/workflows/nix-tests.yml
-    with:
-      runner: ${{ matrix.runner }}
-      suite: common
-      mode: check
+      - name: Restore Nix sources
+        id: cache
+        continue-on-error: true
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            .cache/nix
+            .cache/nix-binary
+          key: nix-v1.0-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('flake.lock', 'flake.nix', 'interface.nix', 'catalog/_shared/**', format('catalog/{0}/**', matrix.target), 'checks/**', 'scripts/run_checks.sh', 'scripts/cache_nix_build.sh', 'scripts/prune_nix_cache.sh') }}
+          restore-keys: |
+            nix-v8-${{ runner.arch }}-${{ matrix.target }}-
+
+      - name: Nix cache permissions
+        run: |
+          mkdir -p .cache/nix .cache/nix-binary
+          sudo chown -R 0:0 .cache/nix .cache/nix-binary
+
+      - name: Run checks
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: >-
+            ${{ matrix.target == 'common' && 'ci/test/common' || format('ci/test/modules MODULES={0}', matrix.target) }}
+            'CONTAINER_ENVS=NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=1 NIX_BUILD_CORES=0${{ steps.cache.outputs.cache-hit != 'true' && ' NIX_BUILD_CACHE_HOOK=/workspace/scripts/cache_nix_build.sh' || '' }}'
+
+      - name: Restore Nix cache ownership
+        if: always()
+        run: |
+          for directory in .cache/nix .cache/nix-binary; do
+            if [ -d "$directory" ]; then
+              sudo chown -R "$(id -u):$(id -g)" "$directory"
+            fi
+          done
+
+      - name: Prune Nix build cache
+        id: prune
+        if: ${{ success() && steps.cache.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          pruned=$(bash scripts/prune_nix_cache.sh .cache/nix-binary)
+          rm -f .cache/nix/binary-cache-v*.sqlite*
+          printf '### Nix cache\n\n%s\n\n```\n%s\n```\n' "$pruned" "$(du -sh .cache/nix .cache/nix-binary)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save Nix sources and local builds
+        if: ${{ success() && steps.cache.outputs.cache-hit != 'true' && steps.prune.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 2
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            .cache/nix
+            .cache/nix-binary
+          key: ${{ steps.cache.outputs.cache-primary-key }}
 
   gate:
     if: always()
-    needs: [plan, lint, test, common]
+    needs: [plan, lint, test]
     runs-on: ubuntu-24.04
     steps:
       - name: Require every selected check
@@ -147,8 +138,6 @@ jobs:
         run: |
           jq -e '
             .plan.result == "success" and .lint.result == "success"
-            and (if .plan.outputs["has-modules"] == "true"
+            and (if .plan.outputs.targets != "[]"
                  then .test.result == "success" else .test.result == "skipped" end)
-            and (if .plan.outputs.common == "true"
-                 then .common.result == "success" else .common.result == "skipped" end)
           ' <<< "$JOB_RESULTS"

@@ -290,7 +290,7 @@ runtime dry-run.
 | -- | -- | -- |
 | Structure, entry points, recommendation, `eval`, `fails` | Changed modules on PRs | 2 minutes |
 | `run` | Changed modules, both native Linux architectures | 5 minutes with prepared cache |
-| `vm` | Release | 15 minutes |
+| `vm` | Locally, on native Linux with KVM | 15 minutes |
 
 Reuse one default fixture, one per needed line and one for each different
 scenario. Fixture counts guide cost; they are not hard limits on correctness.
@@ -303,10 +303,11 @@ and VM status. They separate newly executed checks from reused results where
 known; unknown cache state stays unknown. A cancelled or interrupted run is
 incomplete evidence.
 
-Changed modules include consumers of their public imports. Changes to `_shared`,
-`interface.nix` or `flake.lock` affect every module. Platform `eval` and `run`
-check the generic harness and base interface, including its builder permissions.
-Required compositions belong in their own module tests.
+The PR flow checks changed modules, not the consumers of their public imports.
+Changes to `_shared`, `interface.nix`, the flake or the harness check every
+module. Platform `eval` and `run` check the generic harness and base interface,
+including its builder permissions. Required compositions belong in their own
+module tests.
 
 ## README guarantees
 
