@@ -13,7 +13,6 @@ let
         "aggregate"
         "component"
         "leaf"
-        "extra"
       ];
   leaf = root + "/leaf/default.nix";
   component = root + "/component/default.nix";

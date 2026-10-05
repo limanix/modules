@@ -178,28 +178,22 @@ let
     target: map (key: "${target}\t${key}") (builtins.attrNames selectedTests.${target}.fails)
   ) (builtins.attrNames selectedTests);
   lines = values: lib.concatStringsSep "\n" values + lib.optionalString (values != [ ]) "\n";
-  runtimeManifest =
-    group:
-    let
-      rows = lib.concatMap (
-        target:
-        lib.mapAttrsToList (key: derivation: {
-          inherit target key;
-          path = derivation.drvPath;
-        }) selectedTests.${target}.${group}
-      ) (builtins.attrNames selectedTests);
-    in
-    {
-      roots = lines (lib.unique (map (row: row.path) rows));
-      cases = lines (map (row: "${row.target}\t${row.key}\t${row.path}") rows);
-      builds = lines (
-        lib.unique (
-          lib.concatMap (test: map (value: value.drvPath) (builtins.attrValues test.builds)) (
-            if group == "run" then permissionTests else [ ]
-          )
+  runtimeManifest = group: {
+    roots = lines (
+      lib.unique (
+        lib.concatMap (test: map (derivation: derivation.drvPath) (builtins.attrValues test.${group})) (
+          builtins.attrValues selectedTests
         )
-      );
-    };
+      )
+    );
+    builds = lines (
+      lib.unique (
+        lib.concatMap (test: map (value: value.drvPath) (builtins.attrValues test.builds)) (
+          if group == "run" then permissionTests else [ ]
+        )
+      )
+    );
+  };
 in
 assert require (builtins.elem system [
   "aarch64-linux"
