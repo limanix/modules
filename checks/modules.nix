@@ -17,16 +17,12 @@ let
   base = rawEvaluate [ ];
   inherit (base) pkgs lib;
   require = condition: message: if condition then true else throw "Module checks: ${message}";
-  checkedEvaluate =
-    selected:
+  # Import boundaries and assertions apply to every evaluation.
+  checkScenario =
+    evaluated:
     let
-      evaluated = rawEvaluate selected;
       failed = builtins.filter (item: !item.assertion) evaluated.config.assertions;
     in
-    assert import ./ownership.nix {
-      inherit lib;
-      inherit (evaluated) options;
-    };
     assert import ./imports.nix {
       inherit catalog;
       inherit (evaluated) graph;
@@ -35,6 +31,7 @@ let
       throw "Module assertions:\n${lib.concatMapStringsSep "\n" (item: item.message) failed}"
     else
       evaluated;
+  checkedEvaluate = selected: checkScenario (rawEvaluate selected);
   # Module tests and generic checks share exact singleton public evaluations.
   # Inline scenarios keep their own evaluation and cannot acquire a cache key.
   evalSystem =
@@ -54,15 +51,26 @@ let
   requested = builtins.fromJSON modules;
   selectedNames = if requested == [ ] then names else lib.unique requested;
   entries = item: [ item.path ] ++ map (line: item.directory + "/versions/${line}.nix") item.lines;
-  entryConfigurations = builtins.listToAttrs (
+  # One evaluation per entry point serves checks, tests and dependency discovery.
+  rawEntries = builtins.listToAttrs (
     lib.concatMap (
       item:
       map (path: {
         name = toString path;
-        value = checkedEvaluate [ path ];
+        value = rawEvaluate [ path ];
       }) (entries item)
     ) catalog
   );
+  # Declared options depend only on the module's files, so ownership walks the
+  # whole option tree once per entry point rather than in every scenario.
+  entryConfigurations = builtins.mapAttrs (
+    _: evaluated:
+    assert import ./ownership.nix {
+      inherit lib;
+      inherit (evaluated) options;
+    };
+    checkScenario evaluated
+  ) rawEntries;
   entryNames = builtins.listToAttrs (
     lib.concatMap (
       item:
@@ -105,7 +113,9 @@ let
           }
         );
         dependencies = builtins.filter (name: name != item.name) (
-          lib.unique (lib.concatMap (path: graphDependencies (rawEvaluate [ path ]).graph) (entries item))
+          lib.unique (
+            lib.concatMap (path: graphDependencies rawEntries.${toString path}.graph) (entries item)
+          )
         );
         entryResults = {
           default = defaultConfiguration.config.system.build.toplevel.drvPath;
@@ -178,6 +188,11 @@ let
     target: map (key: "${target}\t${key}") (builtins.attrNames selectedTests.${target}.fails)
   ) (builtins.attrNames selectedTests);
   lines = values: lib.concatStringsSep "\n" values + lib.optionalString (values != [ ]) "\n";
+  evalManifest = {
+    "results.json" = builtins.toJSON evaluation;
+    failures = lines failureRows;
+    expected = lib.mapAttrs (_: test: lib.mapAttrs (_: value: value.message) test.fails) selectedTests;
+  };
   runtimeManifest = group: {
     roots = lines (
       lib.unique (
@@ -194,6 +209,7 @@ let
       )
     );
   };
+  runManifest = runtimeManifest "run";
 in
 assert require (builtins.elem system [
   "aarch64-linux"
@@ -210,15 +226,20 @@ assert require (
 assert require (builtins.all (name: builtins.elem name names) requested) "unknown module name";
 assert require (suite == "module" || requested == [ ]) "only the module suite accepts module names";
 {
-  inherit system names evaluation;
+  inherit
+    system
+    names
+    evaluation
+    evalManifest
+    runManifest
+    ;
   selectionManifest.modules = lines selectedNames;
-  evalManifest = {
-    "results.json" = builtins.toJSON evaluation;
-    failures = lines failureRows;
-    expected = lib.mapAttrs (_: test: lib.mapAttrs (_: value: value.message) test.fails) selectedTests;
-  };
-  runManifest = runtimeManifest "run";
   vmManifest = runtimeManifest "vm";
+  # Both stages from one evaluator: configurations are evaluated once.
+  checkManifest = {
+    eval = evalManifest;
+    run = runManifest;
+  };
   failure =
     let
       target = builtins.getEnv "LMX_CHECK_TARGET";

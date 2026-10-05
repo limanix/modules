@@ -97,17 +97,11 @@ initialize_runner() {
   trap 'exit 143' TERM
 }
 
-run_combined_checks() {
+run_common_checks() {
   local component
-  if test "$suite" = common; then
-    for component in shared platform; do
-      bash "$runner_path" "$component" eval
-      bash "$runner_path" "$component" run
-    done
-  else
-    bash "$runner_path" "$suite" eval "${requested_modules[@]}"
-    bash "$runner_path" "$suite" run "${requested_modules[@]}"
-  fi
+  for component in shared platform; do
+    bash "$runner_path" "$component" check
+  done
 }
 
 configure_build_cache() {
@@ -222,9 +216,10 @@ read_primary_error() {
   printf '%s' "$diagnostic"
 }
 
+# Reads an eval manifest directory: results, expected failures and messages.
 run_evaluation_checks() {
-  evaluate_attribute evalManifest --write-to "$manifest_directory"
-  cat "$manifest_directory/results.json"
+  local manifest=$1 stage_started_at=$SECONDS
+  cat "$manifest/results.json"
   printf '\n'
 
   local target case_name case_started_at exit_status expected_message diagnostic
@@ -236,7 +231,7 @@ run_evaluation_checks() {
     evaluate_attribute failure --json > "$temporary_directory/failure.out" \
       2> "$temporary_directory/failure.err" || exit_status=$?
 
-    expected_message=$(cat "$manifest_directory/expected/$target/$case_name"; printf '.')
+    expected_message=$(cat "$manifest/expected/$target/$case_name"; printf '.')
     expected_message=${expected_message%.}
     diagnostic=$(read_primary_error "$temporary_directory/failure.err"; printf '.')
     diagnostic=${diagnostic%.}
@@ -247,7 +242,8 @@ run_evaluation_checks() {
     fi
     printf 'PASS target=%s fails.%s seconds=%s\n' \
       "$target" "$case_name" "$((SECONDS - case_started_at))"
-  done < "$manifest_directory/failures"
+  done < "$manifest/failures"
+  printf 'PASS phase=eval seconds=%s\n' "$((SECONDS - stage_started_at))"
 }
 
 parse_build_plan() {
@@ -321,13 +317,14 @@ validate_local_builds() {
     printf '{}\n' > "$temporary_directory/derivations.json"
   fi
 
-  export LMX_PLAN_DIRECTORY=$temporary_directory
+  export LMX_PLAN_DIRECTORY=$temporary_directory LMX_PLAN_MANIFEST=${manifest#"$temporary_directory/"}
   local build_policy_expression='let
     directory = builtins.getEnv "LMX_PLAN_DIRECTORY";
     list = name: builtins.filter builtins.isString (builtins.split "\n" (builtins.readFile (directory + "/" + name)));
     paths = name: builtins.filter (value: value != "") (list name);
+    manifest = builtins.getEnv "LMX_PLAN_MANIFEST";
     result = import ./checks/build-plan.nix {
-      planned = paths "planned"; roots = paths "manifest/roots"; builds = paths "manifest/builds";
+      planned = paths "planned"; roots = paths (manifest + "/roots"); builds = paths (manifest + "/builds");
       derivations = builtins.fromJSON (builtins.readFile (directory + "/derivations.json"));
     };
   in if result.allowed then builtins.toJSON result
@@ -349,7 +346,7 @@ realise_test_derivations() {
   local build_started_at=$SECONDS
   nix-store --realise "${build_options[@]}" "${test_derivations[@]}"
   printf 'PASS phase=%s roots=%s seconds=%s\n' \
-    "$phase" "${#test_derivations[@]}" "$((SECONDS - build_started_at))"
+    "$stage" "${#test_derivations[@]}" "$((SECONDS - build_started_at))"
 }
 
 record_live_cache_paths() {
@@ -366,25 +363,26 @@ record_live_cache_paths() {
   fi
 }
 
+# Reads a run or vm manifest directory: roots and permitted local builds.
 run_execution_checks() {
-  evaluate_attribute "${phase}Manifest" --write-to "$manifest_directory"
+  stage=$1 manifest=$2
   test_derivations=()
   local path
   while IFS= read -r path; do
     test -z "$path" || test_derivations+=("$path")
-  done < "$manifest_directory/roots"
+  done < "$manifest/roots"
 
   live_cache_file=''
-  if test -n "$cache_hook" && test "$phase" = run; then
+  if test -n "$cache_hook" && test "$stage" = run; then
     live_cache_file=$NIX_BUILD_CACHE/.live
     : >> "$live_cache_file"
   fi
   if ((${#test_derivations[@]} == 0)); then
-    printf 'No %s exports in this selection\n' "$phase"
+    printf 'No %s exports in this selection\n' "$stage"
     return 0
   fi
 
-  if test "$phase" = vm; then
+  if test "$stage" = vm; then
     if ! test -r /dev/kvm || ! test -w /dev/kvm; then
       printf 'VM checks require readable/writable /dev/kvm\n' >&2
       exit 2
@@ -404,8 +402,8 @@ main() {
   require_runner_tools
   initialize_runner
 
-  if test "$phase" = check && { test "$suite" != module || ((${#requested_modules[@]} == 1)); }; then
-    run_combined_checks
+  if test "$suite" = common; then
+    run_common_checks
     return
   fi
 
@@ -419,10 +417,23 @@ main() {
 
   printf 'Checking suite=%s phase=%s system=%s cache=%s\n' \
     "$suite" "$phase" "$system" "${NIX_BUILD_CACHE:-configured Nix substituters}"
+  # check evaluates both manifests in one Nix process, so each configuration is
+  # evaluated once for both stages.
   manifest_directory="$temporary_directory/manifest"
   case "$phase" in
-    eval) run_evaluation_checks ;;
-    run|vm) run_execution_checks ;;
+    check)
+      evaluate_attribute checkManifest --write-to "$manifest_directory"
+      run_evaluation_checks "$manifest_directory/eval"
+      run_execution_checks run "$manifest_directory/run"
+      ;;
+    eval)
+      evaluate_attribute evalManifest --write-to "$manifest_directory"
+      run_evaluation_checks "$manifest_directory"
+      ;;
+    run|vm)
+      evaluate_attribute "${phase}Manifest" --write-to "$manifest_directory"
+      run_execution_checks "$phase" "$manifest_directory"
+      ;;
   esac
 }
 
