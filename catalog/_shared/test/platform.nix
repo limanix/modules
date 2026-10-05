@@ -1,4 +1,3 @@
-# Common public foundation for module-owned VM nodes. No application policy.
 {
   userName ? "dev",
   userHome ? "/home/${userName}",

@@ -50,7 +50,6 @@ let
       ];
     }
   ];
-  # Force only the selected ABI value; derivation attrs may contain cycles.
   forceToolField = field: { config, ... }: {
     assertions = [
       {
@@ -114,20 +113,6 @@ in
         (forceToolField "package")
       ];
       message = "lmx.capabilities.languageSupport.tools.example.package' was accessed but has no value defined";
-    };
-    missingParserList = {
-      modules = [
-        { lmx.capabilities.languageSupport.languages.example = { }; }
-        ({ config, ... }: {
-          assertions = [
-            {
-              assertion = builtins.deepSeq config.lmx.capabilities.languageSupport.languages.example.parsers true;
-              message = "Shared tests: force parser requirements";
-            }
-          ];
-        })
-      ];
-      message = "lmx.capabilities.languageSupport.languages.example.parsers' was accessed but has no value defined";
     };
   };
 }

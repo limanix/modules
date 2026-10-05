@@ -4,12 +4,12 @@
     name = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      description = "Development account name supplied by Limanix.";
+      description = "Development account name supplied by LimaNix.";
     };
     home = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      description = "Development account home supplied by Limanix.";
+      description = "Development account home supplied by LimaNix.";
     };
     shell = lib.mkOption {
       type = lib.types.shellPackage;

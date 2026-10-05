@@ -24,7 +24,7 @@ pkgs.testers.runNixOSTest {
   name = "docker-service-and-development-account";
   nodes.machine = {
     imports = [
-      (import ../../_shared/test/vm.nix { })
+      (import ../../_shared/test/platform.nix { })
       ../default.nix
     ];
     virtualisation.memorySize = 2048;

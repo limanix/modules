@@ -1,5 +1,3 @@
-# Lazy public-entry fixtures for a module's declared numeric lines.
-# The caller owns its predicates, runtime recipes and coexistence policy.
 {
   evalSystem,
   pkgs,

@@ -139,7 +139,7 @@ through `config` instead of hard-coding values such as the user name `dev`:
 The platform supplies `name` and `home` once. Modules read them; they do not
 redeclare the account identity. For a module-owned VM test, select its account
 through the
-[fixture parameters](catalog-contract.md#shared-helpers-and-vm-tests).
+[VM platform's parameters](../catalog/_shared/README.md#write-a-vm-test).
 
 These three options are declared in the shared `interface.nix` at the catalog
 repository root, together with the
@@ -565,10 +565,10 @@ Test the behavior your module adds. Reuse one evaluated configuration for
 related assertions. Own integration scenarios can import dependencies' public
 entry points, but cannot read their private packages or tests.
 
-For private helpers, the
-[shared API](catalog-contract.md#shared-helpers-and-vm-tests) offers
-configuration records, installed-package predicates and lazy line fixtures. Do
-not extend the public three-argument invocation with extra context.
+[Shared helpers](../catalog/_shared/README.md) lists what these checks can
+reuse: configuration records, package predicates, line fixtures, the VM platform
+and process drivers. Do not extend the public three-argument invocation with
+extra context.
 
 ### Follow the metadata rules
 

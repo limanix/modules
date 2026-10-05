@@ -1,5 +1,4 @@
 # Catppuccin Mocha: https://catppuccin.com/palette/#mocha
-# Shared data only. Selecting a module decides where these colors apply.
 [mocha]
 rosewater = "#f5e0dc"
 flamingo = "#f2cdcd"

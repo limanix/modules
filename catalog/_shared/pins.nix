@@ -1,10 +1,3 @@
-# Infrastructure for module-declared Nixpkgs sources; no source is registered here.
-# Identity: the revision supplied by a selected module.
-# Declaration: ordinary constant hashes; no mkDefault, mkOverride or mkForce
-# around the registry, entries or enclosing definitions.
-# Merge: equal ordinary hash declarations at the same revision agree.
-# Conflict: different ordinary hashes fail the standard string merge.
-# NixOS priority handling is unchanged; priority wrappers violate the contract.
 {
   config,
   lib,
@@ -18,8 +11,6 @@
     description = "Nixpkgs revisions and content hashes declared by selected modules.";
   };
 
-  # One lazy map belongs to this evaluated configuration. Consumers select from
-  # its values; they must not use this argument to choose imports or options.
   config._module.args.pinned = import ./lib/pinned.nix {
     sources = config.lmx.pins;
     inherit (pkgs.stdenv.hostPlatform) system;

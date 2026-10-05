@@ -23,7 +23,7 @@ pkgs.testers.runNixOSTest {
   name = "zsh-activation";
   nodes.machine = {
     imports = [
-      (import ../../_shared/test/vm.nix { userName = "tester"; })
+      (import ../../_shared/test/platform.nix { userName = "tester"; })
       ../default.nix
     ];
   };

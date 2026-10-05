@@ -1,4 +1,3 @@
-# Pure helpers for module-owned tests. No module discovery or policy lives here.
 {
   evalSystem,
   pkgs,

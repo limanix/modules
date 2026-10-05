@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare module Markdown for the LimaNix documentation site.
-
-Validate source documents before replacing build/docs, rewrite site-relative
-links, and connect module guides through Sphinx toctrees. This tool does not
-render the site or evaluate Nix modules.
-"""
+"""Prepare module Markdown for the LimaNix documentation site."""
 
 from __future__ import annotations
 
@@ -20,6 +15,9 @@ SOURCE_LINK = re.compile(
     r"|Taskfile\.yml)(#[^)]*)?\)"
 )
 NESTED_GUIDE_LINK = re.compile(r"\]\(((?:\.\./)+)guides/")
+MODULE_SOURCE_LINK = re.compile(
+    r"\]\((?!https?:|#|\.\./)([^)#]+?\.(?:nix|py|sh|toml))(#[^)]*)?\)"
+)
 
 
 def read_guides(root: Path) -> dict[Path, str]:
@@ -27,7 +25,7 @@ def read_guides(root: Path) -> dict[Path, str]:
     guides = root / "guides"
     if guides.is_symlink():
         raise ValueError("guides/ must not be a symlink")
-    for name in ("index.md", "catalog.md"):
+    for name in ("index.md", "catalog.md", "writing-modules.md"):
         if not (guides / name).is_file():
             raise ValueError(f"Missing guide: guides/{name}")
     documents = {}
@@ -44,11 +42,7 @@ def read_module_documents(root: Path) -> dict[Path, dict[Path, str]]:
     catalog = root / "catalog"
     if not catalog.is_dir():
         raise ValueError("Missing module directory: catalog/")
-    modules = sorted(
-        path
-        for path in catalog.iterdir()
-        if path.is_dir() and not (path.name == "_shared" and not path.is_symlink())
-    )
+    modules = sorted(path for path in catalog.iterdir() if path.is_dir())
     if not modules:
         raise ValueError("No modules found in catalog/")
     documents = {}
@@ -97,7 +91,9 @@ def prepare(root: Path, ref: str) -> Path:
     for module, documents in modules.items():
         target = output / "modules" / module.name / "README.md"
         target.parent.mkdir(parents=True)
-        text = documents[Path("README.md")]
+        text = MODULE_SOURCE_LINK.sub(
+            rf"]({source_url}catalog/{module.name}/\1\2)", documents[Path("README.md")]
+        )
         entries = []
         for relative, nested_text in documents.items():
             if relative == Path("README.md"):
@@ -112,7 +108,11 @@ def prepare(root: Path, ref: str) -> Path:
         target.write_text(text.replace("](../../guides/", "](../../"), encoding="utf-8")
 
     with (output / "catalog.md").open("a", encoding="utf-8") as catalog:
-        catalog.write("\n```{toctree}\n:hidden:\n:glob:\n\nmodules/*/README\n```\n")
+        catalog.write(
+            "\n```{toctree}\n:hidden:\n:glob:\n\nmodules/[!_]*/README\n```\n"
+        )
+    with (output / "writing-modules.md").open("a", encoding="utf-8") as guide:
+        guide.write("\n```{toctree}\n:hidden:\n\nmodules/_shared/README\n```\n")
     return output
 
 

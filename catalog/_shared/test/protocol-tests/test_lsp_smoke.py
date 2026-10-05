@@ -1,4 +1,4 @@
-"""Exercise protocol failures with local fake servers, without real LSP tools."""
+"""Tests of lsp-smoke.py against fake local servers; no real server needed."""
 
 import importlib.util
 import os

@@ -17,12 +17,7 @@ let
     };
   };
   canonical = fixture.options.environment.systemPackages.apply;
-  priority =
-    package:
-    if builtins.isAttrs package then
-      package.meta.priority or lib.meta.defaultPriority
-    else
-      lib.meta.defaultPriority;
+  priority = (import ./helpers.nix { inherit evalSystem pkgs lib; }).packagePriority;
   weak = lib.setPrio 20 (pkgs.writeShellScriptBin "shared-priority-fixture" "printf weak");
   strong = lib.setPrio 4 (pkgs.writeShellScriptBin "shared-priority-fixture" "printf strong");
   wrapped = {
