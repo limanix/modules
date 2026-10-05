@@ -1,7 +1,6 @@
 # Google Cloud CLI
 
-Installs the Google Cloud CLI inside the VM. Select it for Google Cloud commands
-from your Linux shell and mounted project. Cozy includes this module.
+Installs the Google Cloud CLI.
 
 ```toml
 [nixos]
@@ -63,3 +62,4 @@ modules and guest-wide TOML environment settings.
 | Adds base Nixpkgs Google Cloud SDK without unrelated profile packages | `eval.package` |
 | Adds no startup units or activation commands | `eval.noStartup` |
 | The system-profile version command runs offline with an isolated home | `run.commands` |
+| `gke-gcloud-auth-plugin` is on the system profile and runs | `run.commands` |

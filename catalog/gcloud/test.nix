@@ -5,6 +5,7 @@
 }:
 let
   helpers = import ../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
+  gcloud = import ./package.nix { inherit pkgs lib; };
   configuration = helpers.evaluate [ ./default.nix ];
   empty = helpers.evaluate [ ];
   startup =
@@ -28,9 +29,9 @@ in
 {
   eval = {
     package =
-      helpers.installed configuration pkgs.google-cloud-sdk
+      helpers.installed configuration gcloud.package
       && builtins.all (
-        candidate: helpers.installed empty candidate || toString candidate == toString pkgs.google-cloud-sdk
+        candidate: helpers.installed empty candidate || toString candidate == toString gcloud.package
       ) configuration.config.environment.systemPackages;
     noStartup = startup configuration == startup empty;
   };
@@ -38,4 +39,10 @@ in
     inherit pkgs;
     profile = helpers.profileFor configuration;
   };
+  builds = builtins.listToAttrs (
+    map (derivation: {
+      name = lib.getName derivation;
+      value = derivation;
+    }) gcloud.localBuilds
+  );
 }
