@@ -42,8 +42,33 @@ let
     assert(vim.g.colors_name == "astrodark", "personal theme did not override Mocha")
   '';
 
+  clipboardCheck = pkgs.writeText "astronvim-clipboard.lua" ''
+    assert(vim.g.clipboard and vim.g.clipboard.name == "LimaNix", "platform clipboard was not configured")
+    vim.fn.setreg("+", { "one", "two" }, "V")
+    assert(vim.fn.getreg("+") == "one\ntwo\n", "put does not use the last yank")
+    if vim.env.TMUX then
+      local copied = table.concat(vim.fn.readfile(vim.env.TMPDIR .. "/clipboard", "b"), "\n")
+      assert(copied == "one\ntwo\n", "yank in tmux did not reach pbcopy: " .. vim.inspect(copied))
+    else
+      assert(vim.fn.filereadable(vim.env.TMPDIR .. "/clipboard") == 0, "yank outside tmux used pbcopy")
+    end
+  '';
+
 in
 {
+  # Yanks go to the platform's pbcopy; puts never wait for a terminal clipboard query.
+  clipboard = runEditor "astronvim-clipboard" editor ''
+    mkdir -p "$TMPDIR/bin"
+    printf '#!%s\ncat > "$TMPDIR/clipboard"\n' "$(command -v sh)" > "$TMPDIR/bin/pbcopy"
+    printf '#!%s\ntouch "$TMPDIR/pasted"\n' "$(command -v sh)" > "$TMPDIR/bin/pbpaste"
+    chmod +x "$TMPDIR/bin/pbcopy" "$TMPDIR/bin/pbpaste"
+    export PATH="$TMPDIR/bin:$PATH"
+    printf 'local value = 1\n' > example.lua
+    # Outside tmux, Neovim sends OSC 52 to its UI itself: commands it starts have no terminal.
+    run_nvim example.lua -c ${pkgs.lib.escapeShellArg (checkLua clipboardCheck)}
+    TMUX=/tmp/tmux-1000/default,1,0 run_nvim example.lua -c ${pkgs.lib.escapeShellArg (checkLua clipboardCheck)}
+    test ! -e "$TMPDIR/pasted"
+  '';
   commands = runEditor "astronvim-startup" editor ''
     printf 'local value = 1\n' > example.lua
     run_nvim example.lua -c ${pkgs.lib.escapeShellArg (checkLua startupCheck)}

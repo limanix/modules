@@ -55,6 +55,7 @@ The package is configurable with `programs.lazygit.package`.
 | Managed configuration | `/etc/xdg/lazygit/config.yml` |
 | Personal configuration | `~/.config/lazygit/config.yml`; project `.lazygit.yml` and `.git/lazygit.yml` |
 | Integration | Imports Git; AstroNvim opens the same Lazygit application |
+| Clipboard | Copy commands send text to the Mac clipboard through the platform's `pbcopy`; see [Terminal and clipboard](https://limanix.dev/terminal.html) |
 | Services and capabilities | No daemon or language-support declarations |
 
 ## Corner cases
@@ -72,3 +73,4 @@ The package is configurable with `programs.lazygit.package`.
 | Lazygit and Git are enabled and their installed commands run | `eval.defaults`, `run.commands` |
 | All managed theme and author colors use the Mocha palette | `eval.defaults` |
 | An ordinary user setting replaces a managed theme color | `eval.themeOverride` |
+| Copy commands use the platform's `pbcopy` | `eval.clipboard` |

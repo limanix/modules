@@ -91,9 +91,10 @@ supported programs again; it does not resume interrupted builds or recover
 unsaved buffers. See [tmux](../tmux/README.md) for the restoration controls.
 
 For icons, select a Nerd Font in the terminal on your Mac. The host terminal
-must support truecolor and OSC 52 for the configured clipboard flow. Copying
-from a VM must be checked with that terminal; installing guest packages alone
-cannot enable host support.
+must support truecolor and OSC 52 for the configured clipboard flow: tmux,
+AstroNvim and Lazygit copy to the Mac clipboard through the platform's `pbcopy`.
+Installing guest packages alone cannot enable host support; see
+[Terminal and clipboard](https://limanix.dev/terminal.html).
 
 ## Composition
 
