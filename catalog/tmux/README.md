@@ -118,14 +118,16 @@ individual styles through a custom NixOS module:
 Use a terminal on the Mac with truecolor and OSC 52 clipboard support. The VM's
 platform base supplies Ghostty's terminal description for `TERM=xterm-ghostty`.
 The module enables these capabilities for `xterm*` terminals; other terminal
-types use tmux's capability detection. Some terminals require enabling clipboard
-access in their settings. Copying a selection sends it through the terminal
-connection to the Mac clipboard. Paste from the Mac with the terminal's normal
-paste shortcut.
+types use tmux's capability detection. Copying a selection sends it through the
+terminal connection to the Mac clipboard. Paste from the Mac with the terminal's
+normal paste shortcut.
 
-See [tmux's clipboard guide](https://github.com/tmux/tmux/wiki/Clipboard) for
-terminal-specific settings. A `pbcopy` command inside the Linux VM does not
-provide access to the Mac clipboard.
+The platform's `pbcopy` and `pbpaste` work inside tmux too: they go through the
+attached client's terminal.
+[Terminal and clipboard](https://limanix.dev/terminal.html) lists the settings
+for common Mac terminals; see
+[tmux's clipboard guide](https://github.com/tmux/tmux/wiki/Clipboard) for
+others.
 
 ## Resume after a VM restart
 

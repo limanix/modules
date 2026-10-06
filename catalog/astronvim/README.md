@@ -153,9 +153,13 @@ splits and terminal panes; `Alt-h/j/k/l` resizes them. Smart-splits loads at
 startup to mark the active Neovim pane for tmux.
 
 Configure a Nerd Font and true color support in the terminal on macOS. For an
-SSH session the font belongs on the host, not in the VM. Clipboard support
-depends on the terminal and multiplexer; the module does not provide a graphical
-clipboard inside the VM.
+SSH session the font belongs on the host, not in the VM.
+
+Yanks go to the Mac clipboard through the platform's `pbcopy`, inside or outside
+tmux. `p` puts the last yank without asking the terminal, so it never waits for
+a clipboard read. Paste from the Mac with Cmd+V in insert mode, or insert it
+with `:r !pbpaste`. The terminal on the Mac must allow OSC 52; see
+[Terminal and clipboard](https://limanix.dev/terminal.html).
 
 See the [AstroNvim guide](https://docs.astronvim.com/) and
 [LSP configuration](https://docs.astronvim.com/recipes/advanced_lsp/) for editor
@@ -194,6 +198,7 @@ usage.
 | Bundled startup loads Mocha, key bindings and Lua highlighting from immutable plugin sources | `run.commands-6` |
 | Personal init files replace bundled startup and remain unchanged | `run.personalLua`, `run.personalVim` |
 | Personal polish and plugin specifications extend the bundled setup | `run.polish`, `run.personalPlugins` |
+| Yanks reach `pbcopy`, and puts use the last yank without a clipboard read | `run.clipboard` |
 | A catalog Rust server and a guarded third-party Go server attach with the declared command, arguments and highlighting | `run.languageServer` |
 
 Removing this module removes its declarations and bundled store packages when no

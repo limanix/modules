@@ -24,5 +24,7 @@ in
       };
       authorColors."*" = lib.mkDefault mocha.lavender;
     };
+    # The platform's pbcopy sends the text through the terminal to the Mac clipboard.
+    settings.os.copyToClipboardCmd = lib.mkDefault "printf %s {{text}} | pbcopy";
   };
 }

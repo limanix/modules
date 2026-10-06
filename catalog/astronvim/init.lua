@@ -45,7 +45,36 @@ local function link_parsers(source, install_dir, treesitter)
   end
 end
 
+-- Yanks reach the Mac clipboard with OSC 52. Puts use the last yank, so `p` never waits for a
+-- terminal clipboard query; paste from the Mac with Cmd+V or :r !pbpaste.
+local function use_mac_clipboard()
+  if vim.fn.executable("pbcopy") ~= 1 then return end
+  local osc52 = require("vim.ui.clipboard.osc52")
+  local last = { {}, "v" }
+  local function copy(register)
+    local direct = osc52.copy(register)
+    return function(lines, regtype)
+      last = { lines, regtype }
+      -- Commands started by Neovim have no terminal, so Neovim writes OSC 52 itself outside tmux.
+      -- Inside tmux, the platform's pbcopy reaches the attached client whatever set-clipboard says.
+      if vim.env.TMUX then
+        -- Linewise yanks already end with an empty line.
+        vim.fn.system({ "pbcopy" }, table.concat(lines, "\n"))
+      else
+        direct(lines, regtype)
+      end
+    end
+  end
+  local function paste() return last end
+  vim.g.clipboard = {
+    name = "LimaNix",
+    copy = { ["+"] = copy("+"), ["*"] = copy("*") },
+    paste = { ["+"] = paste, ["*"] = paste },
+  }
+end
+
 return function(paths)
+  use_mac_clipboard()
   vim.opt.rtp:prepend(paths.lazy)
   vim.fn.mkdir(vim.fn.stdpath("state"), "p")
   local parser_dir = vim.fn.stdpath("data") .. "/site"
