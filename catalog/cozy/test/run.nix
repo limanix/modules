@@ -17,6 +17,7 @@
         tmux -V
         nvim --version
         git --version
+        task --version
         lazydocker --version
         docker --version
         docker compose version

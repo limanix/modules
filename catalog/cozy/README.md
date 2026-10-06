@@ -1,12 +1,14 @@
 # Cozy
 
-`lmx:cozy` assembles a Linux development workbench with a shell, editor, common
-language toolchains, containers, local Kubernetes tools, cloud clients, and HTTP
-and SQL interfaces. Its components remain separately selectable.
+`lmx:cozy` assembles a Linux development workbench with a shell, editor, task
+runner, common language toolchains, containers, local Kubernetes tools, cloud
+clients, and HTTP and SQL interfaces. Its components remain separately
+selectable.
 
 | Component | Provides |
 | -- | -- |
 | [Console](../console/README.md) | Zsh, tmux, AstroNvim, CLI tools, Lazygit, GitHub CLI and Yazi |
+| [Taskfile](../taskfile/README.md) | Task runner for the tasks a project declares in its `Taskfile.yml` |
 | [Docker](../docker/README.md) | Docker Engine, Compose and Lazydocker |
 | [Minikube](../minikube/README.md) | Local Kubernetes command, matching kubectl through Minikube, and K9s |
 | [Go](../go/README.md) | Go, gopls, Delve and GCC |

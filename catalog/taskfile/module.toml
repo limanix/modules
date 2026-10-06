@@ -1,0 +1,4 @@
+description = "Task runner driven by a Taskfile."
+
+versions = ["3.48", "3.52", "3.53"]
+default = "3.53"
