@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
+let
+  gcloud = import ./package.nix { inherit pkgs lib; };
+in
 {
-  environment.systemPackages = [ pkgs.google-cloud-sdk ];
+  environment.systemPackages = [ gcloud.package ];
 }

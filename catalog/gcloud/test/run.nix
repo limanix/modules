@@ -12,6 +12,8 @@
         mkdir -p "$HOME" "$CLOUDSDK_CONFIG"
         gcloud version > version.txt 2>&1
         grep -F 'Google Cloud SDK' version.txt
+        gke-gcloud-auth-plugin --version > plugin.txt 2>&1
+        grep -F 'Kubernetes v' plugin.txt
         touch "$out"
       '';
 }
