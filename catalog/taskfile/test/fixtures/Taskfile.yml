@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: '3'
+
+vars:
+  MESSAGE: module-ok
+
+tasks:
+  prepare:
+    desc: Write the generated file
+    cmds:
+      - mkdir -p "{{.OUTPUT}}"
+      - printf 'prepared\n' > "{{.OUTPUT}}/prepared.txt"
+
+  default:
+    desc: Read the generated file and print the variable
+    deps: [prepare]
+    cmds:
+      - cat "{{.OUTPUT}}/prepared.txt"
+      - echo "message={{.MESSAGE}}"

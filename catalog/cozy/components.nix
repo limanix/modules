@@ -1,5 +1,6 @@
 [
   ../console/default.nix
+  ../taskfile/default.nix
   ../docker/default.nix
   ../minikube/default.nix
   ../go/default.nix
