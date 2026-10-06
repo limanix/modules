@@ -43,7 +43,7 @@ shows a complete workbench configuration.
 | Module | Selector | Provides |
 | -- | -- | -- |
 | [Console](../catalog/console/README.md) | `lmx:console` | Zsh, tmux, AstroNvim, CLI tools and terminal applications |
-| [Cozy](../catalog/cozy/README.md) | `lmx:cozy` | Project workbench, Console, common languages and LSP, Docker, Minikube, cloud, HTTP and SQL clients |
+| [Cozy](../catalog/cozy/README.md) | `lmx:cozy` | Project workbench, Console, Task, common languages and LSP, Docker, Minikube, cloud, HTTP and SQL clients |
 
 ### Terminal and project tools
 
@@ -55,6 +55,7 @@ shows a complete workbench configuration.
 | [Neovim](../catalog/neovim/README.md) | `lmx:neovim` | Neovim |
 | [CLI tools](../catalog/cli-tools/README.md) | `lmx:cli-tools` | Search, previews, Git diffs, data and system tools |
 | [Git](../catalog/git/README.md) | `lmx:git` | Git |
+| [Taskfile](../catalog/taskfile/README.md) | `lmx:taskfile` | Task runner for the tasks declared in a project's `Taskfile.yml` |
 | [Lazygit](../catalog/lazygit/README.md) | `lmx:lazygit` | Git terminal interface |
 | [GitHub CLI](../catalog/gh/README.md) | `lmx:gh` | GitHub repositories, pull requests and workflow runs |
 | [Codex CLI](../catalog/codex/README.md) | `lmx:codex` | OpenAI coding agent in the terminal |
