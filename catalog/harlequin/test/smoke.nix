@@ -1,6 +1,9 @@
 { pkgs, profile, ... }:
 let
-  package = import ../package.nix { inherit pkgs; };
+  package = import ../package.nix {
+    inherit pkgs;
+    flavor = "mocha";
+  };
   python = pkgs.lib.last package.propagatedBuildInputs;
 in
 {

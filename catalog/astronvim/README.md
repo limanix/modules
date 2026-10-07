@@ -116,7 +116,8 @@ stay in the Nix store. Additional user plugins can be installed explicitly with
 `:Lazy install`; startup does not download missing plugins. XDG configuration,
 data, state, and cache directory overrides are respected.
 
-The bundled colorscheme is Catppuccin Mocha. For another theme, assign AstroUI's
+The bundled colorscheme is Catppuccin in the guest's flavor: Mocha, unless
+`[theme]` in `limanix.toml` selects another. For another theme, assign AstroUI's
 `colorscheme` in a personal Lazy specification:
 
 ```lua
@@ -196,6 +197,7 @@ usage.
 | Language providers remain optional; catalog and third-party declarations are accepted | `eval.optionalProviders`, `eval.catalogProvider`, `eval.thirdPartyProvider` |
 | Rust and TypeScript server names are translated; other identities are preserved | `eval.serverNames` |
 | Bundled startup loads Mocha, key bindings and Lua highlighting from immutable plugin sources | `run.commands-6` |
+| The bundled setup receives the guest's flavor | `eval.theme` |
 | Personal init files replace bundled startup and remain unchanged | `run.personalLua`, `run.personalVim` |
 | Personal polish and plugin specifications extend the bundled setup | `run.polish`, `run.personalPlugins` |
 | Yanks reach `pbcopy`, and puts use the last yank without a clipboard read | `run.clipboard` |

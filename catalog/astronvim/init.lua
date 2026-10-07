@@ -73,7 +73,7 @@ local function use_mac_clipboard()
   }
 end
 
-return function(paths)
+return function(paths, flavor)
   use_mac_clipboard()
   vim.opt.rtp:prepend(paths.lazy)
   vim.fn.mkdir(vim.fn.stdpath("state"), "p")
@@ -99,9 +99,9 @@ return function(paths)
       dir = paths.catppuccin,
       lazy = false,
       priority = 1000,
-      opts = { flavour = "mocha" },
+      opts = { flavour = flavor },
     },
-    { "AstroNvim/astroui", opts = { colorscheme = "catppuccin-mocha" } },
+    { "AstroNvim/astroui", opts = { colorscheme = "catppuccin-" .. flavor } },
     {
       "AstroNvim/astrocore",
       opts = function(_, opts)

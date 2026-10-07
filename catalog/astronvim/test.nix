@@ -40,6 +40,10 @@ let
     entry
     ../rust/default.nix
   ];
+  latte = evaluate [
+    entry
+    { lmx.capabilities.theme.flavor = "latte"; }
+  ];
   suppliedGopls = pkgs.writeShellScriptBin "gopls" ''
     test "$#" -ge 1 && test "$1" = --catalog-smoke || exit 64
     shift
@@ -132,6 +136,10 @@ in
       && !preferences.config.programs.nix-ld.enable
       && preferences.config.programs.neovim.enable
     ) preferences;
+    theme = verify "the colorscheme follows the guest's flavor" (
+      lib.hasInfix ''setup(paths, "latte")'' latte.config.programs.neovim.configure.customLuaRC
+      && lib.hasInfix ''setup(paths, "mocha")'' defaults.config.programs.neovim.configure.customLuaRC
+    ) latte;
     optionalProviders = verify "language providers remain optional" (
       (capability defaults).tools == { }
       && (capability defaults).languages == { }

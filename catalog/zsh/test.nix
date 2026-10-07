@@ -13,6 +13,7 @@ let
     inherit
       defaultConfiguration
       evaluate
+      lib
       pkgs
       verify
       ;

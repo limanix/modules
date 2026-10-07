@@ -1,2 +1,7 @@
 { pkgs, hasPackage, ... }:
-hasPackage (import ../package.nix { inherit pkgs; })
+hasPackage (
+  import ../package.nix {
+    inherit pkgs;
+    flavor = "mocha";
+  }
+)

@@ -86,7 +86,7 @@ in
         else
           local paths = vim.json.decode(table.concat(vim.fn.readfile("${paths}"), "\n"))
           local setup = dofile("${./init.lua}")
-          setup(paths)
+          setup(paths, ${builtins.toJSON config.lmx.capabilities.theme.flavor})
         end
       '';
     };

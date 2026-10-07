@@ -31,13 +31,17 @@ let
       };
     }
   ];
+  latte = evaluate [
+    module.path
+    { lmx.capabilities.theme.flavor = "latte"; }
+  ];
   packageOverride = evaluate [
     module.path
     { programs.yazi.package = pkgs.yazi; }
   ];
 in
 {
-  configurations = { inherit managedOverride managedFlavor; };
+  configurations = { inherit managedOverride managedFlavor latte; };
   evaluation = {
     independentShell = verify "Yazi provides shell integration without enabling Zsh" (
       !defaultConfiguration.config.programs.zsh.enable

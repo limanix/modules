@@ -1,6 +1,11 @@
-{ pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
-  colors = (builtins.fromTOML (builtins.readFile ../_shared/palette.toml)).mocha;
+  colors = config.lmx.capabilities.theme.palette;
   names = [
     "black"
     "white"
@@ -39,8 +44,8 @@ let
     (map (value: ''"${value}"'') values) ++ [ ''overall = { bg = "${colors.base}" }'' ]
   ) (builtins.readFile ./theme-default.toml);
   theme = builtins.fromTOML themeText;
-  themeFile = pkgs.writeText "yazi-mocha-theme.toml" themeText;
-  defaultConfiguration = pkgs.runCommandLocal "yazi-mocha-default-configuration" { } ''
+  themeFile = pkgs.writeText "yazi-theme.toml" themeText;
+  defaultConfiguration = pkgs.runCommandLocal "yazi-default-configuration" { } ''
     mkdir -p "$out"
     ln -s ${themeFile} "$out/theme.toml"
   '';

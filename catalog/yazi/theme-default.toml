@@ -1,7 +1,7 @@
 # Yazi 26.5.6 dark preset, from yazi-config/preset/theme-dark.toml.
 # https://github.com/sxyazi/yazi/blob/v26.5.6/yazi-config/preset/theme-dark.toml
 # Copyright (c) 2023 sxyazi; MIT license in theme-LICENSE.
-# Named terminal colors are replaced with the shared Mocha palette at evaluation.
+# Named terminal colors are replaced with the palette of the guest's theme at evaluation.
 
 # If the user's terminal is in dark mode, Yazi will load `theme-dark.toml` on startup; otherwise, `theme-light.toml`.
 # You can override any parts of them that are not related to the dark/light mode in your own `theme.toml`.

@@ -277,7 +277,8 @@ in
 
 - `flavor` is `latte`, `frappe`, `macchiato` or `mocha`; the default is `mocha`.
   A system has one flavor: equal definitions agree, different definitions at the
-  same priority fail. Modules never set it.
+  same priority fail. The user selects it with `[theme]` in `limanix.toml`;
+  modules never set it. Every catalog module with colors reads it.
 - `palette` is read-only: the flavor's 26 colors by name, such as `blue`, as
   `#rrggbb`.
 - [palette.toml](palette.toml) copies the four flavors of Catppuccin palette

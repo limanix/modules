@@ -32,9 +32,10 @@ branches. Configure your commit identity as described in the
 
 ## Customize
 
-The managed configuration uses Catppuccin Mocha in
-`/etc/xdg/lazygit/config.yml`. A personal `~/.config/lazygit/config.yml` takes
-precedence through Lazygit's native XDG lookup. Project `.lazygit.yml` and
+The managed configuration uses the colors of the guest's theme in
+`/etc/xdg/lazygit/config.yml`: Catppuccin Mocha, unless `[theme]` in
+`limanix.toml` selects another flavor. A personal `~/.config/lazygit/config.yml`
+takes precedence through Lazygit's native XDG lookup. Project `.lazygit.yml` and
 `.git/lazygit.yml` settings retain their native precedence. To change managed
 settings, assign `programs.lazygit.settings` in a custom NixOS module:
 
@@ -71,6 +72,6 @@ The package is configurable with `programs.lazygit.package`.
 | Guarantee | Checked by |
 | -- | -- |
 | Lazygit and Git are enabled and their installed commands run | `eval.defaults`, `run.commands` |
-| All managed theme and author colors use the Mocha palette | `eval.defaults` |
+| All managed theme and author colors use the palette of the guest's theme | `eval.defaults`, `eval.latte` |
 | An ordinary user setting replaces a managed theme color | `eval.themeOverride` |
 | Copy commands use the platform's `pbcopy` | `eval.clipboard` |

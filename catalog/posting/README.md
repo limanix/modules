@@ -1,7 +1,8 @@
 # Posting
 
 Installs Posting, a terminal client for HTTP APIs, and sets `POSTING_THEME` to
-`catppuccin-mocha` by default.
+the Catppuccin theme of the guest's flavor by default: `catppuccin-mocha`,
+unless `[theme]` in `limanix.toml` selects another.
 
 ```toml
 [nixos]
@@ -44,7 +45,7 @@ configuration.
 
 | Boundary | Contract |
 | -- | -- |
-| Settings | `environment.variables.POSTING_THEME` defaults to `catppuccin-mocha`; personal YAML may override it |
+| Settings | `environment.variables.POSTING_THEME` defaults to `catppuccin-<flavor>` of the guest's theme; personal YAML may override it |
 | Personal state | `~/.config/posting/config.yaml` and request collections, respecting XDG configuration |
 | Integration | Cozy ships a project collection for its notes API |
 | Services and capabilities | No API server or language-support declarations |
@@ -63,4 +64,5 @@ configuration.
 | -- | -- |
 | The module installs the base Posting package and its config-location command runs | `eval.defaults`, `run.commands` |
 | POSTING_THEME defaults to catppuccin-mocha | `eval.defaults` |
+| POSTING_THEME follows the guest's flavor | `eval.latte` |
 | An ordinary assignment can replace POSTING_THEME | `eval.themeOverride` |

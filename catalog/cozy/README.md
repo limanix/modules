@@ -64,9 +64,10 @@ tmux server, with different ways to select a session.
 
 Run `y` in a Bash or Zsh shell to browse with Yazi and keep the selected
 directory when you exit. Use `q` to apply the selected directory or `Q` to leave
-the shell's directory unchanged. The shell, tmux, editor, Yazi and Lazygit
-default to Catppuccin Mocha. The component pages describe personal configuration
-and managed overrides.
+the shell's directory unchanged. The shell, tmux, editor, Yazi and Lazygit use
+the guest's theme: Catppuccin Mocha, unless `[theme]` in `limanix.toml` selects
+another flavor. The component pages describe personal configuration and managed
+overrides.
 
 ## Project services
 
@@ -91,7 +92,7 @@ the catalog release.
 | Settings | Owned by the imported components; no aggregate-specific public option namespace |
 | Project interface | `tmux-project [directory]` |
 | Personal state | Component configuration in the guest home; project files in your chosen directory |
-| Integration | Components share public contracts and default Mocha configuration |
+| Integration | Components share public contracts and the guest's theme |
 | Services | Docker Engine is enabled; project containers and Kubernetes clusters start when requested |
 
 ## Corner cases

@@ -11,6 +11,10 @@ let
     ./default.nix
     { environment.variables.POSTING_THEME = "galaxy"; }
   ];
+  latte = evaluate [
+    ./default.nix
+    { lmx.capabilities.theme.flavor = "latte"; }
+  ];
 in
 {
   eval = {
@@ -25,6 +29,9 @@ in
       overridden.config.environment.variables.POSTING_THEME == "galaxy"
       && helpers.installed overridden pkgs.posting
     ) overridden;
+    latte = verify "the Posting theme follows the guest's flavor" (
+      latte.config.environment.variables.POSTING_THEME == "catppuccin-latte"
+    ) latte;
   };
   run.commands = import ./test/smoke.nix {
     inherit pkgs;

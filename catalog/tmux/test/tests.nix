@@ -26,6 +26,11 @@ let
       };
     }
   ];
+  latte = evaluate [
+    module.path
+    { lmx.capabilities.theme.flavor = "latte"; }
+  ];
+  inherit (latte.config.lmx.capabilities.theme) palette;
   text = configuration: configuration.config.environment.etc."tmux.conf".text;
   bindings =
     lib.concatMap
@@ -66,5 +71,15 @@ in
       && lib.hasInfix "set -g mouse on" (text navigationDisabled)
       && lib.hasInfix "set -s set-clipboard on" (text navigationDisabled)
     ) navigationDisabled;
+    theme =
+      verify "styles follow the guest's flavor"
+        (lib.hasInfix "set -g status-style 'bg=${palette.mantle},fg=${palette.text}'" (text latte))
+        latte;
+    segment =
+      verify "the status line shows the words of lmx status --short"
+        (lib.hasInfix "#[fg=${palette.peach},bold]#(/run/current-system/sw/bin/lmx status --short)" (
+          text latte
+        ))
+        latte;
   };
 }

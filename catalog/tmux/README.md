@@ -99,16 +99,34 @@ custom module.
 
 ## Appearance
 
-The [Catppuccin Mocha palette](https://catppuccin.com/palette/#mocha) is stored
-in the catalog and applies when selecting `lmx:tmux` on its own. The theme loads
-before the restoration plugins, which preserve continuum's status-line hook. Set
-individual styles through a custom NixOS module:
+The colors come from the guest's theme: the
+[Catppuccin palette](https://catppuccin.com/palette/) of Mocha, unless `[theme]`
+in `limanix.toml` selects another flavor. They load before the restoration
+plugins, which preserve continuum's status-line hook.
+
+The right side of the status line starts with the words of `lmx status --short`
+that need attention, such as `restart` or `disk-low`; it is empty when all is
+well, and tmux refreshes it once per status interval. Set individual styles
+through a custom NixOS module:
 
 ```nix
 {
   programs.tmux.extraConfig = ''
     set -g status-style 'bg=black,fg=white'
     set -g pane-active-border-style 'fg=blue'
+  '';
+}
+```
+
+Replace `status-right` before the plugins load instead: continuum appends its
+save hook to it, and a later setting removes that hook and stops the automatic
+saves.
+
+```nix
+{ lib, ... }:
+{
+  programs.tmux.extraConfigBeforePlugins = lib.mkAfter ''
+    set -g status-right '%H:%M '
   '';
 }
 ```
@@ -153,7 +171,8 @@ enabled and preserve continuum's `status-right` hook if you customize it.
 | -- | -- |
 | `tmux` and the resurrect/continuum plugins are installed; vi mode, `tmux-256color`, and a 10 ms escape delay are defaults | `eval.defaults`, `run.terminalFeatures` |
 | Ordinary assignments can replace `programs.tmux.keyMode`, `programs.tmux.terminal`, and `programs.tmux.escapeTime` | `eval.preferences`, `run.terminalFeatures` |
-| Catppuccin Mocha styles the status line, active pane border, and copy mode; ordinary `programs.tmux.extraConfig` settings can replace these styles | `run.terminalFeatures` |
+| The guest's theme, Mocha by default, styles the status line, active pane border, and copy mode; ordinary `programs.tmux.extraConfig` settings can replace these styles | `eval.theme`, `run.terminalFeatures` |
+| The status line shows the words of `lmx status --short` | `eval.segment` |
 | Ctrl/Alt-H/J/K/L move and resize panes; prefix followed by Ctrl-H/J/K/L forwards the control key; panes marked by smart-splits receive their navigation keys | `run.terminalFeatures` |
 | `lmx.tmux.navigation.enable = false` removes the custom navigation and forwarding bindings while retaining mouse, clipboard, copy mode, and restoration plugins | `eval.navigation`, `run.terminalFeatures` |
 | In vi copy mode, `v` begins a selection and `y` copies it; tmux emits OSC 52 clipboard output for supported terminals | `run.terminalFeatures` |
