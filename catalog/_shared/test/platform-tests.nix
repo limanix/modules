@@ -81,6 +81,7 @@ in
       && fixture.config.system.stateVersion == "fixture-release"
       && builtins.elem ../languageSupport.nix fixture.imports
       && builtins.elem ../pins.nix fixture.imports
+      && builtins.elem ../theme.nix fixture.imports
       && !(builtins.elem ../test.nix fixture.imports);
     canonicalPackages =
       describe sorted == describe (canonical (lib.reverseList values))

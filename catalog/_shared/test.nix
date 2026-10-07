@@ -8,6 +8,7 @@ let
   pins = import ./test/pins-tests.nix { inherit evalSystem lib; };
   platform = import ./test/platform-tests.nix { inherit evalSystem pkgs lib; };
   lines = import ./test/lines-tests.nix { inherit pkgs lib; };
+  theme = import ./test/theme-tests.nix { inherit evalSystem pkgs; };
   unitTests =
     name: directory: extra:
     pkgs.runCommand "shared-${name}-tests"
@@ -26,10 +27,13 @@ let
       '';
 in
 {
-  eval = language.eval // pins.eval // platform.eval // lines;
-  fails = language.fails // pins.fails;
-  run = platform.run // {
-    terminal = unitTests "terminal" ./test/terminal-tests { };
-    protocol = unitTests "protocol" ./test/protocol-tests { LSP_SMOKE_SOURCE = ./test/lsp-smoke.py; };
-  };
+  eval = language.eval // pins.eval // platform.eval // theme.eval // lines;
+  fails = language.fails // pins.fails // theme.fails;
+  run =
+    platform.run
+    // theme.run
+    // {
+      terminal = unitTests "terminal" ./test/terminal-tests { };
+      protocol = unitTests "protocol" ./test/protocol-tests { LSP_SMOKE_SOURCE = ./test/lsp-smoke.py; };
+    };
 }
