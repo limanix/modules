@@ -3,13 +3,16 @@ version: '3.53.1'
 
 includes:
   nix:
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.5/taskfiles/nix/Taskfile.yml
+    # v0.0.5
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/nix/Taskfile.yml
     internal: true
   python:
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.5/taskfiles/python/Taskfile.yml
+    # v0.0.5
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/python/Taskfile.yml
     internal: true
   markdown:
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.5/taskfiles/markdown/Taskfile.yml
+    # v0.0.5
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/markdown/Taskfile.yml
     internal: true
 
 vars:
