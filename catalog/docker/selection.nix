@@ -10,7 +10,10 @@ let
   selected = lib.unique config.lmx.internal.docker.versions;
 in
 {
-  imports = [ ../lazydocker/default.nix ];
+  imports = [
+    ../lazydocker/default.nix
+    ./help.nix
+  ];
 
   options.lmx.internal.docker.versions = lib.mkOption {
     type = lib.types.listOf (lib.types.enum (builtins.attrNames releases));

@@ -5,13 +5,15 @@
   ...
 }:
 let
-  inherit (builtins.fromTOML (builtins.readFile ../_shared/palette.toml)) mocha;
-  colors = builtins.attrNames mocha;
-  theme = lib.replaceStrings (map (name: "@mocha-${name}@") colors) (map (
-    name: mocha.${name}
+  inherit (config.lmx.capabilities.theme) palette;
+  colors = builtins.attrNames palette;
+  theme = lib.replaceStrings (map (name: "@theme-${name}@") colors) (map (
+    name: palette.${name}
   ) colors) (builtins.readFile ./tmux.conf);
 in
 {
+  imports = [ ./help.nix ];
+
   options.lmx.tmux.navigation.enable = lib.mkOption {
     type = lib.types.bool;
     default = true;

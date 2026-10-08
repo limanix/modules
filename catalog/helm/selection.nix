@@ -10,6 +10,8 @@ let
   selected = lib.unique config.lmx.internal.helm.versions;
 in
 {
+  imports = [ ./help.nix ];
+
   options.lmx.internal.helm.versions = lib.mkOption {
     type = lib.types.listOf (lib.types.enum (builtins.attrNames releases));
     default = [ ];

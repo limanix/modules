@@ -53,7 +53,7 @@ Claude Code keeps its sign-in, settings, session transcripts for
 configuration directory. The managed home keeps them while the VM exists; a
 recreated VM gets a new managed home and starts without them. To keep them on
 your Mac, mount a Mac directory and point `CLAUDE_CONFIG_DIR` at it. Claude Code
-then also stores `.claude.json` there, so one mount holds all of its state:
+then also stores `.claude.json` there, and one mount holds all of its state:
 
 ```toml
 [env]

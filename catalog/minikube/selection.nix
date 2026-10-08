@@ -10,7 +10,10 @@ let
   selected = lib.unique config.lmx.internal.minikube.versions;
 in
 {
-  imports = [ ../k9s/default.nix ];
+  imports = [
+    ../k9s/default.nix
+    ./help.nix
+  ];
 
   options.lmx.internal.minikube.versions = lib.mkOption {
     type = lib.types.listOf (lib.types.enum (builtins.attrNames releases));

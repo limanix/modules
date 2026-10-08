@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, flavor }:
 (pkgs.harlequin.override {
   withPostgresAdapter = true;
   withBigQueryAdapter = false;
@@ -6,6 +6,6 @@
   (previous: {
     postPatch = (previous.postPatch or "") + ''
       substituteInPlace src/harlequin/cli.py \
-        --replace-fail 'DEFAULT_THEME = "harlequin"' 'DEFAULT_THEME = "catppuccin-mocha"'
+        --replace-fail 'DEFAULT_THEME = "harlequin"' 'DEFAULT_THEME = "catppuccin-${flavor}"'
     '';
   })

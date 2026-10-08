@@ -1,3 +1,3 @@
 {
-  imports = import ./components.nix;
+  imports = import ./components.nix ++ [ ./help.nix ];
 }

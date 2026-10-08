@@ -10,7 +10,10 @@ let
   selected = lib.unique config.lmx.internal.go.versions;
 in
 {
-  imports = [ ./tool.nix ];
+  imports = [
+    ./help.nix
+    ./tool.nix
+  ];
 
   options.lmx.internal.go.versions = lib.mkOption {
     type = lib.types.listOf (lib.types.enum (builtins.attrNames releases));

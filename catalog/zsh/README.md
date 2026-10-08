@@ -62,9 +62,13 @@ does not create an environment definition for the project.
 
 Add personal shell settings to `~/.zshrc` inside the VM. A personal
 `~/.config/starship.toml` takes precedence over the module's prompt settings.
-The managed prompt uses the Catppuccin Mocha palette. Its palette and module
-styles accept ordinary `programs.starship.settings` assignments. To change
-managed settings, use a [custom NixOS module](../../guides/writing-modules.md).
+The managed prompt uses the palette of the guest's theme: Catppuccin Mocha,
+unless `[theme]` in `limanix.toml` selects another flavor. Outside tmux it shows
+the words of `lmx status --short` that need attention, such as `restart`; inside
+tmux, tmux's status line shows them. Its palette, module styles and the `lmx`
+segment, `custom.lmx`, accept ordinary `programs.starship.settings` assignments.
+To change managed settings, use a
+[custom NixOS module](../../guides/writing-modules.md).
 
 For example, enable Oh My Zsh's Git aliases with this custom module:
 
@@ -117,7 +121,8 @@ command-line tools.
 | Suggests Zsh as the account shell; an ordinary `limanix.user.shell` assignment can choose another shell | `eval.defaults`, `eval.shell` |
 | Managed startup loads Oh My Zsh, Carapace, fzf-tab, autosuggestions and highlighting | `eval.defaults`, `run.startup` |
 | Managed startup keeps Tab completion, Atuin Ctrl-R, fzf Ctrl-T, zoxide and direnv hooks available together | `run.startup`, `vm.activation` |
-| Managed Starship settings use Mocha, show the hostname and failed status, and accept ordinary overrides | `eval.preferences`, `run.startup` |
+| Managed Starship settings use the theme's palette, show the hostname and failed status, and accept ordinary overrides | `eval.preferences`, `eval.theme`, `run.startup` |
+| Outside tmux, the prompt shows the words of `lmx status --short` | `eval.segment` |
 | Atuin synchronization and update checks default off and accept ordinary overrides | `eval.defaults`, `eval.preferences`, `run.startup` |
 | Fresh and repeat logins skip the automatic wizard without creating personal startup files | `run.startup`, `vm.activation` |
 | Personal startup settings, custom `ZDOTDIR` and an existing new-user handler remain unchanged | `run.startup`, `vm.activation` |

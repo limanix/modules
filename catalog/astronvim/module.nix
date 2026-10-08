@@ -12,6 +12,7 @@ in
   imports = [
     ../neovim/default.nix
     ../lazygit/default.nix
+    ./help.nix
   ];
 
   options.lmx.internal.astronvim.versions = lib.mkOption {

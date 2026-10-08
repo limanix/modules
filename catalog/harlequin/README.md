@@ -1,8 +1,9 @@
 # Harlequin
 
 Installs Harlequin, a terminal SQL IDE, with its PostgreSQL adapter in the same
-Python environment. DuckDB and SQLite adapters are included by Harlequin.
-Catppuccin Mocha is the default theme.
+Python environment. DuckDB and SQLite adapters are included by Harlequin. The
+default theme is Catppuccin in the guest's flavor: Mocha, unless `[theme]` in
+`limanix.toml` selects another.
 
 ```toml
 [nixos]
@@ -70,4 +71,4 @@ profile discovery and precedence.
 | -- | -- |
 | The module-owned package installs Harlequin with its PostgreSQL adapter | `eval.defaults`, `run.commands` |
 | The installed CLI loads the PostgreSQL adapter and its connection options | `run.commands` |
-| The module patch sets Mocha as the default without replacing personal or command-line themes | `run.theme` |
+| The module patch sets the guest's flavor as the default without replacing personal or command-line themes | `eval.latte`, `run.theme` |

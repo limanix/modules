@@ -1,28 +1,31 @@
-{ lib, ... }:
+{ config, lib, ... }:
 let
-  inherit (builtins.fromTOML (builtins.readFile ../_shared/palette.toml)) mocha;
+  inherit (config.lmx.capabilities.theme) palette;
 in
 {
-  imports = [ ../git/default.nix ];
+  imports = [
+    ../git/default.nix
+    ./help.nix
+  ];
 
   programs.lazygit = {
     enable = true;
     settings.gui = {
       theme = lib.mapAttrs (_: lib.mkDefault) {
         activeBorderColor = [
-          mocha.blue
+          palette.blue
           "bold"
         ];
-        inactiveBorderColor = [ mocha.subtext0 ];
-        optionsTextColor = [ mocha.blue ];
-        selectedLineBgColor = [ mocha.surface0 ];
-        cherryPickedCommitBgColor = [ mocha.surface1 ];
-        cherryPickedCommitFgColor = [ mocha.blue ];
-        unstagedChangesColor = [ mocha.red ];
-        defaultFgColor = [ mocha.text ];
-        searchingActiveBorderColor = [ mocha.yellow ];
+        inactiveBorderColor = [ palette.subtext0 ];
+        optionsTextColor = [ palette.blue ];
+        selectedLineBgColor = [ palette.surface0 ];
+        cherryPickedCommitBgColor = [ palette.surface1 ];
+        cherryPickedCommitFgColor = [ palette.blue ];
+        unstagedChangesColor = [ palette.red ];
+        defaultFgColor = [ palette.text ];
+        searchingActiveBorderColor = [ palette.yellow ];
       };
-      authorColors."*" = lib.mkDefault mocha.lavender;
+      authorColors."*" = lib.mkDefault palette.lavender;
     };
     # The platform's pbcopy sends the text through the terminal to the Mac clipboard.
     settings.os.copyToClipboardCmd = lib.mkDefault "printf %s {{text}} | pbcopy";

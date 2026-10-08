@@ -1,7 +1,7 @@
 # Yazi
 
-Configures Yazi, a terminal file manager, with Mocha colors and the preview and
-search dependencies included by its Nixpkgs package.
+Configures Yazi, a terminal file manager, with the colors of the guest's theme
+and the preview and search dependencies included by its Nixpkgs package.
 
 ```toml
 [nixos]
@@ -35,18 +35,19 @@ directory handoff. Selecting Yazi does not enable Zsh.
 
 ## Colors and configuration
 
-The default package uses the upstream Yazi binary with a store-backed
-[Catppuccin Mocha palette](https://catppuccin.com/palette/) theme. It does not
-rebuild Yazi's Rust sources to change colors.
+The default package uses the upstream Yazi binary with a store-backed theme in
+the [Catppuccin palette](https://catppuccin.com/palette/) of the guest's flavor:
+Mocha, unless `[theme]` in `limanix.toml` selects another. It does not rebuild
+Yazi's Rust sources to change colors.
 
 | Configuration | Theme and file behavior |
 | -- | -- |
-| No personal configuration directory | Uses the default Mocha theme from the Nix store |
+| No personal configuration directory | Uses the default theme from the Nix store |
 | Explicit `YAZI_CONFIG_HOME` | Uses that directory with Yazi's native configuration rules |
 | Personal `theme.toml` | Uses your theme with Yazi's native configuration rules |
-| Personal settings without `theme.toml` | Keeps your settings through a temporary symlink directory and adds Mocha; your files stay unchanged |
-| Managed NixOS settings | Combines Mocha defaults with your ordinary theme overrides |
-| A flavor selected in managed settings | Keeps the selected flavor's native precedence without adding Mocha defaults |
+| Personal settings without `theme.toml` | Keeps your settings through a temporary symlink directory and adds the default theme; your files stay unchanged |
+| Managed NixOS settings | Combines the default theme with your ordinary theme overrides |
+| A Yazi flavor selected in managed settings | Keeps the selected flavor's native precedence without adding the default theme |
 
 Personal configuration is read from an absolute `XDG_CONFIG_HOME` followed by
 `/yazi`, or from `~/.config/yazi/` when that variable is unset or relative. For
@@ -64,7 +65,7 @@ configuration directory through `YAZI_CONFIG_HOME`; use them when you want Nix
 to own that configuration. That managed directory takes precedence over a
 personal `YAZI_CONFIG_HOME` value. An ordinary `programs.yazi.package`
 assignment can replace the default package; a bare upstream package bypasses the
-default Mocha wrapper. See Yazi's
+default theme's wrapper. See Yazi's
 [configuration reference](https://yazi-rs.github.io/docs/configuration/overview/).
 
 ## Configuration and integration
@@ -83,7 +84,7 @@ default Mocha wrapper. See Yazi's
 | File manager fails | The shell function returns its failure and cleans the temporary handoff file |
 | Shell directory stays unchanged | Use the shell function `y` and quit with `q`; a direct `yazi` process cannot change its parent shell |
 | Managed configuration is selected | Its Nix-built directory takes precedence over personal configuration; set overrides through `programs.yazi.settings` |
-| Personal keymaps or plugins without a theme | The temporary directory keeps those files and adds Mocha; it is removed on normal exit, failure and handled interruption |
+| Personal keymaps or plugins without a theme | The temporary directory keeps those files and adds the default theme; it is removed on normal exit, failure and handled interruption |
 | Theme wrapper receives `SIGKILL` | It cannot clean its `limanix-yazi.*` directory under `TMPDIR`; personal files remain unchanged |
 | Yazi package is replaced | A bare package override uses that package's native theme; the vendored default theme matches Yazi 26.5.6 |
 | Shared file operations | Moving or deleting mounted files changes the original Mac directory |
@@ -94,7 +95,8 @@ default Mocha wrapper. See Yazi's
 | -- | -- |
 | Enables the configured Yazi package and accepts an ordinary package override | `eval.installed`, `eval.packageOverride` |
 | Bash and Zsh receive `y` without selecting Zsh as a dependency | `eval.independentShell`, `run.shellHandoff` |
-| Mocha defaults respect explicit directories, personal themes, managed overrides and managed flavors | `eval.managedOverride`, `eval.managedFlavor`, `run.shellHandoff` |
+| The default theme respects explicit directories, personal themes, managed overrides and managed Yazi flavors | `eval.managedOverride`, `eval.managedFlavor`, `run.shellHandoff` |
+| The default theme follows the guest's flavor | `run.shellHandoff` |
 | `q` passes the selected directory back to the shell, including spaces and newlines; `Q` retains the shell directory | `run.shellHandoff` |
 | Personal files stay unchanged; temporary handoff files and theme overlays are cleaned after exit, failure or handled interruption | `run.shellHandoff`, `run.shellErrors` |
 | The shell function returns Yazi and temporary-file creation failures | `run.shellErrors` |

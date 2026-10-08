@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -19,6 +20,8 @@ let
       '';
 in
 {
+  imports = [ ./help.nix ];
+
   limanix.user.shell = lib.mkDefault pkgs.zsh;
 
   environment.systemPackages = with pkgs; [
@@ -60,10 +63,16 @@ in
 
     starship = {
       enable = true;
-      settings = lib.recursiveUpdate (import ./prompt.nix { inherit lib; }) {
-        hostname.ssh_only = lib.mkDefault false;
-        status.disabled = lib.mkDefault false;
-      };
+      settings =
+        lib.recursiveUpdate
+          (import ./prompt.nix {
+            inherit lib;
+            inherit (config.lmx.capabilities) theme;
+          })
+          {
+            hostname.ssh_only = lib.mkDefault false;
+            status.disabled = lib.mkDefault false;
+          };
     };
 
     atuin = {

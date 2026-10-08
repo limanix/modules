@@ -1,5 +1,7 @@
 { pkgs, ... }:
 {
+  imports = [ ./help.nix ];
+
   nixpkgs.config.allowUnfreePackages = [ "claude-code" ];
   environment.systemPackages = [ pkgs.claude-code ];
   # The catalog pins the version: keep claude update and claude install from

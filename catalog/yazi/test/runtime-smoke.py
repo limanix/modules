@@ -96,6 +96,7 @@ def run(name, shell, init, profile, color, personal=None, explicit=None, exit_ke
 profile = os.environ["LMX_YAZI_PROFILE"]
 run("bash-default", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;137;220;235")
 run("zsh-default", os.environ["LMX_ZSH"], os.environ["LMX_ZSH_INIT"], profile, b"38;2;137;220;235")
+run("latte", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], os.environ["LMX_YAZI_LATTE_PROFILE"], b"38;2;4;165;229")
 run("personal", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;255;0;0", personal="#ff0000")
 run("explicit", os.environ["LMX_ZSH"], os.environ["LMX_ZSH_INIT"], profile, b"38;2;0;255;0", explicit="#00ff00")
 run("managed", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], os.environ["LMX_YAZI_MANAGED_PROFILE"], b"38;2;18;52;86")

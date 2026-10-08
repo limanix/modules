@@ -2,6 +2,7 @@
   module,
   defaultConfiguration,
   evaluate,
+  lib,
   pkgs,
   userName,
   verify,
@@ -12,6 +13,11 @@ let
     module.path
     { limanix.user.shell = pkgs.bashInteractive; }
   ];
+  latte = evaluate [
+    module.path
+    { lmx.capabilities.theme.flavor = "latte"; }
+  ];
+  inherit (latte.config.programs.starship) settings;
   preferencesOverride = evaluate [
     module.path
     {
@@ -52,5 +58,13 @@ in
       && preferencesOverride.config.programs.atuin.settings.auto_sync
       && preferencesOverride.config.programs.atuin.settings.update_check
     ) preferencesOverride;
+    theme = verify "the prompt follows the guest's flavor" (
+      settings.palette == "catppuccin_latte"
+      && settings.palettes.catppuccin_latte == latte.config.lmx.capabilities.theme.palette
+    ) latte;
+    segment = verify "outside tmux, the prompt shows the words of lmx status --short" (
+      lib.hasPrefix ''[ -n "$TMUX" ] || '' settings.custom.lmx.command
+      && lib.hasSuffix "lmx status --short" settings.custom.lmx.command
+    ) latte;
   };
 }

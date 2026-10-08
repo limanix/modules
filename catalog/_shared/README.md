@@ -1,6 +1,6 @@
 # Shared helpers
 
-`_shared` is the toolbox for catalog module authors: two option schemas that let
+`_shared` is the toolbox for catalog module authors: option schemas that let
 modules exchange data, helpers for `test.nix` and common data. It knows no
 module names. Your module's checks and policy stay in your module.
 
@@ -11,12 +11,13 @@ flowchart LR
         test[test.nix]
     end
     subgraph shared[_shared]
-        schemas[Schemas: languageSupport, pins]
+        schemas[Schemas: languageSupport, pins, theme]
         helpers[Test helpers in test/]
         data[palette.toml]
     end
-    default -- sets lmx options --> schemas
+    default -- sets and reads lmx options --> schemas
     default -. reads .-> data
+    schemas -. reads .-> data
     test -- imports --> helpers
 ```
 
@@ -34,7 +35,7 @@ import.
 | Take packages from another Nixpkgs revision | [`lmx.pins` and `pinned`](#use-another-nixpkgs-revision) |
 | Offer a language server or parsers to editors | [`languageSupport`](#share-language-tools) |
 | Prove activation in a NixOS VM | [`test/platform.nix`](#write-a-vm-test) |
-| Use the catalog's theme colors | [`palette.toml`](#theme-colors) |
+| Use the guest's theme colors | [`theme`](#theme-colors) |
 | Drive a terminal program or a language server in `run` | [Process helpers](#drive-processes) |
 
 ## Check a configuration
@@ -122,9 +123,9 @@ run.newestCommand = import ../_shared/test/profile-commands.nix {
 
 > [!TIP]
 >
-> The platform sorts `systemPackages` by store path and then priority, so import
-> order never decides a collision. Give colliding commands explicit priorities
-> with `lib.setPrio`.
+> The platform sorts `systemPackages` by store path and then priority, and
+> import order never decides a collision. Give colliding commands explicit
+> priorities with `lib.setPrio`.
 
 ## Use another Nixpkgs revision
 
@@ -261,12 +262,28 @@ python ${../../_shared/test/lsp-smoke.py} --timeout 10 ${profile}/bin/gopls
 
 ## Theme colors
 
-[palette.toml](palette.toml) holds the Catppuccin Mocha colors:
+`lmx.capabilities.theme` holds the guest's colors: a Catppuccin flavor and its
+colors. Read it in configuration values:
 
 ```nix
-inherit (builtins.fromTOML (builtins.readFile ../_shared/palette.toml)) mocha;
-# mocha.blue == "#89b4fa"
+{ config, ... }:
+let
+  inherit (config.lmx.capabilities.theme) flavor palette;
+in
+{
+  # flavor == "mocha" by default; palette.blue == "#89b4fa" for Mocha
+}
 ```
+
+- `flavor` is `latte`, `frappe`, `macchiato` or `mocha`; the default is `mocha`.
+  A system has one flavor: equal definitions agree, different definitions at the
+  same priority fail. The user selects it with `[theme]` in `limanix.toml`;
+  modules never set it. Every catalog module with colors reads it.
+- `palette` is read-only: the flavor's 26 colors by name, such as `blue`, as
+  `#rrggbb`.
+- [palette.toml](palette.toml) copies the four flavors of Catppuccin palette
+  v1.8.0 from the revision that `pkgs.catppuccin` packages; a check compares the
+  two.
 
 ## Change `_shared`
 
@@ -305,3 +322,6 @@ helpers; module checks cover real tools. Pin checks do not download a source.
 | A non-Boolean line predicate fails | `eval.strictLinePredicate` |
 | PTY deadlines, fragmented I/O, bounded output and cleanup work | `run.terminal` |
 | JSON-RPC framing, unrelated messages, failure diagnostics and cleanup work | `run.protocol` |
+| The theme defaults to Mocha with 26 colors; each flavor gives its own table | `eval.themeDefaults`, `eval.themeFlavors` |
+| Unknown flavors, different flavors at one priority and palette definitions fail | `fails.unknownFlavor`, `fails.conflictingFlavors`, `fails.readOnlyPalette` |
+| The palette copy equals Catppuccin's palette in Nixpkgs | `run.themePalette` |

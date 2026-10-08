@@ -1,4 +1,11 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
-  environment.systemPackages = [ (import ./package.nix { inherit pkgs; }) ];
+  imports = [ ./help.nix ];
+
+  environment.systemPackages = [
+    (import ./package.nix {
+      inherit pkgs;
+      inherit (config.lmx.capabilities.theme) flavor;
+    })
+  ];
 }

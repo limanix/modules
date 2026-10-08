@@ -74,9 +74,9 @@ task --yes ci/test/common
 replace it with a module present in your checkout. `MODULES` accepts
 space-separated directory names. Omitting it selects the full catalog. Selected
 modules run one after another, each in its own evaluator. `MODE=check` evaluates
-both stages in that one evaluator, so each configuration is evaluated once; it
-then checks expected failures and builds the `run` exports. The common cycle
-runs shared, then platform checks.
+both stages in that one evaluator, each configuration once; it then checks
+expected failures and builds the `run` exports. The common cycle runs shared,
+then platform checks.
 
 `ci/test/modules` defaults to `MODE=check`. `ci/test/common` defaults to
 `SUITE=common` and `MODE=check`; `MODE=eval` and `MODE=run` need `SUITE=shared`
@@ -98,7 +98,7 @@ bash scripts/run_checks.sh common check
 ```
 
 A manual activation check needs native Linux and `/dev/kvm` access for the Nix
-build user. CI has no KVM runners, so activation checks run only locally:
+build user. Activation checks run only locally, because CI has no KVM runners:
 
 ```console
 task --yes ci/test/modules MODE=vm MODULES=dev-tools CONTAINER_RUN_ARGS=--device=/dev/kvm
@@ -119,7 +119,7 @@ not replace check results.
 The key combines the architecture, the target and a hash of `flake.lock`,
 `flake.nix`, `interface.nix`, `catalog/_shared/**`, the target's own
 `catalog/<module>/**`, `checks/**` and the three cache and runner scripts. A
-push that changes other modules keeps the key, so the job reuses its archive and
+push that changes other modules keeps the key; the job reuses its archive and
 saves nothing. Restore tries the exact key first, then the newest cache for the
 same architecture and target. A change in an imported module does not change the
 key; Nix builds what the archive lacks, and the next change to the target saves
@@ -127,15 +127,15 @@ a new one. Parallel jobs with the same key do not merge their archives. An
 existing exact archive is read without adding another export.
 
 Without an exact hit, a post-build hook copies every locally built output into
-`.cache/nix-binary`. Nix requires a binary cache to hold the references of its
-paths, so the copy includes the output's runtime closure, such as glibc;
+`.cache/nix-binary`. The copy includes the output's runtime closure, such as
+glibc, because Nix requires a binary cache to hold the references of its paths;
 build-only tools such as compilers stay out. There is no size limit. Instead,
 the runner lists the build closure of the checks it ran, and the job removes
 every cached path outside that list before saving. Builds of older versions
 therefore leave the cache, which holds only what the target's current version
 builds locally, with its runtime closure. Before saving, the job also deletes
-Nix's local record of binary-cache lookups, so the next run does not reuse stale
-answers about pruned or newly added paths.
+Nix's local record of binary-cache lookups, which keeps the next run from
+reusing stale answers about pruned or newly added paths.
 
 The module's `builds` export permits exact artifacts. The harness includes
 permissions from selected modules and their default/individual-line public-entry
@@ -148,7 +148,7 @@ dry-run. Restoring a cache does not expand build permission.
 
 [Cost and reports](catalog-contract.md#cost-and-reports) sets the duration
 targets for the PR flow and each module, and what a report records. Targets are
-measured, not enforced: the runner and the jobs set no time limits, so a slow
+measured, not enforced: the runner and the jobs set no time limits, and a slow
 check finishes and reports its actual duration. Only cache transfers stop after
 two minutes, because a stuck transfer produces no check result: the restore and
 save steps, and each post-build copy into the cache. A hung job runs until

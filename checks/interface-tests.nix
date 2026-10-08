@@ -11,9 +11,22 @@ let
   defaults = evalSystem [ ];
   custom = evalSystem [
     {
-      limanix.user.shell = pkgs.zsh;
+      limanix = {
+        user.shell = pkgs.zsh;
+        session.command = "${pkgs.coreutils}/bin/true";
+        help.example = {
+          summary = "An example topic.";
+          commands = [ "example" ];
+          tips = [
+            {
+              label = "Run";
+              text = "example --run";
+            }
+          ];
+          guide = "https://example.invalid/guide";
+        };
+      };
       programs.zsh.enable = true;
-      limanix.session.command = "${pkgs.coreutils}/bin/true";
     }
   ];
   force = field: { config, ... }: {
@@ -30,7 +43,20 @@ in
     publicInterface =
       defaults.limanix.user.shell.outPath == pkgs.bashInteractive.outPath
       && defaults.limanix.session.command == null
-      && builtins.isList defaults.limanix.session.providers;
+      && builtins.isList defaults.limanix.session.providers
+      && defaults.limanix.help == { };
+    helpCard =
+      custom.limanix.help.example.title == "example"
+      && custom.limanix.help.example.summary == "An example topic."
+      && custom.limanix.help.example.commands == [ "example" ]
+      &&
+        custom.limanix.help.example.tips == [
+          {
+            label = "Run";
+            text = "example --run";
+          }
+        ]
+      && custom.limanix.help.example.guide == "https://example.invalid/guide";
     identityDeclaration =
       declarations.options.limanix.user.name.readOnly
       && declarations.options.limanix.user.home.readOnly
@@ -59,6 +85,33 @@ in
         ])
       ];
       message = "limanix.session.command";
+    };
+    longHelpLabel = {
+      modules = [
+        {
+          limanix.help.example = {
+            summary = "An example topic.";
+            tips = [
+              {
+                label = "Far too long";
+                text = "example";
+              }
+            ];
+          };
+        }
+        (
+          { config, ... }:
+          {
+            assertions = [
+              {
+                assertion = builtins.deepSeq config.limanix.help true;
+                message = "Interface test: force limanix.help";
+              }
+            ];
+          }
+        )
+      ];
+      message = "limanix.help";
     };
     invalidShell = {
       modules = [

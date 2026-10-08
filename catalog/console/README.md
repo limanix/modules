@@ -61,8 +61,9 @@ enable Docker or create a Kubernetes cluster.
 The catalog release pins the shared configuration and package sources. User
 history, tmux snapshots, editor state and GitHub credentials live in the VM
 user's home. Updating the VM preserves those files. The component pages explain
-supported customization. The shell, tmux, AstroNvim, Yazi and Lazygit default to
-Catppuccin Mocha.
+supported customization. The shell, tmux, AstroNvim, Yazi and Lazygit use the
+guest's theme: Catppuccin Mocha, unless `[theme]` in `limanix.toml` selects
+another flavor.
 
 To change the login shell or disable the additional tmux navigation keys, select
 a custom module alongside Console:
