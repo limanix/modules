@@ -10,6 +10,8 @@ let
   selected = lib.unique config.lmx.internal.terraform.versions;
 in
 {
+  imports = [ ./help.nix ];
+
   options.lmx.internal.terraform.versions = lib.mkOption {
     type = lib.types.listOf (lib.types.enum (builtins.attrNames releases));
     default = [ ];

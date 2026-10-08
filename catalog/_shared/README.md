@@ -123,9 +123,9 @@ run.newestCommand = import ../_shared/test/profile-commands.nix {
 
 > [!TIP]
 >
-> The platform sorts `systemPackages` by store path and then priority, so import
-> order never decides a collision. Give colliding commands explicit priorities
-> with `lib.setPrio`.
+> The platform sorts `systemPackages` by store path and then priority, and
+> import order never decides a collision. Give colliding commands explicit
+> priorities with `lib.setPrio`.
 
 ## Use another Nixpkgs revision
 

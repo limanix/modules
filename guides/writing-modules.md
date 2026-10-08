@@ -135,6 +135,7 @@ through `config` instead of hard-coding values such as the user name `dev`:
 | `limanix.user.name` | string, read-only | Guest account name supplied by the client |
 | `limanix.user.home` | string, read-only | Guest home directory supplied by the client |
 | `limanix.user.shell` | shell package | Login shell; Bash by default, or Zsh with `lmx:zsh` |
+| `limanix.help.<topic>` | help card | What `lmx help TOPIC` shows in the guest; see [Write the help card](#write-the-help-card) |
 
 The platform supplies `name` and `home` once. Modules read them; they do not
 redeclare the account identity. For a module-owned VM test, select its account
@@ -401,8 +402,8 @@ pkg-config --cflags --libs openssl
 
 The command prints compiler and linker flags with paths under `/nix/store`.
 Build systems that query pkg-config use these flags automatically. The compiler
-itself does not search the system profile for headers or libraries, so a build
-that includes `zlib.h` without asking pkg-config still fails with
+itself does not search the system profile for headers or libraries: a build that
+includes `zlib.h` without asking pkg-config still fails with
 `No such file or directory`. Point the compiler to the library for that command
 only:
 
@@ -484,6 +485,7 @@ and add its public metadata, tests and README. Keep this order:
 | Define the promise | A user action and expected result for the README |
 | Write the entry point | Self-contained implementation behind `default.nix` |
 | Add metadata | Discovery through `module.toml` |
+| Write the help card | `help.nix`, what the guest sees with `lmx help NAME` |
 | Export checks | Public `test.nix`, private fixtures under `test/` |
 | Write the page | Selectors, settings, corner cases and exact guarantee keys |
 | Validate | Selected `eval` and `run`; `vm.activation` when activation is promised |
@@ -592,6 +594,51 @@ Root `_shared/*.nix` declares generic schemas and infrastructure; the reserved
 `_shared/test.nix` is its test export. Pure helpers use `_shared/lib/`, test
 helpers use `_shared/test/`, and common data can use non-Nix files. The shared
 layer knows no application names or private release pins.
+
+### Write the help card
+
+Every catalog module explains itself in the guest. `lmx help dev-tools` prints
+the card that the module declares with `limanix.help.dev-tools`, in a new
+`help.nix` beside `default.nix`:
+
+```nix
+let
+  metadata = builtins.fromTOML (builtins.readFile ./module.toml);
+in
+{
+  limanix.help.dev-tools = {
+    title = "Dev tools";
+    summary = metadata.description;
+    commands = [ "jq" ];
+    tips = [
+      {
+        label = "Pretty";
+        text = "jq . data.json";
+      }
+    ];
+    guide = "https://limanix.dev/categories/nixos/modules/dev-tools/README.html";
+  };
+}
+```
+
+Import it from `default.nix` with `imports = [ ./help.nix ];`. A versioned
+module imports it from the file that every entry point shares, and builds the
+title and the per-line commands from the selected lines, as
+[`python/help.nix`](../catalog/python/help.nix) does.
+
+| Field | Rule |
+| -- | -- |
+| Topic | The module's directory name |
+| `title` | The tool's name; a versioned module adds the exact selected versions |
+| `summary` | The `description` from `module.toml` |
+| `commands` | Commands the module itself puts on `PATH`, most used first |
+| `tips` | 2 to 4 common tasks; each `label` has at most 10 characters, each `text` is one command or a short sentence |
+| `guide` | `https://limanix.dev/categories/nixos/modules/<name>/README.html` |
+
+The catalog checks every entry point: the card must exist, its summary and guide
+must follow the table, and every command it names must be on the entry point's
+`PATH`. A project module outside the catalog may declare a card too; the same
+fields apply, and its guide may be any address or `null`.
 
 ### Write the entry's page
 

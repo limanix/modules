@@ -1,5 +1,7 @@
 { config, pkgs, ... }:
 {
+  imports = [ ./help.nix ];
+
   environment.systemPackages = [
     (import ./package.nix {
       inherit pkgs;

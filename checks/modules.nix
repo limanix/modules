@@ -113,13 +113,52 @@ let
             lib.concatMap (path: graphDependencies rawEntries.${toString path}.graph) (entries item)
           )
         );
-        entryResults = {
-          default = defaultConfiguration.config.system.build.toplevel.drvPath;
+        configurations = {
+          default = defaultConfiguration;
         }
         // lib.mapAttrs' (line: configuration: {
           name = "line-${line}";
-          value = configuration.config.system.build.toplevel.drvPath;
+          value = configuration;
         }) lineConfigurations;
+        inherit (builtins.fromTOML (builtins.readFile (item.directory + "/module.toml"))) description;
+        guide = "https://limanix.dev/categories/nixos/modules/${item.name}/README.html";
+        helpCard =
+          entry: configuration:
+          let
+            cards = configuration.config.limanix.help;
+            card = cards.${item.name};
+          in
+          assert require (
+            cards ? ${item.name}
+          ) "${item.name} (${entry}): every entry point must declare limanix.help.${item.name}";
+          assert require (
+            card.summary == description
+          ) "${item.name}: limanix.help.${item.name}.summary must be the description in module.toml";
+          assert require (
+            card.guide == guide
+          ) "${item.name}: limanix.help.${item.name}.guide must be ${guide}";
+          card;
+        entryResults = lib.mapAttrs (
+          entry: configuration:
+          builtins.deepSeq (helpCard entry configuration) configuration.config.system.build.toplevel.drvPath
+        ) configurations;
+
+        helpRuns = lib.mapAttrs (
+          entry: configuration:
+          let
+            card = helpCard entry configuration;
+            profile = configuration.config.system.path;
+          in
+          pkgs.runCommand "help-commands-${item.name}-${entry}" { } ''
+            for command in ${lib.escapeShellArgs card.commands}; do
+              if [ ! -x ${profile}/bin/"$command" ]; then
+                echo "${item.name}: the help card names $command, but ${entry} has no such command on PATH" >&2
+                exit 1
+              fi
+            done
+            touch "$out"
+          ''
+        ) configurations;
         recommendations = builtins.listToAttrs (
           map (
             line:
@@ -189,12 +228,21 @@ let
     failures = lines failureRows;
     expected = lib.mapAttrs (_: test: lib.mapAttrs (_: value: value.message) test.fails) selectedTests;
   };
+  helpRoots =
+    group:
+    if group == "run" && suite == "module" then
+      lib.concatMap (
+        name: map (derivation: derivation.drvPath) (builtins.attrValues contexts.${name}.helpRuns)
+      ) selectedNames
+    else
+      [ ];
   runtimeManifest = group: {
     roots = lines (
       lib.unique (
         lib.concatMap (test: map (derivation: derivation.drvPath) (builtins.attrValues test.${group})) (
           builtins.attrValues selectedTests
         )
+        ++ helpRoots group
       )
     );
     builds = lines (

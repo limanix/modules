@@ -12,6 +12,8 @@ let
   ) colors) (builtins.readFile ./tmux.conf);
 in
 {
+  imports = [ ./help.nix ];
+
   options.lmx.tmux.navigation.enable = lib.mkOption {
     type = lib.types.bool;
     default = true;

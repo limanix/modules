@@ -1,6 +1,9 @@
 { pkgs, lib, ... }:
 {
-  imports = [ ../git/default.nix ];
+  imports = [
+    ../git/default.nix
+    ./help.nix
+  ];
 
   environment.systemPackages = [
     pkgs.ripgrep

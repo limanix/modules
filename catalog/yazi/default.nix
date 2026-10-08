@@ -111,6 +111,8 @@ let
   shellInit = builtins.readFile ./shell-init.sh;
 in
 {
+  imports = [ ./help.nix ];
+
   programs = {
     yazi = {
       enable = true;

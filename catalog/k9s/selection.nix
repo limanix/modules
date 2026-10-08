@@ -36,6 +36,8 @@ let
     '';
 in
 {
+  imports = [ ./help.nix ];
+
   options.lmx.internal.k9s = {
     versions = lib.mkOption {
       type = lib.types.listOf (lib.types.enum (builtins.attrNames releases));

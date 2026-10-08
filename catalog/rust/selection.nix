@@ -10,7 +10,10 @@ let
   selected = lib.unique config.lmx.internal.rust.versions;
 in
 {
-  imports = [ ./tool.nix ];
+  imports = [
+    ./help.nix
+    ./tool.nix
+  ];
 
   options.lmx.internal.rust.versions = lib.mkOption {
     type = lib.types.listOf (lib.types.enum (builtins.attrNames releases));

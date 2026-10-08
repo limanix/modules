@@ -13,7 +13,7 @@ lib.mapAttrsRecursive (_: lib.mkDefault) {
     vimcmd_symbol = "[❮](bold green)";
   };
   # The words of lmx status --short that need attention, such as restart. Inside tmux its status
-  # line shows them, so the prompt does not ask.
+  # line shows them, and the prompt does not ask.
   custom.lmx = {
     description = "What the guest owner needs attention for";
     command = ''[ -n "$TMUX" ] || exec /run/current-system/sw/bin/lmx status --short'';

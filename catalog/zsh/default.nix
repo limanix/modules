@@ -20,6 +20,8 @@ let
       '';
 in
 {
+  imports = [ ./help.nix ];
+
   limanix.user.shell = lib.mkDefault pkgs.zsh;
 
   environment.systemPackages = with pkgs; [

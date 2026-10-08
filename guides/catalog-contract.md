@@ -105,6 +105,13 @@ name and returns status 64 for an invalid name. Its provider owns the
 application behavior. `limanix.session.providers` lists the selectors the client
 suggests while the command is `null`; it defaults to `[ "lmx:tmux" ]`.
 
+`limanix.help.<topic>` is the help card that `lmx help TOPIC` shows in the
+guest: a `title`, a one-sentence `summary`, the `commands` the topic puts on
+`PATH`, up to four `tips` with labels of at most 10 characters, and an optional
+`guide` address. The platform renders the cards of the evaluated system into
+`/etc/lmx/help.json`. A catalog module declares the card of its own name; any
+module, catalog or not, may declare others.
+
 ## Capability providers and consumers
 
 A dependency imports another module's public entry point. NixOS handles repeat
@@ -195,6 +202,12 @@ evaluates system derivations without building them. The module import graph
 allows only the owning module's files, root `_shared` schemas and other modules'
 public entry points. Ordinary `import` and `readFile` boundaries need review;
 that graph cannot see them. Module-specific scenarios stay inside the module.
+
+Every entry point must declare `limanix.help.<name>` for its module, with the
+`description` of `module.toml` as its summary and
+`https://limanix.dev/categories/nixos/modules/<name>/README.html` as its guide.
+The run phase builds one `help-commands` check per entry point: every command
+the card names must be in `bin/` of that entry point's system profile.
 
 Public invocation:
 

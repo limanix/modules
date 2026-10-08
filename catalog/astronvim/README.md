@@ -157,9 +157,9 @@ Configure a Nerd Font and true color support in the terminal on macOS. For an
 SSH session the font belongs on the host, not in the VM.
 
 Yanks go to the Mac clipboard through the platform's `pbcopy`, inside or outside
-tmux. `p` puts the last yank without asking the terminal, so it never waits for
-a clipboard read. Paste from the Mac with Cmd+V in insert mode, or insert it
-with `:r !pbpaste`. The terminal on the Mac must allow OSC 52; see
+tmux. `p` puts the last yank without asking the terminal and never waits for a
+clipboard read. Paste from the Mac with Cmd+V in insert mode, or insert it with
+`:r !pbpaste`. The terminal on the Mac must allow OSC 52; see
 [Terminal and clipboard](https://limanix.dev/terminal.html).
 
 See the [AstroNvim guide](https://docs.astronvim.com/) and

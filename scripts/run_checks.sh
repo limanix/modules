@@ -417,8 +417,7 @@ main() {
 
   printf 'Checking suite=%s phase=%s system=%s cache=%s\n' \
     "$suite" "$phase" "$system" "${NIX_BUILD_CACHE:-configured Nix substituters}"
-  # check evaluates both manifests in one Nix process, so each configuration is
-  # evaluated once for both stages.
+
   manifest_directory="$temporary_directory/manifest"
   case "$phase" in
     check)

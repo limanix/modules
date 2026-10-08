@@ -10,6 +10,8 @@ let
   selected = lib.unique config.lmx.internal.taskfile.versions;
 in
 {
+  imports = [ ./help.nix ];
+
   options.lmx.internal.taskfile.versions = lib.mkOption {
     type = lib.types.listOf (lib.types.enum (builtins.attrNames releases));
     default = [ ];

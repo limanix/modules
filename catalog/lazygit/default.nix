@@ -3,7 +3,10 @@ let
   inherit (config.lmx.capabilities.theme) palette;
 in
 {
-  imports = [ ../git/default.nix ];
+  imports = [
+    ../git/default.nix
+    ./help.nix
+  ];
 
   programs.lazygit = {
     enable = true;
