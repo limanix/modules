@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v2
         with:
           command: ci/lint
 
@@ -89,7 +89,7 @@ jobs:
           sudo chown -R 0:0 .cache/nix .cache/nix-binary
 
       - name: Run checks
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        uses: mr-chelyshkin/actions/invoke-taskfile@v2
         with:
           command: >-
             ${{ matrix.target == 'common' && 'ci/test/common' || format('ci/test/modules MODULES={0}', matrix.target) }}
