@@ -13,8 +13,8 @@ Add the selector to `nixos.modules` and
 ## Versions
 
 The package comes from the catalog's
-[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
-This module has no version lines.
+[nixos-unstable revision](../../guides/concepts.md#nixos-version-and-package-pins),
+which the Update flow moves every week. This module has no version lines.
 
 ```console
 gcloud version

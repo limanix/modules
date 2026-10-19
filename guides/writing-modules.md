@@ -809,6 +809,12 @@ manually on native Linux with KVM when available; record unavailable checks as
 not run. PR and release workflows do not run them. Module-local additional pins
 remain separate from this base update.
 
+To see which lines no longer follow the source rule after an update:
+
+```console
+task --yes catalog/drift
+```
+
 ### Prepare the documentation
 
 ```console

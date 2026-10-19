@@ -104,6 +104,24 @@ jobs:
           NUMBER: ${{ steps.pr.outputs.pull-request-number }}
         run: gh pr merge "$NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash
 
+  drift:
+    name: Report catalog drift
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          github_access_token: ${{ github.token }}
+      - name: Keep the drift issue current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/report_drift.sh
+
   nixos:
     name: Move to the next NixOS
     runs-on: ubuntu-24.04

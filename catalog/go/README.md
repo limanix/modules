@@ -20,8 +20,7 @@ replaces that recommendation, including when Cozy imports the default.
 | -- | -- | -- | -- | -- |
 | `lmx:go`, `lmx:go-1.27` | 1.27.x | Base | Base | Default |
 | `lmx:go-1.26` | 1.26.x | Base | Base |  |
-| `lmx:go-1.25` | 1.25.13 | 0.22.0 | 1.26.3 | End of life |
-| `lmx:go-1.24` | 1.24.13 | 0.20.0 | 1.25.2 | End of life |
+| `lmx:go-1.25` | 1.25.x | Base | Base | End of life |
 
 Lines marked `.x` and their gopls and Delve come from the
 [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
@@ -115,8 +114,8 @@ and the [gopls editor setup](https://go.dev/gopls/#editors).
 
 | Guarantee | Checked by |
 | -- | -- |
-| Go, gopls and Delve versions, parsers and end-of-life warnings match the selected line | `eval.line-1.24`, `eval.line-1.25`, `eval.line-1.26`, `eval.line-1.27` |
+| Go, gopls and Delve versions, parsers and end-of-life warnings match the selected line | `eval.line-1.25`, `eval.line-1.26`, `eval.line-1.27` |
 | Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
 | The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
-| Each versioned Go command compiles a cgo package and passes its race-enabled test | `run.commands-1.24`, `run.commands-1.25`, `run.commands-1.26`, `run.commands-1.27` |
+| Each versioned Go command compiles a cgo package and passes its race-enabled test | `run.commands-1.25`, `run.commands-1.26`, `run.commands-1.27` |
 | Installing this module does not enable an editor | `eval.allLines` |

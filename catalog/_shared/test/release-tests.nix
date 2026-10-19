@@ -23,6 +23,13 @@ let
   resolve = resolver pinned;
   lazy = resolver (throw "Resolving pins evaluated a package set");
   rejects = line: !(builtins.tryEval (resolve line)).success;
+  source =
+    value:
+    import ../lib/source.nix {
+      source = value;
+      pkgs = base;
+      inherit pinned;
+    };
   older = resolve "1.9";
   newer = resolve "1.10";
   frozen = resolve "2";
@@ -62,6 +69,12 @@ in
     (lazy "1.9").pins == { }
     && (lazy "1.10").pins == { ${unstable.rev} = unstable.sha256; }
     && (lazy "2").pins == { ${snapshot} = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; };
+  sourceWithoutLines =
+    (source "unstable").packages.tool.version == "1.10.3"
+    && (source "unstable").pins == { ${unstable.rev} = unstable.sha256; }
+    && (source "base").packages.tool.version == "1.9.4"
+    && (source "base").pins == { }
+    && !(builtins.tryEval (source "nixos-26.05").pins).success;
   releaseRejects = builtins.all rejects [
     "3"
     "4"

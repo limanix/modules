@@ -183,16 +183,26 @@ A push to `main` that changes `flake.lock` or `catalog/_shared/unstable.toml`
 starts the tag flow, which creates the next `v<N>` unless the commit is tagged
 already. Other changes release when a tag is created by hand.
 
-The update flow runs every Monday and on request, in three jobs:
+The update flow runs every Monday and on request, in four jobs:
 
 | Job | Change | Pull request |
 | -- | -- | -- |
 | Nixpkgs | The base revision within the current NixOS release, in `flake.lock` | Merges itself once the checks pass |
 | nixos-unstable | The catalog's unstable revision, in `catalog/_shared/unstable.toml` | Merges itself once the checks pass |
 | Next NixOS | `flake.nix` to the next release, once `channels.nixos.org` publishes it | Waits for a reviewer to boot the image artifact of its checks |
+| Drift report | None: it compares every `releases.nix` with the base and unstable | Keeps one `Catalog drift` issue instead |
 
 The base and unstable jobs open separate pull requests: a line that moved in
 unstable holds back only its own update, never the base's security fixes.
+
+The drift report applies the source rule of
+[Support multiple versions](writing-modules.md#support-multiple-versions) to the
+current revisions. It lists new lines newer than a module's oldest one, lines
+that left their source, and snapshots or unstable lines that a newer source
+could take. A line counts when its version has no pre-release suffix. The job
+opens the issue when such a line appears, updates it every week and closes it
+once every line matches its source. `task --yes catalog/drift` prints the same
+report locally.
 
 PR and release workflows do not run VM tests. Activation checks remain available
 for manual execution on native Linux with KVM; their results are separate from

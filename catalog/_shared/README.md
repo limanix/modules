@@ -34,6 +34,7 @@ import.
 | Check which line's executable a command runs | [`test/profile-commands.nix`](#check-profile-commands) |
 | Take packages from another Nixpkgs revision | [`lmx.pins` and `pinned`](#use-another-nixpkgs-revision) |
 | Take each version line from the base, unstable or a snapshot | [`lib/release.nix`](#resolve-a-version-line) |
+| Take a module without lines from nixos-unstable | [`lib/source.nix`](#resolve-a-version-line) |
 | Offer a language server or parsers to editors | [`languageSupport`](#share-language-tools) |
 | Prove activation in a NixOS VM | [`test/platform.nix`](#write-a-vm-test) |
 | Use the guest's theme colors | [`theme`](#theme-colors) |
@@ -67,6 +68,7 @@ in
 | `selectedPackage configuration package` | `true` when the package beats others with the same name |
 | `packagePriority package` | The package's priority; `5` by default |
 | `profileFor configuration` | The system profile for `run` checks |
+| `sourceFor configuration source` | The packages and pins of a source such as `"unstable"`, as the evaluated system resolves them |
 | `verify label value configuration` | `true`, or an error naming `label` when `value` is not `true` |
 
 A profile is the evaluated `config.system.path`. Running it proves commands, not
@@ -204,6 +206,23 @@ assert release.matches go.version;
 Declare `release.pins` in `lmx.pins`: it never evaluates a package set. Other
 fields of the record are the module's own, and `release.resolve` resolves one of
 them as a source too, such as a separately pinned compiler.
+
+A module without lines takes its packages from a source directly with
+[lib/source.nix](lib/source.nix), such as a fast-moving CLI from unstable:
+
+```nix
+{ pkgs, pinned, ... }:
+let
+  unstable = import ../_shared/lib/source.nix {
+    source = "unstable";
+    inherit pkgs pinned;
+  };
+in
+{
+  lmx.pins = unstable.pins;
+  environment.systemPackages = [ unstable.packages.codex ];
+}
+```
 
 - Lines from the base and unstable record no version and receive their patch
   releases: the Update flow moves both revisions every Monday.
@@ -372,6 +391,7 @@ helpers; module checks cover real tools. Pin checks do not download a source.
 | Other record fields resolve as sources with their own pins | `eval.releaseFieldSources` |
 | Resolving a pin never evaluates a package set | `eval.releaseLazyPins` |
 | Invalid records and unknown lines fail | `eval.releaseRejects` |
+| A module without lines resolves the base or unstable as a source; an unknown source fails | `eval.sourceWithoutLines` |
 | VM platform loads public schemas, excludes the test export and follows the configured account | `eval.vmPlatform` |
 | Package ordering preserves values, context, duplicates and replacement semantics | `eval.canonicalPackages`, `eval.packageValues` |
 | Canonical profile retains the explicit package-priority winner | `run.packagePriority` |

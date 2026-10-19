@@ -99,6 +99,13 @@ tasks:
         vars:
           CMD: nix flake update nixpkgs --flake path:.
 
+  catalog/drift:
+    desc: Print where the catalog's lines differ from the base Nixpkgs and nixos-unstable
+    cmds:
+      - task: nix:_nix/tool
+        vars:
+          CMD: nix eval --raw --impure --file scripts/drift.nix markdown
+
   nixpkgs/update/unstable:
     desc: Move the catalog's nixos-unstable revision in catalog/_shared/unstable.toml to the channel's newest one
     cmds:

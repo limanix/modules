@@ -21,7 +21,6 @@ replaces that recommendation, including when Cozy imports the default.
 | `lmx:rust`, `lmx:rust-1.98` | 1.98.x | Base | Default |
 | `lmx:rust-1.97` | 1.97.1 | 2026-08-03 | End of life |
 | `lmx:rust-1.96` | 1.96.1 | 2026-06-15 | End of life |
-| `lmx:rust-1.95` | 1.95.0 | 2026-04-27 | End of life |
 
 Lines marked `.x` and their rust-analyzer come from the
 [base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
@@ -60,19 +59,19 @@ Select several lines to install them side by side:
 
 ```toml
 [nixos]
-modules = ["lmx:rust-1.95", "lmx:rust-1.98"]
+modules = ["lmx:rust-1.96", "lmx:rust-1.98"]
 ```
 
-Each line adds versioned commands: `cargo-1.95`, `rustc-1.95`, `rustdoc-1.95`,
-`rustfmt-1.95`, and `rust-analyzer-1.95` for Rust 1.95.
+Each line adds versioned commands: `cargo-1.96`, `rustc-1.96`, `rustdoc-1.96`,
+`rustfmt-1.96`, and `rust-analyzer-1.96` for Rust 1.96.
 
 ```console
-cargo-1.95 build
-cargo-1.95 clippy
+cargo-1.96 build
+cargo-1.96 clippy
 ```
 
-`cargo-1.95` puts the whole Rust 1.95 toolchain first on `PATH`.
-`cargo-1.95 fmt` and `cargo-1.95 clippy` use the matching tools by default.
+`cargo-1.96` puts the whole Rust 1.96 toolchain first on `PATH`.
+`cargo-1.96 fmt` and `cargo-1.96 clippy` use the matching tools by default.
 Cargo's
 [environment overrides](https://doc.rust-lang.org/cargo/reference/environment-variables.html),
 such as `RUSTC`, `RUSTDOC`, and `RUSTFMT`, can select different executables.
@@ -106,8 +105,8 @@ and the
 
 | Guarantee | Checked by |
 | -- | -- |
-| The toolchain, native build tools, parser and end-of-life warnings match the selected line | `eval.line-1.95`, `eval.line-1.96`, `eval.line-1.97`, `eval.line-1.98` |
+| The toolchain, native build tools, parser and end-of-life warnings match the selected line | `eval.line-1.96`, `eval.line-1.97`, `eval.line-1.98` |
 | Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
 | The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
-| Each versioned Cargo builds and tests offline, then runs fmt and Clippy | `run.commands-1.95`, `run.commands-1.96`, `run.commands-1.97`, `run.commands-1.98` |
+| Each versioned Cargo builds and tests offline, then runs fmt and Clippy | `run.commands-1.96`, `run.commands-1.97`, `run.commands-1.98` |
 | Installing this module does not enable an editor | `eval.allLines` |
