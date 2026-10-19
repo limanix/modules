@@ -1,4 +1,3 @@
-# The base disk of a LimaNix guest: an EFI system partition and a btrfs root.
 {
   config,
   lib,

@@ -1,4 +1,3 @@
-# The guest platform: what the base disk and every rebuilt guest must agree on.
 {
   config,
   lib,

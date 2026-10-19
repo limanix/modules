@@ -216,7 +216,6 @@ read_primary_error() {
   printf '%s' "$diagnostic"
 }
 
-# Reads an eval manifest directory: results, expected failures and messages.
 run_evaluation_checks() {
   local manifest=$1 stage_started_at=$SECONDS
   cat "$manifest/results.json"
@@ -363,7 +362,6 @@ record_live_cache_paths() {
   fi
 }
 
-# Reads a run or vm manifest directory: roots and permitted local builds.
 run_execution_checks() {
   stage=$1 manifest=$2
   test_derivations=()
