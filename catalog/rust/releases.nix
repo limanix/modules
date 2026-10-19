@@ -18,7 +18,7 @@
     endOfLife = true;
   };
   "1.98" = {
-    source = "base";
+    source = "unstable";
     package = "rust_1_98";
     endOfLife = false;
   };

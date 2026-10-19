@@ -18,13 +18,15 @@ replaces that recommendation, including when Cozy imports the default.
 
 | Selector | Rust | rust-analyzer | Notes |
 | -- | -- | -- | -- |
-| `lmx:rust`, `lmx:rust-1.98` | 1.98.x | Base | Default |
+| `lmx:rust`, `lmx:rust-1.98` | 1.98.x | Unstable | Default |
 | `lmx:rust-1.97` | 1.97.1 | 2026-08-03 | End of life |
 | `lmx:rust-1.96` | 1.96.1 | 2026-06-15 | End of life |
 
-Lines marked `.x` and their rust-analyzer come from the
-[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
-and receive its updates with each catalog release.
+Lines marked `.x` and their rust-analyzer come from the catalog's
+[nixos-unstable revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its updates with each catalog release. NixOS 26.05 builds Clippy
+only for its default Rust, 1.95: Rust 1.98 comes from nixos-unstable, where it
+is the default.
 
 rustc, Cargo, rustfmt, and Clippy come from the same Rust release. GCC,
 pkg-config, and GDB come from the

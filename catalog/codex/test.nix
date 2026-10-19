@@ -13,5 +13,6 @@ in
   run.commands = import ./test/commands.nix {
     inherit pkgs;
     profile = helpers.profileFor configuration;
+    inherit (unstable.packages.codex) version;
   };
 }
