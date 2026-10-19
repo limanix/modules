@@ -15,10 +15,10 @@ in
       (
         line:
         let
-          release = releases.versions.${line};
+          release = releases.${line};
           tools = toolsFor line;
         in
-        builtins.hasAttr release.buildSource releases.sources
+        builtins.isAttrs release.buildSource
         && tools.k9s.stdenv.drvPath == tools.buildStdenv.drvPath
         && tools.k9s.passthru.go.version == tools.buildGo.version
       )

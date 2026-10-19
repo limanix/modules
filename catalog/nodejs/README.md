@@ -17,10 +17,14 @@ selection replaces that recommendation, including when Cozy imports the default.
 
 | Selector | Node.js | Notes |
 | -- | -- | -- |
-| `lmx:nodejs`, `lmx:nodejs-26` | 26.9.0 | Default |
+| `lmx:nodejs`, `lmx:nodejs-26` | 26.x | Default |
 | `lmx:nodejs-25` | 25.9.0 | End of life |
-| `lmx:nodejs-24` | 24.20.0 |  |
+| `lmx:nodejs-24` | 24.x |  |
 | `lmx:nodejs-23` | 23.11.0 | End of life |
+
+Lines marked `.x` come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its patch releases with each catalog release.
 
 Each line includes npm and npx for its Node.js version. Support status follows
 the [Node.js release lifecycle](https://nodejs.org/en/about/previous-releases).

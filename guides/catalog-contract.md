@@ -1,6 +1,6 @@
 # Catalog contract
 
-This document defines the module contract, revision 3.
+This document defines the module contract, revision 4.
 
 ## NixOS foundation
 
@@ -40,15 +40,16 @@ catalog/<name>/
 ├── module.toml          discovery metadata
 ├── default.nix          default public entry point
 ├── versions/<line>.nix  one public entry point per declared line
+├── releases.nix         where each line's packages come from
 ├── test.nix             public test export
 ├── test/                private test code and fixtures
 ├── README.md            usage, guarantees and corner cases
 └── ...                  private implementation
 ```
 
-`module.toml`, entry points, documented options and `test.nix` are the machine
-interface. The README is the public human interface. Other filenames are
-private; a harness must not depend on their names or layout.
+`module.toml`, `releases.nix`, entry points, documented options and `test.nix`
+are the machine interface. The README is the public human interface. Other
+filenames are private; a harness must not depend on their names or layout.
 
 ### Discovery metadata
 
@@ -160,6 +161,23 @@ Adding or removing lines and changing `default` require a catalog release.
 Removing a line is incompatible: release notes explain the migration and link to
 the previous release.
 
+### Release maps
+
+A versioned module whose lines come from Nixpkgs maps exactly its declared lines
+in `releases.nix`; the harness compares them with `module.toml`. Each record
+names its `source`, its `package` attribute and its `endOfLife` status: `true`,
+`false` or `null` when unknown.
+
+| Source | Packages | Version |
+| -- | -- | -- |
+| `"base"` | The system's `pkgs`, from `flake.lock` | Not recorded: the package must stay on the line |
+| `"unstable"` | The catalog's nixos-unstable revision in `_shared/unstable.toml` | Not recorded: the package must stay on the line |
+| `{ rev, sha256 }` | A snapshot of that Nixpkgs revision | The exact `version`, which the package must match |
+
+The shared resolver `_shared/lib/release.nix` returns the record with the line's
+package set, its pin and its version check, and rejects a record that breaks
+these rules. Other fields of a record belong to its module.
+
 ## Package pins and unfree permissions
 
 The base Nixpkgs revision comes from `flake.lock`. A module declares any
@@ -175,8 +193,9 @@ breaks this contract.
 
 Within a system, all modules share the same lazy package set for one revision.
 Every declared revision uses the same architecture, empty overlays and effective
-unfree policy. No selected revision or module package recipe is registered
-centrally.
+unfree policy. The catalog's nixos-unstable revision in `_shared/unstable.toml`
+is the only revision registered centrally; module package recipes stay in their
+modules.
 
 An unfree module declares a constant list through
 `nixpkgs.config.allowUnfreePackages`. The base package set applies it; the
@@ -191,7 +210,7 @@ fixture applies its own merged list.
 | `test.nix` | Shared checks using the same test ABI, without module metadata or a selector |
 | `lib/` | Pure generic functions |
 | `test/` | Generic fixtures and test helpers |
-| Non-Nix files | Common data such as the palette |
+| Non-Nix files | Common data such as the palette and the unstable revision |
 
 ## Required checks for every module
 

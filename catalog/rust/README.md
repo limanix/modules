@@ -18,10 +18,14 @@ replaces that recommendation, including when Cozy imports the default.
 
 | Selector | Rust | rust-analyzer | Notes |
 | -- | -- | -- | -- |
-| `lmx:rust`, `lmx:rust-1.98` | 1.98.1 | 2026-08-03 | Default |
+| `lmx:rust`, `lmx:rust-1.98` | 1.98.x | Base | Default |
 | `lmx:rust-1.97` | 1.97.1 | 2026-08-03 | End of life |
 | `lmx:rust-1.96` | 1.96.1 | 2026-06-15 | End of life |
 | `lmx:rust-1.95` | 1.95.0 | 2026-04-27 | End of life |
+
+Lines marked `.x` and their rust-analyzer come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its updates with each catalog release.
 
 rustc, Cargo, rustfmt, and Clippy come from the same Rust release. GCC,
 pkg-config, and GDB come from the

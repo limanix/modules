@@ -6,27 +6,28 @@
   ...
 }:
 let
-  catalog = import ./releases.nix;
-  releases = catalog.versions;
+  releases = import ./releases.nix;
   versions = lib.unique config.lmx.internal.k9s.versions;
   inherit (config.lmx.internal.k9s) packages;
   selected = map (version: packages.${version}) versions;
-  sources = lib.unique (
-    lib.concatMap (
-      version:
-      let
-        release = releases.${version};
-      in
-      [ release.source ] ++ lib.optional (release ? buildSource) release.buildSource
-    ) versions
-  );
+  # Each selected line pins its own source and, when it has one, its compiler's.
+  pinsOf =
+    version:
+    let
+      release = import ../_shared/lib/release.nix {
+        releases = ./releases.nix;
+        line = version;
+        inherit pkgs pinned;
+      };
+    in
+    release.pins
+    // lib.optionalAttrs (release ? buildSource) (release.resolve release.buildSource).pins;
+  # Lines rank by their numbers: lines from the base or unstable record no exact version.
   priority =
-    tools:
+    line:
     lib.meta.defaultPriority
     - builtins.length (
-      builtins.filter (release: lib.versionOlder release.version tools.k9s.version) (
-        builtins.attrValues releases
-      )
+      builtins.filter (other: lib.versionOlder other line) (builtins.attrNames releases)
     );
   versionCommand =
     version:
@@ -55,23 +56,13 @@ in
     };
   };
   config = {
-    lmx.pins = lib.listToAttrs (
-      map (
-        name:
-        let
-          source = catalog.sources.${name};
-        in
-        {
-          name = source.rev;
-          value = source.sha256;
-        }
-      ) sources
-    );
+    lmx.pins = lib.foldl' (pins: version: pins // pinsOf version) { } versions;
     lmx.internal.k9s.packages = lib.genAttrs versions (
-      version: import ./packages.nix { inherit version pinned; }
+      version: import ./packages.nix { inherit version pinned pkgs; }
     );
     environment.systemPackages =
-      map (tools: lib.setPrio (priority tools) tools.k9s) selected ++ map versionCommand versions;
+      map (version: lib.setPrio (priority version) packages.${version}.k9s) versions
+      ++ map versionCommand versions;
     warnings = lib.concatMap (
       tools:
       lib.optional (

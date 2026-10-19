@@ -7,16 +7,20 @@ version:
 }:
 let
   tools = import ./packages.nix {
-    inherit version pinned;
+    inherit version pinned pkgs;
   };
 
-  catalog = import ./releases.nix;
-  source = catalog.sources.${catalog.versions.${version}.source};
-  releases = builtins.attrValues catalog.versions;
-  olderReleases = builtins.filter (
-    release: lib.versionOlder release.version tools.nodejs.version
-  ) releases;
-  rank = builtins.length olderReleases;
+  release = import ../_shared/lib/release.nix {
+    releases = ./releases.nix;
+    line = version;
+    inherit pkgs pinned;
+  };
+  inherit (release) pins;
+  # Lines rank by their numbers: lines from the base or unstable record no exact version.
+  olderLines = builtins.filter (line: lib.versionOlder line version) (
+    builtins.attrNames (import ./releases.nix)
+  );
+  rank = builtins.length olderLines;
   priority = lib.meta.defaultPriority - rank;
 
   versionedNode =
@@ -43,7 +47,7 @@ in
   ];
 
   lmx = {
-    pins.${source.rev} = source.sha256;
+    inherit pins;
     internal.nodejs.packages.${version} = tools;
 
     capabilities.languageSupport = {

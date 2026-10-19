@@ -18,10 +18,14 @@ replaces that recommendation, including when Cozy imports the default.
 
 | Selector | Go | gopls | Delve | Notes |
 | -- | -- | -- | -- | -- |
-| `lmx:go`, `lmx:go-1.27` | 1.27.1 | 0.23.0 | 1.27.2 | Default |
-| `lmx:go-1.26` | 1.26.7 | 0.23.0 | 1.27.2 |  |
+| `lmx:go`, `lmx:go-1.27` | 1.27.x | Base | Base | Default |
+| `lmx:go-1.26` | 1.26.x | Base | Base |  |
 | `lmx:go-1.25` | 1.25.13 | 0.22.0 | 1.26.3 | End of life |
 | `lmx:go-1.24` | 1.24.13 | 0.20.0 | 1.25.2 | End of life |
+
+Lines marked `.x` and their gopls and Delve come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its updates with each catalog release.
 
 Support status follows the
 [Go release policy](https://go.dev/doc/devel/release). Selecting an end-of-life

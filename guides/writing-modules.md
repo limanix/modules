@@ -645,7 +645,7 @@ fields apply, and its guide may be any address or `null`.
 | Part | Content |
 | -- | -- |
 | Summary and selector | What the user gets and how to select it |
-| Versions | Selectors, exact package versions, default and support status |
+| Versions | Selectors, package versions (exact for a pinned line, `<line>.x` for a line from the base), default and support status |
 | Use | First commands and their expected result |
 | Configuration and integration | Public options, dependencies, capabilities, files and services |
 | Corner cases | Limitations, conflicting choices and persistent data |
@@ -765,11 +765,21 @@ Keep a default fixture, one per needed line and one per different scenario.
 Reuse each configuration for related assertions. Coverage follows the promises
 and regression risks; there is no hard fixture-count limit.
 
-Base packages come from the locked `pkgs`. For an additional Nixpkgs revision,
-declare `lmx.pins.<revision> = <hash>` in the module and consume
-`pinned.<revision>` in configuration values. Do not fetch/import another Nixpkgs
-package set in a module-private package helper. Keep release maps and package
-helpers module-local; neither naming convention is public ABI.
+Base packages come from the locked `pkgs`. List the lines of a versioned module
+in `releases.nix` and resolve the selected one with the shared resolver;
+[Resolve a version line](../catalog/_shared/README.md#resolve-a-version-line)
+shows both. Each line takes its source by one rule: the base when the base has
+the line at the same or a newer version, otherwise the catalog's nixos-unstable
+revision when it has the line, otherwise a snapshot `{ rev, sha256 }` with its
+exact version. Lines from the base and unstable record no version: the module
+checks that the package stays on the line, and the line receives patch releases
+every week. A line never moves to an older version. The default is the newest
+line from the base, unless that line is end of life or refuses project files
+written for newer releases; without such a line, the default is the newest
+maintained line. The unstable revision and each snapshot add their own copy of
+the libraries their packages link to. Do not fetch/import another Nixpkgs
+package set in a module-private package helper; package helpers stay
+module-local.
 
 | Support status | README and warning |
 | -- | -- |

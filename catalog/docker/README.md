@@ -18,8 +18,12 @@ selection replaces that recommendation, including when Cozy imports the default.
 
 | Selector | Docker Engine and CLI | Notes |
 | -- | -- | -- |
-| `lmx:docker`, `lmx:docker-29` | 29.8.0 | Default |
+| `lmx:docker`, `lmx:docker-29` | 29.x | Default |
 | `lmx:docker-28` | 28.5.2 | End of life |
+
+Lines marked `.x` come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its patch releases with each catalog release.
 
 Support status follows
 [Moby's branch maintenance table](https://github.com/moby/moby/blob/master/project/BRANCHES-AND-TAGS.md).

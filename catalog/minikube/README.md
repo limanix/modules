@@ -20,9 +20,13 @@ selection replaces that recommendation, including when Cozy imports the default.
 
 | Selector | Minikube | Notes |
 | -- | -- | -- |
-| `lmx:minikube`, `lmx:minikube-1.38` | 1.38.1 | Default |
+| `lmx:minikube`, `lmx:minikube-1.38` | 1.38.x | Default |
 | `lmx:minikube-1.37` | 1.37.0 |  |
 | `lmx:minikube-1.36` | 1.36.0 |  |
+
+Lines marked `.x` come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its patch releases with each catalog release.
 
 Upstream maintenance status for these Minikube lines has not been confirmed. The
 catalog records their [EOL status](../../guides/catalog.md#versions) as unknown

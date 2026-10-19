@@ -19,14 +19,22 @@ the side-by-side behavior described below.
 
 | Selector | Task | Notes |
 | -- | -- | -- |
-| `lmx:taskfile`, `lmx:taskfile-3.53` | 3.53.1 | Default |
+| `lmx:taskfile`, `lmx:taskfile-3.53` | 3.53.x | Default |
 | `lmx:taskfile-3.52` | 3.52.0 |  |
-| `lmx:taskfile-3.48` | 3.48.0 |  |
+| `lmx:taskfile-3.48` | 3.48.x |  |
+
+Lines marked `.x` come from the
+[base Nixpkgs revision or the catalog's nixos-unstable revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive their patch releases with each catalog release.
 
 Upstream ships fixes in its newest release and publishes no support policy for
 older minor lines. The catalog records their
 [EOL status](../../guides/catalog.md#versions) as unknown and does not emit an
 EOL warning for them.
+
+The default is the newest line, 3.53, from the catalog's nixos-unstable
+revision: Task refuses a `Taskfile.yml` whose `version` is newer than its own,
+and the catalog's NixOS release has only 3.48.
 
 ## Use
 

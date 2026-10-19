@@ -6,17 +6,21 @@ version:
   ...
 }:
 let
-  releases = import ./releases.nix;
-  source = releases.sources.${releases.versions.${version}.source};
+  release = import ../_shared/lib/release.nix {
+    releases = ./releases.nix;
+    line = version;
+    inherit pkgs pinned;
+  };
+  inherit (release) pins;
   tools = import ./packages.nix {
-    inherit version pinned;
+    inherit version pinned pkgs;
   };
 
-  releaseValues = builtins.attrValues releases.versions;
-  olderReleases = builtins.filter (
-    release: lib.versionOlder release.version tools.postgres.version
-  ) releaseValues;
-  priority = lib.meta.defaultPriority - 1 - builtins.length olderReleases;
+  # Lines rank by their numbers: lines from the base or unstable record no exact version.
+  olderLines = builtins.filter (line: lib.versionOlder line version) (
+    builtins.attrNames (import ./releases.nix)
+  );
+  priority = lib.meta.defaultPriority - 1 - builtins.length olderLines;
 
   versionedPostgres =
     pkgs.runCommandLocal "postgres-${version}-commands"
@@ -31,7 +35,7 @@ let
       '';
 in
 {
-  lmx.pins.${source.rev} = source.sha256;
+  lmx.pins = pins;
   lmx.internal.postgres.packages.${version} = tools;
 
   environment.systemPackages = [

@@ -18,9 +18,13 @@ the side-by-side behavior described below.
 
 | Selector | Terraform | Notes |
 | -- | -- | -- |
-| `lmx:terraform`, `lmx:terraform-1.16` | 1.16.4 | Default |
+| `lmx:terraform`, `lmx:terraform-1.16` | 1.16.x | Default |
 | `lmx:terraform-1.15` | 1.15.9 |  |
 | `lmx:terraform-1.14` | 1.14.9 |  |
+
+Lines marked `.x` come from the
+[catalog's nixos-unstable revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its patch releases with each catalog release.
 
 Upstream maintenance status for these Terraform CLI lines has not been
 confirmed. The catalog records their

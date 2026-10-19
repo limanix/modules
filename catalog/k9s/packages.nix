@@ -1,10 +1,17 @@
-{ version, pinned }:
+{
+  version,
+  pinned,
+  pkgs,
+}:
 let
-  releases = import ./releases.nix;
-  release = releases.versions.${version};
-  packageSet = name: pinned.${releases.sources.${name}.rev};
-  original = (packageSet release.source).${release.package};
-  builder = packageSet (release.buildSource or release.source);
+  release = import ../_shared/lib/release.nix {
+    releases = ./releases.nix;
+    line = version;
+    inherit pkgs pinned;
+  };
+  original = release.packages.${release.package};
+  builder =
+    if release ? buildSource then (release.resolve release.buildSource).packages else release.packages;
   # Reuse the application recipe and hashes with a separately pinned compiler.
   # Its upstream version test must also refer to this rebuilt package.
   k9s =
@@ -42,7 +49,7 @@ let
     inherit (package.meta) description license mainProgram;
   };
 in
-assert k9s.version == release.version;
+assert release.matches k9s.version;
 assert !(release ? buildSource) || fingerprint k9s == fingerprint original;
 {
   inherit k9s original;

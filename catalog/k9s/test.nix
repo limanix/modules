@@ -37,7 +37,7 @@ let
       }).commands;
   };
   inherit (lineTests) lines configurations allConfiguration;
-  rebuiltLines = builtins.filter (line: releases.versions.${line} ? buildSource) lines;
+  rebuiltLines = builtins.filter (line: releases.${line} ? buildSource) lines;
   localTests = import ./test/eval.nix {
     inherit verify rebuiltLines lib;
     toolsFor = line: toolsFor configurations.${line} line;

@@ -99,6 +99,35 @@ tasks:
         vars:
           CMD: nix flake update nixpkgs --flake path:.
 
+  nixpkgs/update/unstable:
+    desc: Move the catalog's nixos-unstable revision in catalog/_shared/unstable.toml to the channel's newest one
+    cmds:
+      - task: nix:_nix/tool
+        vars:
+          CMD: bash scripts/update_unstable.sh
+
+  release/build:
+    desc: "Build the base disk; ARCH=aarch64 or x86_64 (default: the host), natively only"
+    requires:
+      vars:
+        - name: ARCH
+          enum: [aarch64, x86_64]
+    vars:
+      ARCH: '{{.ARCH | default (ARCH | replace "arm64" "aarch64" | replace "amd64" "x86_64")}}'
+      host_arch: '{{ARCH | replace "arm64" "aarch64" | replace "amd64" "x86_64"}}'
+    preconditions:
+      - sh: test {{.ARCH | shellQuote}} = {{.host_arch | shellQuote}}
+        msg: Images build natively; build {{.ARCH}} on an {{.ARCH}} machine.
+    cmds:
+      - task: nix:_nix/tool
+        vars:
+          CMD: sh scripts/build_image.sh {{.ARCH}}
+          TASK_CONTEXT:
+            ref: >-
+              merge (dict) (dict
+              "CONTAINER_RUN_ARGS" (printf "--security-opt seccomp=unconfined --security-opt apparmor=unconfined %s %s" .nix_build_caps (.CONTAINER_RUN_ARGS | default ""))
+              "CONTAINER_VOLUMES" (printf "limanix-modules-nix:/nix %s" (.CONTAINER_VOLUMES | default ""))) (.TASK_CONTEXT | default .)
+
   docs/prepare:
     desc: >-
       Prepare this repository's pages for the LimaNix site in build/docs.

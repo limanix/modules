@@ -22,15 +22,18 @@ tests: a merged change was checked in its pull request.
 ```mermaid
 flowchart LR
     plan[Plan targets] --> test[Test: target × architecture]
+    plan --> image[Build image: architecture]
     lint[Lint] --> gate[Required gate]
     test --> gate
+    image --> gate
 ```
 
 | Job | Work | Selection |
 | -- | -- | -- |
-| `plan` | Git diff to test targets | Every run |
+| `plan` | Git diff to test targets and the image | Every run |
 | `lint` | Nixfmt, Statix, Deadnix and source Markdown formatting | Every run |
 | `test` | One target: `eval`, then `run` | Selected targets, on x86 and ARM |
+| `image` | The base disk, kept as an artifact for a week | Changes to the disk, on x86 and ARM |
 | `gate` | Require all selected jobs to succeed | Every run |
 
 A target is a catalog module or `common`, the shared and platform suites; the
@@ -50,6 +53,11 @@ catalog runs only when a change affects every module evaluation:
 
 Evaluation inputs are `catalog/_shared/**`, `interface.nix`, `flake.nix`,
 `flake.lock`, `checks/**` and `scripts/run_checks.sh`.
+
+The image builds when `flake.nix`, `flake.lock`, `platform.nix`, `image.nix`,
+`scripts/build_image.sh`, `Taskfile.yml` or the workflow change, and on a manual
+run. Its artifact is what a reviewer boots in Lima before merging a new NixOS
+release.
 
 Lint runs for every change. A module's `README.md` belongs to that module: its
 job validates the catalog structure, including each page's `## Guarantees`
@@ -165,15 +173,38 @@ unavailable KVM.
 
 A tag `v<N>` on a commit of `main` starts the release flow. It runs no tests:
 the tagged commit passed its pull request. The flow checks the tag, prepares the
-documentation sources with `build_docs.py`, publishes the GitHub release with
-that archive and notifies the client repository.
+documentation sources with `build_docs.py`, builds the base disk for both
+architectures, publishes the GitHub release with the documentation archive, the
+disks, their checksums and `image.json`, and notifies the client repository. A
+failed disk build leaves the tag without a release; rerunning the flow completes
+it.
+
+A push to `main` that changes `flake.lock` or `catalog/_shared/unstable.toml`
+starts the tag flow, which creates the next `v<N>` unless the commit is tagged
+already. Other changes release when a tag is created by hand.
+
+The update flow runs every Monday and on request, in three jobs:
+
+| Job | Change | Pull request |
+| -- | -- | -- |
+| Nixpkgs | The base revision within the current NixOS release, in `flake.lock` | Merges itself once the checks pass |
+| nixos-unstable | The catalog's unstable revision, in `catalog/_shared/unstable.toml` | Merges itself once the checks pass |
+| Next NixOS | `flake.nix` to the next release, once `channels.nixos.org` publishes it | Waits for a reviewer to boot the image artifact of its checks |
+
+The base and unstable jobs open separate pull requests: a line that moved in
+unstable holds back only its own update, never the base's security fixes.
 
 PR and release workflows do not run VM tests. Activation checks remain available
 for manual execution on native Linux with KVM; their results are separate from
 CI results.
 
-`nixpkgs/update` is an explicit local command and changes only the base revision
-in `flake.lock`. Additional revisions belong to the modules that declare them in
-`lmx.pins` and change only when those modules edit them. Shared
+`nixpkgs/update` and `nixpkgs/update/unstable` are the local forms of the same
+changes. Snapshot revisions belong to the modules that declare them in
+`releases.nix` and change only when those modules edit them. Shared
 `_module.args.pinned` resolves one lazy package set per revision within that
 system, using its architecture and unfree policy.
+
+Lines that come from the base or unstable move with it. Their modules check the
+line, not the patch: an update that brings patch releases passes, while one that
+moves a package to another line or removes it fails that module's eval check.
+Snapshots keep their exact versions.

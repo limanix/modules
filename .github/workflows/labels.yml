@@ -17,7 +17,7 @@ jobs:
     name: check label
     runs-on: ubuntu-24.04
     steps:
-      - uses: mr-chelyshkin/actions/check-changelog-label@v1
+      - uses: mr-chelyshkin/actions/changelog-label-check@v2
         with:
           allowed-labels: |
             feature
