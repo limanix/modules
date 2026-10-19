@@ -1,7 +1,6 @@
 #!/bin/bash
 # Moves the catalog's nixos-unstable revision in catalog/_shared/unstable.toml to the channel's
 # newest one and prints GitHub outputs: the revision before and after, and the new revision's date.
-# It needs only Bash, curl and Nix: the ci/nix container has no sed or jq.
 #
 # Usage: update_unstable.sh >> "$GITHUB_OUTPUT"
 set -euo pipefail

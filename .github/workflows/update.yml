@@ -44,6 +44,7 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: update/nixpkgs
+          labels: deps
           add-paths: flake.lock
           commit-message: Update Nixpkgs to ${{ steps.nixpkgs.outputs.date }}
           title: Update Nixpkgs to ${{ steps.nixpkgs.outputs.date }}
@@ -89,6 +90,7 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: update/unstable
+          labels: deps
           add-paths: catalog/_shared/unstable.toml
           commit-message: Update nixos-unstable to ${{ steps.unstable.outputs.date }}
           title: Update nixos-unstable to ${{ steps.unstable.outputs.date }}
@@ -152,6 +154,7 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: update/nixos-${{ steps.nixos.outputs.next }}
+          labels: deps
           add-paths: |
             flake.nix
             flake.lock

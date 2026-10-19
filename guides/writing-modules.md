@@ -689,9 +689,9 @@ defines its checks, including those of every declared line.
 | `ci/test/modules MODE=eval MODULES=dev-tools` | Public structure, entry points, recommendation, `eval` and `fails` |
 | `ci/test/modules MODE=run MODULES=dev-tools` | Declared native checks and local-build dry-run |
 | `ci/test/modules MODE=vm MODULES=dev-tools` | Declared activation checks on native Linux with KVM |
-| `ci/test/common` | Shared and platform evaluation and native checks together |
-| `ci/test/common SUITE=shared MODE=eval` | Shared infrastructure assertions and diagnostics |
-| `ci/test/common SUITE=platform MODE=run` | Native builder-permission regression |
+| `ci/test/layer` | Shared and platform evaluation and native checks together |
+| `ci/test/layer SUITE=shared MODE=eval` | Shared infrastructure assertions and diagnostics |
+| `ci/test/layer SUITE=platform MODE=run` | Native builder-permission regression |
 
 The same runner can be used directly on native Linux:
 
@@ -796,11 +796,10 @@ removals; removal needs a migration and link to the previous release.
 ### Update the NixOS base
 
 The root `flake.nix` selects the NixOS release; `flake.lock` fixes its revision.
-To update the revision within that release:
-
-```console
-task --yes nixpkgs/update
-```
+Every Monday the Update flow moves that revision within the release, and the
+catalog's unstable revision, each in its own pull request; see
+[Other automation](automation.md#other-automation). When such a pull request
+fails, fix the module's `releases.nix` on its branch.
 
 To change the release, update `inputs.nixpkgs.url` first. Review the lock
 change, update [Concepts](concepts.md#nixos-version-and-package-pins), and
@@ -809,11 +808,8 @@ manually on native Linux with KVM when available; record unavailable checks as
 not run. PR and release workflows do not run them. Module-local additional pins
 remain separate from this base update.
 
-To see which lines no longer follow the source rule after an update:
-
-```console
-task --yes catalog/drift
-```
+The weekly `Catalog drift` issue lists the lines that no longer follow the
+source rule.
 
 ### Prepare the documentation
 

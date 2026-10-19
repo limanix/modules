@@ -172,12 +172,12 @@ incomplete evidence.
 For shared and platform checks:
 
 ```console
-task --yes ci/test/common
-task --yes ci/test/common SUITE=shared MODE=eval
-task --yes ci/test/common SUITE=platform MODE=run
+task --yes ci/test/layer
+task --yes ci/test/layer SUITE=shared MODE=eval
+task --yes ci/test/layer SUITE=platform MODE=run
 ```
 
-`ci/test/common` runs shared, then platform, each with `eval` and then `run`.
+`ci/test/layer` runs shared, then platform, each with `eval` and then `run`.
 `MODE=eval` and `MODE=run` need `SUITE=shared` or `SUITE=platform`; the combined
 suite accepts only `check`. The same CLI on native Linux is
 `bash scripts/run_checks.sh SUITE MODE [module names]`; use `module check` or

@@ -98,7 +98,7 @@ jobs:
       - name: Run checks
         uses: mr-chelyshkin/actions/task-run@v2
         with:
-          task: ${{ matrix.target == 'common' && 'ci/test/common' || 'ci/test/modules' }}
+          task: ${{ matrix.target == 'common' && 'ci/test/layer' || 'ci/test/modules' }}
           args: |
             ${{ matrix.target != 'common' && format('MODULES={0}', matrix.target) || '' }}
             CONTAINER_ENVS=NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=1 NIX_BUILD_CORES=0${{ steps.cache.outputs.cache-hit != 'true' && ' NIX_BUILD_CACHE_HOOK=/workspace/scripts/cache_nix_build.sh' || '' }}

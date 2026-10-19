@@ -75,7 +75,7 @@ From the repository root, with Task and Docker:
 ```console
 task --yes ci/lint
 task --yes ci/test/modules MODULES=dev-tools
-task --yes ci/test/common
+task --yes ci/test/layer
 ```
 
 `dev-tools` is the illustrative entry in [Write a module](writing-modules.md);
@@ -86,7 +86,7 @@ both stages in that one evaluator, each configuration once; it then checks
 expected failures and builds the `run` exports. The common cycle runs shared,
 then platform checks.
 
-`ci/test/modules` defaults to `MODE=check`. `ci/test/common` defaults to
+`ci/test/modules` defaults to `MODE=check`. `ci/test/layer` defaults to
 `SUITE=common` and `MODE=check`; `MODE=eval` and `MODE=run` need `SUITE=shared`
 or `SUITE=platform`. Select an individual suite or stage when diagnosing a
 failure:
@@ -95,8 +95,8 @@ failure:
 | -- | -- |
 | `ci/test/modules MODE=eval MODULES=dev-tools` | Metadata, entry points, recommendation, Boolean assertions and expected diagnostics |
 | `ci/test/modules MODE=run MODULES=dev-tools` | Native execution after the local-build dry-run |
-| `ci/test/common SUITE=shared MODE=eval` | Shared schemas and test helpers |
-| `ci/test/common SUITE=platform MODE=run` | Native builder permissions |
+| `ci/test/layer SUITE=shared MODE=eval` | Shared schemas and test helpers |
+| `ci/test/layer SUITE=platform MODE=run` | Native builder permissions |
 
 On native Linux, the same runner is available directly:
 
@@ -201,18 +201,16 @@ current revisions. It lists new lines newer than a module's oldest one, lines
 that left their source, and snapshots or unstable lines that a newer source
 could take. A line counts when its version has no pre-release suffix. The job
 opens the issue when such a line appears, updates it every week and closes it
-once every line matches its source. `task --yes catalog/drift` prints the same
-report locally.
+once every line matches its source.
 
 PR and release workflows do not run VM tests. Activation checks remain available
 for manual execution on native Linux with KVM; their results are separate from
 CI results.
 
-`nixpkgs/update` and `nixpkgs/update/unstable` are the local forms of the same
-changes. Snapshot revisions belong to the modules that declare them in
-`releases.nix` and change only when those modules edit them. Shared
-`_module.args.pinned` resolves one lazy package set per revision within that
-system, using its architecture and unfree policy.
+Snapshot revisions belong to the modules that declare them in `releases.nix` and
+change only when those modules edit them. Shared `_module.args.pinned` resolves
+one lazy package set per revision within that system, using its architecture and
+unfree policy.
 
 Lines that come from the base or unstable move with it. Their modules check the
 line, not the patch: an update that brings patch releases passes, while one that
