@@ -10,7 +10,6 @@ let
   versions = lib.unique config.lmx.internal.k9s.versions;
   inherit (config.lmx.internal.k9s) packages;
   selected = map (version: packages.${version}) versions;
-  # Each selected line pins its own source and, when it has one, its compiler's.
   pinsOf =
     version:
     let
@@ -22,7 +21,6 @@ let
     in
     release.pins
     // lib.optionalAttrs (release ? buildSource) (release.resolve release.buildSource).pins;
-  # Lines rank by their numbers: lines from the base or unstable record no exact version.
   priority =
     line:
     lib.meta.defaultPriority

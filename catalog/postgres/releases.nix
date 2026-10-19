@@ -1,5 +1,4 @@
 {
-  # https://www.postgresql.org/support/versioning/ (checked 2026-09-30).
   "16" = {
     source = "base";
     package = "postgresql_16";

@@ -1,8 +1,6 @@
-# Variables are supplied by workspace.nix.
 # shellcheck disable=SC2154
 set -uo pipefail
 
-# Keep the launcher alive on Ctrl-C; the application still receives SIGINT.
 trap ':' INT
 
 if test -x "$cozy_command"; then

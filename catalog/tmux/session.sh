@@ -9,8 +9,6 @@ if [[ "$name" == *.* || "$name" == *:* ]]; then
   printf "Limanix tmux session names cannot contain '.' or ':'.\n" >&2
   exit 64
 fi
-# tmux interprets -s as a format and a trailing semicolon as a command separator.
-# Its literal format preserves the name without executing either syntax.
 if [[ "$name" == *"#"* || "$name" == *";" ]]; then
   name=${name//#/##}
   name=${name//\}/#\}}

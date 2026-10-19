@@ -17,7 +17,6 @@ let
   source = record.source or (fail "needs a source");
   moving = source == "base" || source == "unstable";
   snapshot = builtins.isAttrs source;
-  # The package set of a source and the pin it declares. Pins never evaluate a package set.
   resolve =
     value:
     import ./source.nix {
@@ -49,6 +48,5 @@ checked
 // resolve source
 // {
   inherit resolve;
-  # Whether a package version belongs to this line.
   matches = version: if moving then lib.hasPrefix "${line}." version else version == record.version;
 }

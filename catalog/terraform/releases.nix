@@ -1,5 +1,4 @@
 {
-  # Upstream maintenance status for these CLI lines has not been confirmed.
   "1.14" = {
     source = {
       rev = "d30430e7eca9645a26e0e40000bcc31261aadc3c";

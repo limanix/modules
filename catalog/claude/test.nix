@@ -7,10 +7,7 @@ let
   helpers = import ../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   configuration = helpers.evaluate [ ./default.nix ];
   inherit (configuration) config;
-  # The package comes from the catalog's unstable revision, resolved as the system resolves it.
   unstable = helpers.sourceFor configuration "unstable";
-  # The system's package set carries the module's unfree permission; the
-  # runner's does not. Test and permit the exact derivation the system installs.
   installed = lib.findFirst (
     package: lib.getName package == "claude-code"
   ) null config.environment.systemPackages;

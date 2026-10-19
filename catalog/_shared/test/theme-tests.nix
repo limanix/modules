@@ -59,7 +59,6 @@ in
       message = "lmx.capabilities.theme.palette' is read-only";
     };
   };
-  # The copy in palette.toml must equal Catppuccin's palette.json that Nixpkgs packages.
   run.themePalette =
     pkgs.runCommand "shared-theme-palette"
       {

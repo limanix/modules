@@ -84,8 +84,6 @@ let
   basePackages = ownedPackages defaults;
   catalogPackages = ownedPackages catalog;
   thirdPartyPackages = ownedPackages thirdParty;
-  # Optional plugin integrations are explicit checkInputs in Nixpkgs. Stdenv
-  # removes those fields from the resulting derivation; retain metadata only.
   applicationCheckPlugins =
     plugin:
     let
@@ -101,7 +99,6 @@ let
     builtins.filter (
       input: lib.isDerivation input && (input.vimPlugin or false)
     ) annotated.lmxCheckPlugins;
-  # Follow application declarations only, never generic derivation inputs.
   withPluginDependencies =
     plugin:
     [ plugin ]
@@ -119,7 +116,6 @@ let
   );
   pluginBuilds = builtins.listToAttrs (
     map (plugin: {
-      # Package names can contain characters outside the public export grammar.
       name = "plugin${builtins.hashString "sha256" (builtins.unsafeDiscardStringContext plugin.drvPath)}-${metadata.default}";
       value = plugin;
     }) pluginPackages

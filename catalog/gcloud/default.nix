@@ -5,7 +5,6 @@
   ...
 }:
 let
-  # The CLI follows the catalog's nixos-unstable revision: upstream releases it every week.
   unstable = import ../_shared/lib/source.nix {
     source = "unstable";
     inherit pkgs pinned;

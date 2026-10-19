@@ -5,7 +5,6 @@
   source,
   pkgs,
   pinned,
-  # Reports an invalid source; release.nix names the module and line.
   fail ? message: throw "Package source: ${message}",
 }:
 let

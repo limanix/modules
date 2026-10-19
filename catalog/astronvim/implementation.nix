@@ -14,8 +14,6 @@ let
       )
     );
   };
-  # Lazy identifies require-triggered plugins by their directory basename.
-  # Keep plugin IDs in these paths while retaining immutable Nix package sources.
   sourceEntries = [
     {
       name = "AstroNvim";
@@ -73,7 +71,6 @@ in
   );
 
   programs = {
-    # Mason may install foreign Linux binaries. Language modules remain preferred.
     nix-ld.enable = lib.mkDefault true;
     neovim = {
       defaultEditor = lib.mkDefault true;

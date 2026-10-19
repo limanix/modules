@@ -12,8 +12,6 @@ let
   original = release.packages.${release.package};
   builder =
     if release ? buildSource then (release.resolve release.buildSource).packages else release.packages;
-  # Reuse the application recipe and hashes with a separately pinned compiler.
-  # Its upstream version test must also refer to this rebuilt package.
   k9s =
     if release ? buildSource then
       (original.override {
@@ -27,8 +25,6 @@ let
         inherit k9s;
       }).overrideAttrs
         (previous: {
-          # K9s fixtures use package-relative paths. Matching the build's path
-          # mode lets every upstream test reuse compiled dependencies.
           checkFlags = (previous.checkFlags or [ ]) ++ [ "-trimpath" ];
         })
     else

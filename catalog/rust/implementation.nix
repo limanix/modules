@@ -16,7 +16,6 @@ let
     inherit pkgs pinned;
   };
   inherit (release) pins;
-  # Lines rank by their numbers: lines from the base or unstable record no exact version.
   olderLines = builtins.filter (line: lib.versionOlder line version) (
     builtins.attrNames (import ./releases.nix)
   );

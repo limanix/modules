@@ -1,6 +1,4 @@
 {
-  # Latest maintained minors on 2026-09-30: 3.22 and 4.3.
-  # https://helm.sh/docs/topics/version_skew/#supported-versions
   "3.20" = {
     source = "base";
     package = "kubernetes-helm";

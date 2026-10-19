@@ -1,5 +1,4 @@
 {
-  # Upstream maintenance status for these lines has not been confirmed.
   "1.36" = {
     source = {
       rev = "d581d019cf215cd74c9d55824b72e72481df72d2";
