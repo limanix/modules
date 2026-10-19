@@ -117,11 +117,23 @@ exact base Nixpkgs revision. That base provides NixOS options and the default
 `pkgs` package collection. Use the same release in package and option searches
 when writing a module.
 
-A module can declare an additional revision in `lmx.pins`. Shared infrastructure
-resolves it for the system's architecture and effective unfree policy. The
-module owns its package choices. Pins fix sources; they do not follow the latest
-upstream release. A selector line identifies a supported module choice; its
+Besides the base, a line can come from the catalog's nixos-unstable revision,
+which carries the newest releases of fast-moving tools, or from a snapshot of an
+older revision. The Update flow moves the base and the unstable revision every
+week; a snapshot never moves. Shared infrastructure resolves every revision for
+the system's architecture and effective unfree policy. The module owns its
+package choices. A selector line identifies a supported module choice; its
 README lists the exact packages and the scope of that line.
+
+The default line of a versioned module comes from the base when the base has a
+suitable line, even when nixos-unstable has a newer release. That default shares
+the system's libraries and moves with every base update. Otherwise the default
+is the newest maintained line from unstable or a snapshot: Helm 3.20 in the base
+is end of life, and Task 3.48 refuses a `Taskfile.yml` written for a newer
+release. Other lines are selected explicitly, such as `lmx:python-3.12`. The
+unstable revision and each snapshot bring their own copy of the libraries their
+packages link to, such as glibc and OpenSSL, and only a VM that selects such a
+line pays for it.
 
 ## Catalog compatibility
 

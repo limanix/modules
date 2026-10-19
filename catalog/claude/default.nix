@@ -1,10 +1,15 @@
-{ pkgs, ... }:
+{ pkgs, pinned, ... }:
+let
+  unstable = import ../_shared/lib/source.nix {
+    source = "unstable";
+    inherit pkgs pinned;
+  };
+in
 {
   imports = [ ./help.nix ];
 
   nixpkgs.config.allowUnfreePackages = [ "claude-code" ];
-  environment.systemPackages = [ pkgs.claude-code ];
-  # The catalog pins the version: keep claude update and claude install from
-  # placing a separate self-updating copy under ~/.local.
+  lmx.pins = unstable.pins;
+  environment.systemPackages = [ unstable.packages.claude-code ];
   environment.sessionVariables.DISABLE_UPDATES = "1";
 }

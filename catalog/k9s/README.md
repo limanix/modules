@@ -14,9 +14,13 @@ Add the selector to your VM's `nixos.modules` list and
 
 | Selector | K9s | Notes |
 | -- | -- | -- |
-| `lmx:k9s`, `lmx:k9s-0.51` | 0.51.0 | Default |
+| `lmx:k9s`, `lmx:k9s-0.51` | 0.51.x | Default |
 | `lmx:k9s-0.50` | 0.50.18 |  |
 | `lmx:k9s-0.40` | 0.40.10 |  |
+
+Lines marked `.x` come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its patch releases with each catalog release.
 
 Upstream maintenance status for these lines has not been confirmed. The catalog
 records their [EOL status](../../guides/catalog.md#versions) as unknown and does

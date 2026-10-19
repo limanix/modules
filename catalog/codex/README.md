@@ -13,9 +13,9 @@ Add the selector to your VM's `nixos.modules` list and
 ## Versions
 
 Codex comes from the catalog's
-[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins).
-This module has no version lines. Inside the VM, `codex --version` shows the
-installed version.
+[nixos-unstable revision](../../guides/concepts.md#nixos-version-and-package-pins),
+which the Update flow moves every week. This module has no version lines. Inside
+the VM, `codex --version` shows the installed version.
 
 ## Use
 

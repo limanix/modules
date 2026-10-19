@@ -13,7 +13,7 @@ flowchart LR
     subgraph shared[_shared]
         schemas[Schemas: languageSupport, pins, theme]
         helpers[Test helpers in test/]
-        data[palette.toml]
+        data[palette.toml, unstable.toml]
     end
     default -- sets and reads lmx options --> schemas
     default -. reads .-> data
@@ -33,6 +33,8 @@ import.
 | Check each version line of my module | [`test/lines.nix`](#test-version-lines) |
 | Check which line's executable a command runs | [`test/profile-commands.nix`](#check-profile-commands) |
 | Take packages from another Nixpkgs revision | [`lmx.pins` and `pinned`](#use-another-nixpkgs-revision) |
+| Take each version line from the base, unstable or a snapshot | [`lib/release.nix`](#resolve-a-version-line) |
+| Take a module without lines from nixos-unstable | [`lib/source.nix`](#resolve-a-version-line) |
 | Offer a language server or parsers to editors | [`languageSupport`](#share-language-tools) |
 | Prove activation in a NixOS VM | [`test/platform.nix`](#write-a-vm-test) |
 | Use the guest's theme colors | [`theme`](#theme-colors) |
@@ -66,6 +68,7 @@ in
 | `selectedPackage configuration package` | `true` when the package beats others with the same name |
 | `packagePriority package` | The package's priority; `5` by default |
 | `profileFor configuration` | The system profile for `run` checks |
+| `sourceFor configuration source` | The packages and pins of a source such as `"unstable"`, as the evaluated system resolves them |
 | `verify label value configuration` | `true`, or an error naming `label` when `value` is not `true` |
 
 A profile is the evaluated `config.system.path`. Running it proves commands, not
@@ -158,6 +161,75 @@ source does not guarantee a binary-cache hit; local builds follow the
 [local-build policy](../../guides/catalog-contract.md#local-builds-and-runtime).
 
 </details>
+
+## Resolve a version line
+
+A versioned module whose lines come from Nixpkgs lists them in `releases.nix`,
+one record per line:
+
+```nix
+{
+  "1.27" = { source = "base"; package = "go_1_27"; endOfLife = false; };
+  "1.28" = { source = "unstable"; package = "go_1_28"; endOfLife = false; };
+  "1.25" = {
+    source = { rev = "<revision>"; sha256 = "<sha256>"; };
+    package = "go_1_25";
+    version = "1.25.13";
+    endOfLife = true;
+  };
+}
+```
+
+| Source | Packages | Version check |
+| -- | -- | -- |
+| `"base"` | The system's `pkgs`, from `flake.lock` | The line: `1.27` accepts any `1.27.x` |
+| `"unstable"` | The catalog's nixos-unstable revision in [`unstable.toml`](unstable.toml) | The line |
+| `{ rev, sha256 }` | That snapshot | The exact `version` of the record |
+
+[lib/release.nix](lib/release.nix) resolves the selected line. The record comes
+back with the line's package set, the pin it needs and its version check:
+
+```nix
+{ version, pinned, pkgs }:
+let
+  release = import ../_shared/lib/release.nix {
+    releases = ./releases.nix;
+    line = version;
+    inherit pkgs pinned;
+  };
+  go = release.packages.${release.package};
+in
+assert release.matches go.version;
+{ inherit go; }
+```
+
+Declare `release.pins` in `lmx.pins`: it never evaluates a package set. Other
+fields of the record are the module's own, and `release.resolve` resolves one of
+them as a source too, such as a separately pinned compiler.
+
+A module without lines takes its packages from a source directly with
+[lib/source.nix](lib/source.nix), such as a fast-moving CLI from unstable:
+
+```nix
+{ pkgs, pinned, ... }:
+let
+  unstable = import ../_shared/lib/source.nix {
+    source = "unstable";
+    inherit pkgs pinned;
+  };
+in
+{
+  lmx.pins = unstable.pins;
+  environment.systemPackages = [ unstable.packages.codex ];
+}
+```
+
+- Lines from the base and unstable record no version and receive their patch
+  releases: the Update flow moves both revisions every Monday.
+- A snapshot keeps its exact version and never moves.
+- The harness requires `releases.nix` to map exactly the lines of `module.toml`.
+  The resolver rejects a record without a valid source, package or `endOfLife`,
+  a version on a line from the base or unstable, and a snapshot without one.
 
 ## Share language tools
 
@@ -313,6 +385,13 @@ helpers; module checks cover real tools. Pin checks do not download a source.
 | Empty and unused pin values stay lazy in the actual loader | `eval.emptyPins`, `eval.lazyPins` |
 | Equal ordinary pin hashes agree; different ordinary hashes fail | `eval.pinDeclarations`, `fails.conflictingPins` |
 | Empty registry reaches the actual `pinned` module argument | `eval.pinWiring` |
+| The unstable revision has a full rev and an SRI hash | `eval.unstableRevision` |
+| Lines from the base and unstable resolve their package sets and pins and check only the line | `eval.releaseBase`, `eval.releaseUnstable` |
+| A snapshot resolves its pin and checks its exact version | `eval.releaseSnapshot` |
+| Other record fields resolve as sources with their own pins | `eval.releaseFieldSources` |
+| Resolving a pin never evaluates a package set | `eval.releaseLazyPins` |
+| Invalid records and unknown lines fail | `eval.releaseRejects` |
+| A module without lines resolves the base or unstable as a source; an unknown source fails | `eval.sourceWithoutLines` |
 | VM platform loads public schemas, excludes the test export and follows the configured account | `eval.vmPlatform` |
 | Package ordering preserves values, context, duplicates and replacement semantics | `eval.canonicalPackages`, `eval.packageValues` |
 | Canonical profile retains the explicit package-priority winner | `run.packagePriority` |

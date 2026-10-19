@@ -3,27 +3,35 @@ version: '3.53.1'
 
 includes:
   nix:
-    # v0.0.5
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/nix/Taskfile.yml
+    # v0.1.0
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/3aa8c569bdc71b41fa50fc33f66e2ef1317813ed/taskfiles/nix/Taskfile.yml
     internal: true
   python:
-    # v0.0.5
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/python/Taskfile.yml
+    # v0.1.0
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/3aa8c569bdc71b41fa50fc33f66e2ef1317813ed/taskfiles/python/Taskfile.yml
     internal: true
   markdown:
-    # v0.0.5
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/markdown/Taskfile.yml
+    # v0.1.0
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/3aa8c569bdc71b41fa50fc33f66e2ef1317813ed/taskfiles/markdown/Taskfile.yml
     internal: true
 
 vars:
   NIX_VERSION: '2.35.2'
-  markdown_paths: README.md catalog guides
 
   nix_build_caps: >-
-    --cap-add=DAC_OVERRIDE --cap-add=CHOWN --cap-add=FOWNER
-    --cap-add=SETUID --cap-add=SETGID --cap-add=KILL
+    --cap-add=DAC_OVERRIDE
+    --cap-add=CHOWN
+    --cap-add=FOWNER
+    --cap-add=SETUID
+    --cap-add=SETGID
+    --cap-add=KILL
+
+  nix_files: >-
+    find . \( -path ./.git -o -path ./.cache -o -path ./.task -o -path ./build \) -prune
+    -o -type f -name "*.nix"
 
   nix_cache_env: XDG_CACHE_HOME=/workspace/.cache
+  markdown_paths: README.md catalog guides
 
 tasks:
   ci/lint:
@@ -33,76 +41,89 @@ tasks:
       - task: lint/markdown
 
   ci/test/modules:
-    desc: >-
-      Test catalog modules. MODULES="go docker" (default: all, one after another);
-      MODE=check (eval, then run; default), eval, run or vm (needs CONTAINER_RUN_ARGS=--device=/dev/kvm)
+    desc: Test catalog modules
     cmds:
       - task: _nix/check
         vars:
           CMD: >-
-            bash scripts/run_checks.sh module {{.MODE | default "check" | shellQuote}}
+            bash scripts/run_checks.sh module
+            {{.MODE | default "check" | shellQuote}}
             {{.MODULES | default "" | shellQuote}}
 
-  ci/test/common:
-    desc: >-
-      Test the shared layer (_shared/test.nix) and the harness (checks/).
-      SUITE=common (both; default), shared or platform; MODE=check (default), eval or run (eval and run need SUITE=shared or platform)
+  ci/test/layer:
+    desc: Test the shared layer
     cmds:
       - task: _nix/check
         vars:
           CMD: >-
-            bash scripts/run_checks.sh {{.SUITE | default "common" | shellQuote}}
+            bash scripts/run_checks.sh
+            {{.SUITE | default "common" | shellQuote}}
             {{.MODE | default "check" | shellQuote}}
 
   lint/nix:
     desc: Check Nix formatting
     cmds:
-      - task: nix:_nix/tool
+      - task: nix:exec
         vars:
-          CMD: >-
-            bash -c 'status=0;
-            find . \( -path ./.git -o -path ./.cache -o -path ./.task -o -path ./build \) -prune
-            -o -type f -name "*.nix" -exec nixfmt --check {} + || status=1;
-            statix check . || status=1;
-            deadnix --fail . || status=1;
-            exit "$status"'
-          TASK_CONTEXT:
-            ref: 'merge (dict) (dict "CONTAINER_MOUNT_MODE" "ro" "CONTAINER_USER" "host") (.TASK_CONTEXT | default .)'
+          CMD: |
+            bash -c '
+              status=0
+              {{.nix_files}} -exec nixfmt --check {} + || status=1
+              statix check . || status=1
+              deadnix --fail . || status=1
+              exit "$status"
+            '
+          CONTAINER_MOUNT_MODE: ro
 
   lint/nix/fix:
     desc: Format Nix files in place
     cmds:
-      - task: nix:nixfmt
+      - task: nix:exec
         vars:
-          FMT_ARGS: ''
+          CMD: |
+            bash -c '{{.nix_files}} -exec nixfmt {} +'
 
   lint/markdown:
     desc: Check Markdown formatting
     cmds:
       - task: markdown:fmt
         vars:
-          FMT_PATHS: '{{.markdown_paths}}'
-          TASK_CONTEXT:
-            ref: 'merge (dict) (dict "CONTAINER_MOUNT_MODE" "ro") (.TASK_CONTEXT | default .)'
+          FMT_ARGS: '{{.markdown_paths}}'
 
   lint/markdown/fix:
     desc: Format Markdown in place
     cmds:
       - task: markdown:fmt/fix
         vars:
-          FMT_PATHS: '{{.markdown_paths}}'
+          FMT_ARGS: '{{.markdown_paths}}'
 
-  nixpkgs/update:
-    desc: Update the pinned Nixpkgs revision in flake.lock
+  release/build:
+    desc: Build image
+    requires:
+      vars:
+        - name: ARCH
+          enum: [aarch64, x86_64]
+    vars:
+      ARCH: '{{.ARCH | default (ARCH | replace "arm64" "aarch64" | replace "amd64" "x86_64")}}'
+      host_arch: '{{ARCH | replace "arm64" "aarch64" | replace "amd64" "x86_64"}}'
+    preconditions:
+      - sh: test {{.ARCH | shellQuote}} = {{.host_arch | shellQuote}}
+        msg: Images build natively; build {{.ARCH}} on an {{.ARCH}} machine.
     cmds:
-      - task: nix:_nix/tool
+      - task: nix:exec
         vars:
-          CMD: nix flake update nixpkgs --flake path:.
+          CMD: sh scripts/build_image.sh {{.ARCH}}
+          CONTAINER_RUN_ARGS: >-
+            --security-opt seccomp=unconfined
+            --security-opt apparmor=unconfined
+            {{.nix_build_caps}}
+            {{.CONTAINER_RUN_ARGS | default ""}}
+          CONTAINER_VOLUMES: >-
+            limanix-modules-nix:/nix
+            {{.CONTAINER_VOLUMES | default ""}}
 
   docs/prepare:
-    desc: >-
-      Prepare this repository's pages for the LimaNix site in build/docs.
-      MODULES_REF=<tag or commit> (default: HEAD). The docs repository calls this task by name
+    desc: Build docs for the LimaNix site
     vars:
       modules_ref:
         sh: |
@@ -112,7 +133,7 @@ tasks:
           git -C {{.ROOT_DIR | shellQuote}} rev-parse HEAD
           {{end}}
     cmds:
-      - task: python:_uv/tool
+      - task: python:exec
         vars:
           CMD: python scripts/build_docs.py --ref {{.modules_ref | shellQuote}}
 
@@ -121,11 +142,12 @@ tasks:
     requires:
       vars: [ CMD ]
     cmds:
-      - task: nix:_nix/tool
+      - task: nix:exec
         vars:
+          CONTAINER_RUN_ARGS: >-
+            {{.nix_build_caps}}
+            {{.CONTAINER_RUN_ARGS | default ""}}
+          CONTAINER_ENVS: >-
+            {{.nix_cache_env}}
+            {{.CONTAINER_ENVS | default ""}}
           CMD: '{{.CMD}}'
-          TASK_CONTEXT:
-            ref: >-
-              merge (dict) (.TASK_CONTEXT | default .) (dict
-              "CONTAINER_RUN_ARGS" (printf "%s %s" .nix_build_caps (.CONTAINER_RUN_ARGS | default ""))
-              "CONTAINER_ENVS" (printf "%s %s" .nix_cache_env (.CONTAINER_ENVS | default "")))

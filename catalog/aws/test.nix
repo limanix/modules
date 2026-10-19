@@ -7,6 +7,7 @@ let
   helpers = import ../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   configuration = helpers.evaluate [ ./default.nix ];
   empty = helpers.evaluate [ ];
+  unstable = helpers.sourceFor configuration "unstable";
   startup =
     record:
     let
@@ -28,9 +29,10 @@ in
 {
   eval = {
     package =
-      helpers.installed configuration pkgs.awscli2
+      helpers.installed configuration unstable.packages.awscli2
       && builtins.all (
-        candidate: helpers.installed empty candidate || toString candidate == toString pkgs.awscli2
+        candidate:
+        helpers.installed empty candidate || toString candidate == toString unstable.packages.awscli2
       ) configuration.config.environment.systemPackages;
     noStartup = startup configuration == startup empty;
   };

@@ -8,6 +8,7 @@ let
   pins = import ./test/pins-tests.nix { inherit evalSystem lib; };
   platform = import ./test/platform-tests.nix { inherit evalSystem pkgs lib; };
   lines = import ./test/lines-tests.nix { inherit pkgs lib; };
+  release = import ./test/release-tests.nix { inherit lib; };
   theme = import ./test/theme-tests.nix { inherit evalSystem pkgs; };
   unitTests =
     name: directory: extra:
@@ -27,7 +28,7 @@ let
       '';
 in
 {
-  eval = language.eval // pins.eval // platform.eval // theme.eval // lines;
+  eval = language.eval // pins.eval // platform.eval // theme.eval // lines // release;
   fails = language.fails // pins.fails // theme.fails;
   run =
     platform.run

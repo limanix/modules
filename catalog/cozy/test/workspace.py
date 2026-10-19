@@ -94,7 +94,6 @@ def pane_command(pane):
 
 
 def pane_process_commands(pane):
-    # The launcher can lead the foreground group while its tool runs as a child.
     pid = int(pane_value(pane, "#{pane_pid}"))
     try:
         children = Path(f"/proc/{pid}/task/{pid}/children").read_text().split()

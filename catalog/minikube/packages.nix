@@ -1,12 +1,19 @@
-{ version, pinned, ... }:
+{
+  version,
+  pinned,
+  pkgs,
+  ...
+}:
 let
-  releases = import ./releases.nix;
-  release = releases.versions.${version};
-  source = releases.sources.${release.source};
-  packages = pinned.${source.rev};
+  release = import ../_shared/lib/release.nix {
+    releases = ./releases.nix;
+    line = version;
+    inherit pkgs pinned;
+  };
+  inherit (release) packages;
   minikube = packages.${release.package};
 in
-assert minikube.version == release.version;
+assert release.matches minikube.version;
 {
   inherit minikube;
   inherit (release) endOfLife;

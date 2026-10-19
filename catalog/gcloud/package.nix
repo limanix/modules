@@ -1,4 +1,3 @@
-# The CLI with the components this module installs on top of the base package.
 { pkgs, lib }:
 let
   inherit (pkgs) google-cloud-sdk;

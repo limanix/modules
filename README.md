@@ -49,6 +49,38 @@ create a VM, apply changes or import custom modules.
 The guides and module references are published at
 [limanix.dev](https://limanix.dev/categories/nixos/index.html).
 
+## Base disk
+
+Each release carries the disk that LimaNix boots a new VM from: NixOS for
+`aarch64` and `x86_64`, built from this catalog's Nixpkgs with
+[`platform.nix`](platform.nix) and [`image.nix`](image.nix). Its assets are
+`limanix-<arch>.qcow2`, the `.sha256` next to it and `image.json`, which the
+client reads when it bundles the catalog.
+
+`platform.nix` is what the disk and every rebuilt guest agree on. Its partition
+layout is frozen: the labels, file systems and boot loader of a released disk
+never change.
+
+Build locally with [Task](https://taskfile.dev) and Docker. Images build
+natively: `aarch64` on an arm64 machine, `x86_64` on an x86_64 one. The image
+lands in `dist/`.
+
+```console
+task --yes release/build
+```
+
+## Releases
+
+A tag `v<N>` on `main` releases the catalog with its disks.
+
+| Change | What happens |
+| -- | -- |
+| Nixpkgs moves within the NixOS release | Every Monday the Update flow opens a pull request that merges itself once the checks pass |
+| nixos-unstable moves | Every Monday the Update flow opens a separate pull request that merges itself once the checks pass |
+| A new NixOS release is published | The Update flow opens a pull request that waits: boot the image artifact of its checks in Lima, then merge |
+| `flake.lock` or `catalog/_shared/unstable.toml` changes on `main` | The Tag flow creates the next `v<N>`, which releases |
+| Anything else | Create the next `v<N>` by hand |
+
 ## Contributing
 
 Follow the

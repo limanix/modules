@@ -8,7 +8,6 @@ if [[ -o interactive && -o rcs ]] &&
       ! -e "${ZDOTDIR:-$HOME}/.zlogin" ]] &&
    (( ! ${+functions[zsh-newuser-install]} )); then
   zsh-newuser-install() {
-    # Keep the normal autoloadable wizard available for an explicit later run.
     unfunction zsh-newuser-install
   }
 fi

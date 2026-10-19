@@ -65,7 +65,6 @@ let
           upstream = pkgs.yazi.override (
             arguments
             // {
-              # These builders generate configuration links and command wrappers only.
               runCommand = pkgs.runCommandLocal;
               settings =
                 if managed then

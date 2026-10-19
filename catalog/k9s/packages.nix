@@ -1,12 +1,17 @@
-{ version, pinned }:
+{
+  version,
+  pinned,
+  pkgs,
+}:
 let
-  releases = import ./releases.nix;
-  release = releases.versions.${version};
-  packageSet = name: pinned.${releases.sources.${name}.rev};
-  original = (packageSet release.source).${release.package};
-  builder = packageSet (release.buildSource or release.source);
-  # Reuse the application recipe and hashes with a separately pinned compiler.
-  # Its upstream version test must also refer to this rebuilt package.
+  release = import ../_shared/lib/release.nix {
+    releases = ./releases.nix;
+    line = version;
+    inherit pkgs pinned;
+  };
+  original = release.packages.${release.package};
+  builder =
+    if release ? buildSource then (release.resolve release.buildSource).packages else release.packages;
   k9s =
     if release ? buildSource then
       (original.override {
@@ -20,8 +25,6 @@ let
         inherit k9s;
       }).overrideAttrs
         (previous: {
-          # K9s fixtures use package-relative paths. Matching the build's path
-          # mode lets every upstream test reuse compiled dependencies.
           checkFlags = (previous.checkFlags or [ ]) ++ [ "-trimpath" ];
         })
     else
@@ -42,7 +45,7 @@ let
     inherit (package.meta) description license mainProgram;
   };
 in
-assert k9s.version == release.version;
+assert release.matches k9s.version;
 assert !(release ? buildSource) || fingerprint k9s == fingerprint original;
 {
   inherit k9s original;

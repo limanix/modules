@@ -22,15 +22,18 @@ tests: a merged change was checked in its pull request.
 ```mermaid
 flowchart LR
     plan[Plan targets] --> test[Test: target × architecture]
+    plan --> image[Build image: architecture]
     lint[Lint] --> gate[Required gate]
     test --> gate
+    image --> gate
 ```
 
 | Job | Work | Selection |
 | -- | -- | -- |
-| `plan` | Git diff to test targets | Every run |
+| `plan` | Git diff to test targets and the image | Every run |
 | `lint` | Nixfmt, Statix, Deadnix and source Markdown formatting | Every run |
 | `test` | One target: `eval`, then `run` | Selected targets, on x86 and ARM |
+| `image` | The base disk, kept as an artifact for a week | Changes to the disk, on x86 and ARM |
 | `gate` | Require all selected jobs to succeed | Every run |
 
 A target is a catalog module or `common`, the shared and platform suites; the
@@ -51,6 +54,11 @@ catalog runs only when a change affects every module evaluation:
 Evaluation inputs are `catalog/_shared/**`, `interface.nix`, `flake.nix`,
 `flake.lock`, `checks/**` and `scripts/run_checks.sh`.
 
+The image builds when `flake.nix`, `flake.lock`, `platform.nix`, `image.nix`,
+`scripts/build_image.sh`, `Taskfile.yml` or the workflow change, and on a manual
+run. Its artifact is what a reviewer boots in Lima before merging a new NixOS
+release.
+
 Lint runs for every change. A module's `README.md` belongs to that module: its
 job validates the catalog structure, including each page's `## Guarantees`
 heading. A removed module selects nothing.
@@ -67,7 +75,7 @@ From the repository root, with Task and Docker:
 ```console
 task --yes ci/lint
 task --yes ci/test/modules MODULES=dev-tools
-task --yes ci/test/common
+task --yes ci/test/layer
 ```
 
 `dev-tools` is the illustrative entry in [Write a module](writing-modules.md);
@@ -78,7 +86,7 @@ both stages in that one evaluator, each configuration once; it then checks
 expected failures and builds the `run` exports. The common cycle runs shared,
 then platform checks.
 
-`ci/test/modules` defaults to `MODE=check`. `ci/test/common` defaults to
+`ci/test/modules` defaults to `MODE=check`. `ci/test/layer` defaults to
 `SUITE=common` and `MODE=check`; `MODE=eval` and `MODE=run` need `SUITE=shared`
 or `SUITE=platform`. Select an individual suite or stage when diagnosing a
 failure:
@@ -87,8 +95,8 @@ failure:
 | -- | -- |
 | `ci/test/modules MODE=eval MODULES=dev-tools` | Metadata, entry points, recommendation, Boolean assertions and expected diagnostics |
 | `ci/test/modules MODE=run MODULES=dev-tools` | Native execution after the local-build dry-run |
-| `ci/test/common SUITE=shared MODE=eval` | Shared schemas and test helpers |
-| `ci/test/common SUITE=platform MODE=run` | Native builder permissions |
+| `ci/test/layer SUITE=shared MODE=eval` | Shared schemas and test helpers |
+| `ci/test/layer SUITE=platform MODE=run` | Native builder permissions |
 
 On native Linux, the same runner is available directly:
 
@@ -165,15 +173,46 @@ unavailable KVM.
 
 A tag `v<N>` on a commit of `main` starts the release flow. It runs no tests:
 the tagged commit passed its pull request. The flow checks the tag, prepares the
-documentation sources with `build_docs.py`, publishes the GitHub release with
-that archive and notifies the client repository.
+documentation sources with `build_docs.py`, builds the base disk for both
+architectures, publishes the GitHub release with the documentation archive, the
+disks, their checksums and `image.json`, and notifies the client repository. A
+failed disk build leaves the tag without a release; rerunning the flow completes
+it.
+
+A push to `main` that changes `flake.lock` or `catalog/_shared/unstable.toml`
+starts the tag flow, which creates the next `v<N>` unless the commit is tagged
+already. Other changes release when a tag is created by hand.
+
+The update flow runs every Monday and on request, in four jobs:
+
+| Job | Change | Pull request |
+| -- | -- | -- |
+| Nixpkgs | The base revision within the current NixOS release, in `flake.lock` | Merges itself once the checks pass |
+| nixos-unstable | The catalog's unstable revision, in `catalog/_shared/unstable.toml` | Merges itself once the checks pass |
+| Next NixOS | `flake.nix` to the next release, once `channels.nixos.org` publishes it | Waits for a reviewer to boot the image artifact of its checks |
+| Drift report | None: it compares every `releases.nix` with the base and unstable | Keeps one `Catalog drift` issue instead |
+
+The base and unstable jobs open separate pull requests: a line that moved in
+unstable holds back only its own update, never the base's security fixes.
+
+The drift report applies the source rule of
+[Support multiple versions](writing-modules.md#support-multiple-versions) to the
+current revisions. It lists new lines newer than a module's oldest one, lines
+that left their source, and snapshots or unstable lines that a newer source
+could take. A line counts when its version has no pre-release suffix. The job
+opens the issue when such a line appears, updates it every week and closes it
+once every line matches its source.
 
 PR and release workflows do not run VM tests. Activation checks remain available
 for manual execution on native Linux with KVM; their results are separate from
 CI results.
 
-`nixpkgs/update` is an explicit local command and changes only the base revision
-in `flake.lock`. Additional revisions belong to the modules that declare them in
-`lmx.pins` and change only when those modules edit them. Shared
-`_module.args.pinned` resolves one lazy package set per revision within that
-system, using its architecture and unfree policy.
+Snapshot revisions belong to the modules that declare them in `releases.nix` and
+change only when those modules edit them. Shared `_module.args.pinned` resolves
+one lazy package set per revision within that system, using its architecture and
+unfree policy.
+
+Lines that come from the base or unstable move with it. Their modules check the
+line, not the patch: an update that brings patch releases passes, while one that
+moves a package to another line or removes it fails that module's eval check.
+Snapshots keep their exact versions.

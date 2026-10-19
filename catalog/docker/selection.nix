@@ -6,7 +6,7 @@
   ...
 }:
 let
-  releases = (import ./releases.nix).versions;
+  releases = import ./releases.nix;
   selected = lib.unique config.lmx.internal.docker.versions;
 in
 {

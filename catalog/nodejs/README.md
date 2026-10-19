@@ -17,10 +17,13 @@ selection replaces that recommendation, including when Cozy imports the default.
 
 | Selector | Node.js | Notes |
 | -- | -- | -- |
-| `lmx:nodejs`, `lmx:nodejs-26` | 26.9.0 | Default |
-| `lmx:nodejs-25` | 25.9.0 | End of life |
-| `lmx:nodejs-24` | 24.20.0 |  |
-| `lmx:nodejs-23` | 23.11.0 | End of life |
+| `lmx:nodejs`, `lmx:nodejs-26` | 26.x | Default |
+| `lmx:nodejs-24` | 24.x |  |
+| `lmx:nodejs-22` | 22.x |  |
+
+Lines marked `.x` come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its patch releases with each catalog release.
 
 Each line includes npm and npx for its Node.js version. Support status follows
 the [Node.js release lifecycle](https://nodejs.org/en/about/previous-releases).
@@ -108,9 +111,9 @@ selected line.
 
 | Guarantee | Checked by |
 | -- | -- |
-| The Node.js version, language server, parsers and end-of-life warnings match the selected line | `eval.line-23`, `eval.line-24`, `eval.line-25`, `eval.line-26` |
+| The Node.js version, language server, parsers and end-of-life warnings match the selected line | `eval.line-22`, `eval.line-24`, `eval.line-26` |
 | Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
 | The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
-| Versioned npm and npx scripts use their matching Node.js interpreter | `run.commands-23`, `run.commands-24`, `run.commands-25`, `run.commands-26` |
+| Versioned npm and npx scripts use their matching Node.js interpreter | `run.commands-22`, `run.commands-24`, `run.commands-26` |
 | Installing this module does not enable an editor | `eval.allLines` |
 | The declared and user-supplied servers answer an LSP initialization request | `run.languageServer`, `run.userOverride` |

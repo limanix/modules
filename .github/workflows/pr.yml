@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       targets: ${{ steps.plan.outputs.targets }}
+      image: ${{ steps.plan.outputs.image }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,6 +37,7 @@ jobs:
 
           every='^(catalog/_shared/|checks/|flake\.nix$|flake\.lock$|interface\.nix$|scripts/run_checks\.sh$)'
           plumbing='^(Taskfile\.yml|\.taskrc\.yml|\.github/workflows/pr\.yml|scripts/cache_nix_build\.sh|scripts/prune_nix_cache\.sh)$'
+          image='^(flake\.nix$|flake\.lock$|platform\.nix$|image\.nix$|scripts/build_image\.sh$|Taskfile\.yml$|\.github/workflows/pr\.yml$)'
 
           if [ "$EVENT_NAME" = workflow_dispatch ] || grep -qE "$every" <<< "$changed"; then
             targets="$modules common"
@@ -45,6 +47,11 @@ jobs:
           fi
 
           echo "targets=$(jq -cn '$ARGS.positional' --args $targets)" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = workflow_dispatch ] || grep -qE "$image" <<< "$changed"; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=false" >> "$GITHUB_OUTPUT"
+          fi
 
   lint:
     runs-on: ubuntu-24.04
@@ -52,9 +59,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+      - uses: mr-chelyshkin/actions/task-run@v2
         with:
-          command: ci/lint
+          task: ci/lint
 
   test:
     name: Test ${{ matrix.target }} (${{ matrix.runner }})
@@ -89,11 +96,12 @@ jobs:
           sudo chown -R 0:0 .cache/nix .cache/nix-binary
 
       - name: Run checks
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        uses: mr-chelyshkin/actions/task-run@v2
         with:
-          command: >-
-            ${{ matrix.target == 'common' && 'ci/test/common' || format('ci/test/modules MODULES={0}', matrix.target) }}
-            'CONTAINER_ENVS=NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=1 NIX_BUILD_CORES=0${{ steps.cache.outputs.cache-hit != 'true' && ' NIX_BUILD_CACHE_HOOK=/workspace/scripts/cache_nix_build.sh' || '' }}'
+          task: ${{ matrix.target == 'common' && 'ci/test/layer' || 'ci/test/modules' }}
+          args: |
+            ${{ matrix.target != 'common' && format('MODULES={0}', matrix.target) || '' }}
+            CONTAINER_ENVS=NIX_BUILD_CACHE=/workspace/.cache/nix-binary NIX_CHECK_JOBS=1 NIX_BUILD_CORES=0${{ steps.cache.outputs.cache-hit != 'true' && ' NIX_BUILD_CACHE_HOOK=/workspace/scripts/cache_nix_build.sh' || '' }}
 
       - name: Restore Nix cache ownership
         if: always()
@@ -124,18 +132,47 @@ jobs:
             .cache/nix-binary
           key: ${{ steps.cache.outputs.cache-primary-key }}
 
+  image:
+    name: Build image (${{ matrix.arch }})
+    needs: [plan, lint]
+    if: ${{ needs.plan.outputs.image == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: aarch64, runner: ubuntu-24.04-arm }
+          - { arch: x86_64, runner: ubuntu-24.04 }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Allow user namespaces for systemd-repart
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Build the image
+        uses: mr-chelyshkin/actions/task-run@v2
+        with:
+          task: release/build
+          args: ARCH=${{ matrix.arch }}
+      - name: Keep the image
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: image-${{ matrix.arch }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+          overwrite: true
+
   gate:
     if: always()
-    needs: [plan, lint, test]
+    needs: [plan, lint, test, image]
     runs-on: ubuntu-24.04
     steps:
       - name: Require every selected check
-        shell: bash
-        env:
-          JOB_RESULTS: ${{ toJSON(needs) }}
-        run: |
-          jq -e '
-            .plan.result == "success" and .lint.result == "success"
-            and (if .plan.outputs.targets != "[]"
-                 then .test.result == "success" else .test.result == "skipped" end)
-          ' <<< "$JOB_RESULTS"
+        uses: mr-chelyshkin/actions/job-results-check@v2
+        with:
+          results: ${{ toJSON(needs) }}
+          skipped: >-
+            ${{ needs.plan.outputs.targets == '[]' && 'test' || '' }}
+            ${{ needs.plan.outputs.image == 'false' && 'image' || '' }}

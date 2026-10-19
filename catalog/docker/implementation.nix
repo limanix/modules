@@ -1,19 +1,24 @@
 version:
 {
   pinned,
+  pkgs,
   lib,
   config,
   ...
 }:
 let
-  releases = import ./releases.nix;
-  source = releases.sources.${releases.versions.${version}.source};
+  release = import ../_shared/lib/release.nix {
+    releases = ./releases.nix;
+    line = version;
+    inherit pkgs pinned;
+  };
+  inherit (release) pins;
   tools = import ./packages.nix {
-    inherit version pinned;
+    inherit version pinned pkgs;
   };
 in
 {
-  lmx.pins.${source.rev} = source.sha256;
+  lmx.pins = pins;
   lmx.internal.docker.packages.${version} = tools;
 
   virtualisation.docker = {

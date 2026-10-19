@@ -18,9 +18,13 @@ side-by-side behavior described below.
 
 | Selector | Helm | Notes |
 | -- | -- | -- |
-| `lmx:helm`, `lmx:helm-4.3` | 4.3.0 | Default |
+| `lmx:helm`, `lmx:helm-4.3` | 4.3.x | Default |
 | `lmx:helm-4.2` | 4.2.4 | End of life |
-| `lmx:helm-3.20` | 3.20.2 | End of life |
+| `lmx:helm-3.20` | 3.20.x | End of life |
+
+Lines marked `.x` come from the
+[base Nixpkgs revision or the catalog's nixos-unstable revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive their patch releases with each catalog release.
 
 The catalog derives these EOL marks from Helm's
 [version support policy](https://helm.sh/docs/topics/version_skew/#supported-versions),
@@ -28,6 +32,10 @@ also documented for
 [Helm 3](https://helm.sh/docs/v3/topics/version_skew/#supported-versions). As of
 September 30, 2026, the maintained minor lines are 3.22 and 4.3. Selecting an
 end-of-life line prints a warning when the VM is built.
+
+The default is the newest maintained line, 4.3, from the catalog's
+nixos-unstable revision: the catalog's NixOS release has only 3.20, which is end
+of life.
 
 Inside the VM, `helm version --short` shows the installed version.
 

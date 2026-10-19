@@ -21,9 +21,13 @@ the side-by-side behavior described below.
 
 | Selector | PostgreSQL | Notes |
 | -- | -- | -- |
-| `lmx:postgres`, `lmx:postgres-18` | 18.6 | Default |
-| `lmx:postgres-17` | 17.11 |  |
-| `lmx:postgres-16` | 16.15 |  |
+| `lmx:postgres`, `lmx:postgres-18` | 18.x | Default |
+| `lmx:postgres-17` | 17.x |  |
+| `lmx:postgres-16` | 16.x |  |
+
+Lines marked `.x` come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its patch releases with each catalog release.
 
 Upstream support dates are listed in the
 [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/).

@@ -20,9 +20,13 @@ selection replaces that recommendation, including when Cozy imports the default.
 
 | Selector | Python | virtualenv | Notes |
 | -- | -- | -- | -- |
-| `lmx:python`, `lmx:python-3.14` | 3.14.7 | 21.6.1 | Default |
-| `lmx:python-3.13` | 3.13.15 | 21.6.1 |  |
-| `lmx:python-3.12` | 3.12.14 | 21.6.1 |  |
+| `lmx:python`, `lmx:python-3.14` | 3.14.x | Base | Default |
+| `lmx:python-3.13` | 3.13.x | Base |  |
+| `lmx:python-3.12` | 3.12.x | Base |  |
+
+Lines marked `.x` and their virtualenv come from the
+[base Nixpkgs revision](../../guides/concepts.md#nixos-version-and-package-pins)
+and receive its updates with each catalog release.
 
 Upstream support stages and EOL dates are listed in
 [Status of Python versions](https://devguide.python.org/versions/).

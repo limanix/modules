@@ -1,4 +1,4 @@
-# Discover only public module records; private implementation is not inspected.
+# Discover only public module records and release maps; private implementation is not inspected.
 modulesDir:
 let
   require = condition: message: if condition then true else throw "Module catalog: ${message}";
@@ -35,6 +35,9 @@ let
     assert require (builtins.any (
       line: builtins.isString line && builtins.match "##[[:blank:]]+Guarantees[[:blank:]]*" line != null
     ) (builtins.split "\n" readme)) "${name}: README.md needs a Guarantees section";
+    assert
+      !(regular "releases.nix")
+      || import ./catalog-releases.nix name normalized.lines (import (directory + "/releases.nix"));
     {
       inherit name directory;
       path = directory + "/default.nix";

@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check module tag format
-        uses: mr-chelyshkin/actions/check-tag-format@v1
+        uses: mr-chelyshkin/actions/tag-format-check@v2
         with:
           pattern: '^v[1-9][0-9]*$'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
-      - uses: mr-chelyshkin/actions/check-tag-branch@v1
+      - uses: mr-chelyshkin/actions/tag-branch-check@v2
         with:
           branch: main
 
@@ -37,9 +37,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare documentation sources
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        uses: mr-chelyshkin/actions/task-run@v2
         with:
-          command: docs/prepare MODULES_REF=${{ github.ref_name }}
+          task: docs/prepare
+          args: MODULES_REF=${{ github.ref_name }}
       - name: Package documentation
         run: tar -czf build/docs.tar.gz -C build/docs .
       - name: Upload documentation archive
@@ -50,18 +51,61 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
+  image:
+    name: Build image (${{ matrix.arch }})
+    needs: verify
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: aarch64, runner: ubuntu-24.04-arm }
+          - { arch: x86_64, runner: ubuntu-24.04 }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Allow user namespaces for systemd-repart
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Build the image
+        uses: mr-chelyshkin/actions/task-run@v2
+        with:
+          task: release/build
+          args: ARCH=${{ matrix.arch }}
+      - name: Upload the image
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: image-${{ matrix.arch }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+
   release:
     name: Create GitHub release
-    needs: [verify, docs]
+    needs: [verify, docs, image]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Download docs archive
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: docs
           path: build
+      - name: Download the images
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: image-*
+          path: dist
+          merge-multiple: true
+      - name: Write the image manifest
+        env:
+          TAG: ${{ github.ref_name }}
+        run: bash scripts/image_manifest.sh "$TAG"
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ github.ref_name }}
@@ -69,7 +113,11 @@ jobs:
           generate_release_notes: true
           prerelease: false
           draft: false
-          files: build/docs.tar.gz
+          files: |
+            build/docs.tar.gz
+            dist/limanix-*.qcow2
+            dist/limanix-*.qcow2.sha256
+            dist/image.json
           fail_on_unmatched_files: true
           overwrite_files: false
 

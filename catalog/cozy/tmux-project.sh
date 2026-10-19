@@ -1,4 +1,3 @@
-# Variables are supplied by workspace.nix.
 # shellcheck disable=SC2154
 set -euo pipefail
 
@@ -7,7 +6,6 @@ if (($# > 1)); then
   exit 64
 fi
 
-# The suffix preserves directory names ending in a newline in command substitution.
 directory=$(cd -P -- "${1:-.}" && printf '%s.' "$PWD")
 directory=${directory%.}
 identity=$(printf '%s' "$directory" | "$cozy_sha256")
@@ -16,7 +14,6 @@ project_name=${project_name//[^a-zA-Z0-9_-]/-}
 project_name=${project_name:0:24}
 session="project-${project_name:-root}-${identity:0:16}"
 
-# tmux expands -c as a format; pass the physical directory as literal text.
 literal_directory=${directory//#/##}
 literal_directory=${literal_directory//\}/#\}}
 literal_directory="#{l:$literal_directory}"

@@ -53,6 +53,17 @@ in
     inherit pkgs lib;
   };
   profileFor = configuration: configuration.config.system.path;
+  # A package source as the evaluated system resolves it: the same loader with its pins and unfree list.
+  sourceFor =
+    configuration: source:
+    import ../lib/source.nix {
+      inherit source pkgs;
+      pinned = import ../lib/pinned.nix {
+        sources = configuration.config.lmx.pins;
+        inherit (pkgs.stdenv.hostPlatform) system;
+        unfreePackages = configuration.config.nixpkgs.config.allowUnfreePackages or [ ];
+      };
+    };
   verify =
     label: valid: _:
     if !builtins.isBool valid then

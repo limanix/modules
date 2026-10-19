@@ -104,9 +104,9 @@ Versioned modules expose numeric lines in their metadata:
 
 An explicit line replaces a default recommendation, including one brought in by
 Console or Cozy. A future catalog release may change the default. Read the
-module's `Versions` section for exact package versions and what its line fixes;
-a line can represent a major or a major/minor choice. Modules without lines have
-only their unversioned selector.
+module's `Versions` section for package versions and what its line fixes; a line
+can represent a major or a major/minor choice. Modules without lines have only
+their unversioned selector.
 
 Support status is also module-owned. Follow the module page's upstream policy
 links and any documented end-of-life warnings. An unknown status or absence of a

@@ -15,6 +15,8 @@ let
   };
   rejects =
     name: metadata: !(builtins.tryEval (builtins.deepSeq (validate name metadata) true)).success;
+  releases = import ./catalog-releases.nix "fixture";
+  rejectsReleases = lines: records: !(builtins.tryEval (releases lines records)).success;
 in
 assert
   discover {
@@ -85,4 +87,14 @@ assert builtins.all
     "1-2"
     (lib.concatStrings (lib.replicate 64 "1"))
   ];
+assert releases [ "1.9" "1.10" ] {
+  "1.10" = { };
+  "1.9" = { };
+};
+assert rejectsReleases [ "1.9" "1.10" ] { "1.9" = { }; };
+assert rejectsReleases [ "1.9" ] {
+  "1.9" = { };
+  "2" = { };
+};
+assert rejectsReleases [ "1.9" ] [ "1.9" ];
 true

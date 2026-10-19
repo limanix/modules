@@ -29,7 +29,6 @@ local function link_parsers(source, install_dir, treesitter)
   sync("parser")
   sync("queries")
 
-  -- Record the plugin's revision for linked parsers; :TSUpdate then leaves them to the catalog.
   local ok, parsers = pcall(dofile, treesitter .. "/lua/nvim-treesitter/parsers.lua")
   if not ok then return end
   vim.fn.mkdir(install_dir .. "/parser-info", "p")
@@ -39,14 +38,11 @@ local function link_parsers(source, install_dir, treesitter)
     local file = revision_file(name)
     if revision and catalog_link(install_dir .. "/parser/" .. name)
       and table.concat(vim.fn.filereadable(file) == 1 and vim.fn.readfile(file, "b") or {}, "\n") ~= revision then
-      -- nvim-treesitter compares the file byte for byte: no trailing newline.
       vim.fn.writefile({ revision }, file, "b")
     end
   end
 end
 
--- Yanks reach the Mac clipboard with OSC 52. Puts use the last yank, and `p` never waits for
--- a terminal clipboard query; paste from the Mac with Cmd+V or :r !pbpaste.
 local function use_mac_clipboard()
   if vim.fn.executable("pbcopy") ~= 1 then return end
   local osc52 = require("vim.ui.clipboard.osc52")
@@ -55,10 +51,7 @@ local function use_mac_clipboard()
     local direct = osc52.copy(register)
     return function(lines, regtype)
       last = { lines, regtype }
-      -- Outside tmux, Neovim writes OSC 52 itself, because commands it starts have no terminal.
-      -- Inside tmux, the platform's pbcopy reaches the attached client whatever set-clipboard says.
       if vim.env.TMUX then
-        -- Linewise yanks already end with an empty line.
         vim.fn.system({ "pbcopy" }, table.concat(lines, "\n"))
       else
         direct(lines, regtype)
@@ -88,7 +81,6 @@ return function(paths, flavor)
       opts = { pin_plugins = false },
     },
   }
-  -- Keep upstream plugin specifications and loading order, with Nix-owned sources.
   for repository, directory in pairs(paths.plugins) do
     table.insert(specs, { repository, dir = directory, optional = true, build = false })
   end
@@ -129,14 +121,12 @@ return function(paths, flavor)
     { "mrjones2014/smart-splits.nvim", lazy = false },
     { "nvim-mini/mini.icons", lazy = false, priority = 1000 },
     { "mason-org/mason.nvim", lazy = false, opts = { PATH = "append" } },
-    -- Loading this installer refreshes its registry. Keep it behind explicit commands.
     {
       "mason-org/mason-lspconfig.nvim",
       event = function() return {} end,
       opts = { automatic_enable = false },
     },
     { "WhoIsSethDaniel/mason-tool-installer.nvim", opts = { run_on_start = false, ensure_installed = {} } },
-    -- Nix supplies the native library; never download a binary during completion setup.
     { "saghen/blink.cmp", opts = { fuzzy = { implementation = "prefer_rust", prebuilt_binaries = { download = false } } } },
   })
 

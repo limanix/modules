@@ -1,0 +1,42 @@
+name: Tag flow
+
+on:
+  push:
+    branches: [main]
+    paths: [flake.lock, catalog/_shared/unstable.toml]
+
+concurrency:
+  group: tag
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    name: Tag the release
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Pick the next tag
+        id: next
+        run: bash scripts/next_tag.sh >> "$GITHUB_OUTPUT"
+      - name: Create token
+        if: steps.next.outputs.tag != ''
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          repositories: modules
+          owner: limanix
+      - name: Tag ${{ steps.next.outputs.tag }}
+        if: steps.next.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAG: ${{ steps.next.outputs.tag }}
+        run: gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA"

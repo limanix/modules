@@ -7,15 +7,14 @@ let
   helpers = import ../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   configuration = helpers.evaluate [ ./default.nix ];
   inherit (configuration) config;
-  # The system's package set carries the module's unfree permission; the
-  # runner's does not. Test and permit the exact derivation the system installs.
+  unstable = helpers.sourceFor configuration "unstable";
   installed = lib.findFirst (
     package: lib.getName package == "claude-code"
   ) null config.environment.systemPackages;
 in
 {
   eval = {
-    package = installed != null && installed.version == pkgs.claude-code.version;
+    package = installed != null && toString installed == toString unstable.packages.claude-code;
     unfreeDeclaration = builtins.elem "claude-code" config.nixpkgs.config.allowUnfreePackages;
     updatesDisabled = config.environment.sessionVariables.DISABLE_UPDATES == "1";
   };

@@ -5,8 +5,12 @@
 }:
 let
   helpers = import ../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
-  gcloud = import ./package.nix { inherit pkgs lib; };
   configuration = helpers.evaluate [ ./default.nix ];
+  unstable = helpers.sourceFor configuration "unstable";
+  gcloud = import ./package.nix {
+    pkgs = unstable.packages;
+    inherit lib;
+  };
   empty = helpers.evaluate [ ];
   startup =
     record:

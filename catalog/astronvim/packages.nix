@@ -14,10 +14,8 @@ let
     pname = "AstroNvim";
     inherit (release) version;
     src = source;
-    # AstroNvim modules are initialized together by lazy.nvim, not individually.
     doCheck = false;
   };
-  # These pinned upstream declarations are literal Lua tables, not executable configuration.
   quotedStrings =
     text: map builtins.head (builtins.filter builtins.isList (builtins.split ''"([^"]*)"'' text));
   snapshotLines = builtins.filter (

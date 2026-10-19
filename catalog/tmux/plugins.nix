@@ -1,6 +1,5 @@
 { pkgs }:
 let
-  # The pinned plugins retain /usr/bin/env shebangs without a runtime Bash input.
   withBash =
     plugin:
     plugin.overrideAttrs (old: {
