@@ -120,7 +120,7 @@ the profile resolves to:
 run.newestCommand = import ../../_shared/test/profile-commands.nix {
   inherit pkgs;
   profile = helpers.profileFor lineTests.allConfiguration;
-  expectedCommands.helm = "${newestHelm}/bin/helm";
+  expectedCommands.go = "${newestGo}/bin/go";
 };
 ```
 
@@ -224,7 +224,7 @@ let
 in
 {
   lmx.pins = unstable.pins;
-  environment.systemPackages = [ unstable.packages.codex ];
+  environment.systemPackages = [ unstable.packages.claude-code ];
 }
 ```
 

@@ -1,5 +1,6 @@
 # Compares every release map with the lines that the base Nixpkgs and the catalog's nixos-unstable
-# revision carry, by the source rule of writing-modules.md, and renders the findings as Markdown.
+# revision carry, by the rule of Release maps in catalog/README.md, and renders the findings as
+# Markdown.
 #
 # Usage: nix eval --json --impure --file scripts/drift.nix
 #        nix eval --raw --impure --file scripts/drift.nix markdown
@@ -55,7 +56,7 @@ let
     set: name:
     let
       value = set.${name};
-      attempt = builtins.tryEval (value.version or value.packages.stable.rustc.version or null);
+      attempt = builtins.tryEval (value.version or null);
     in
     if attempt.success then attempt.value else null;
 

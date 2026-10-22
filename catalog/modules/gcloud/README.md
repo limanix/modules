@@ -59,7 +59,7 @@ modules and guest-wide TOML environment settings.
 
 | Guarantee | Checked by |
 | -- | -- |
-| Adds base Nixpkgs Google Cloud SDK without unrelated profile packages | `eval.package` |
+| Adds the Google Cloud SDK of the catalog's nixos-unstable revision without unrelated profile packages | `eval.package` |
 | Adds no startup units or activation commands | `eval.noStartup` |
 | The system-profile version command runs offline with an isolated home | `run.commands` |
 | `gke-gcloud-auth-plugin` is on the system profile and runs | `run.commands` |

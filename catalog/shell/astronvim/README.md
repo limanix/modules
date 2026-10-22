@@ -190,11 +190,11 @@ usage.
 | Editor and compatibility-loader preferences accept ordinary settings | `eval.preferences` |
 | Language providers remain optional; catalog and third-party declarations are accepted | `eval.optionalProviders`, `eval.catalogProvider`, `eval.thirdPartyProvider` |
 | Rust and TypeScript server names are translated; other identities are preserved | `eval.serverNames` |
-| Bundled startup loads Mocha, key bindings and Lua highlighting from immutable plugin sources | `run.commands-6` |
+| Bundled startup loads Catppuccin on the terminal's background with the default system flavor, key bindings and Lua highlighting from immutable plugin sources | `run.commands-6` |
 | The bundled setup receives the guest's flavor | `eval.theme` |
 | Personal init files replace bundled startup and remain unchanged | `run.personalLua`, `run.personalVim` |
 | Personal polish and plugin specifications extend the bundled setup | `run.polish`, `run.personalPlugins` |
-| Yanks reach `pbcopy`, and puts use the last yank without a clipboard read | `run.clipboard` |
+| Yanks reach the Mac clipboard, through `pbcopy` inside tmux and Neovim's own OSC 52 outside it; puts use the last yank without a clipboard read | `run.clipboard` |
 | A catalog Rust server and a guarded third-party Go server attach with the declared command, arguments and highlighting | `run.languageServer` |
 
 Removing this module removes its declarations and bundled store packages when no

@@ -94,7 +94,7 @@ Use your `user.home` in place of `/home/dev`, add the variable to an existing
 
 | Guarantee | Checked by |
 | -- | -- |
-| Installs the base Nixpkgs Claude Code package | `eval.package` |
+| Installs the Claude Code package of the catalog's nixos-unstable revision | `eval.package` |
 | Declares unfree permission for Claude Code | `eval.unfreeDeclaration` |
 | Turns off background and manual updates in every session | `eval.updatesDisabled` |
 | The system-profile command prints its version and offline help | `run.commands` |
