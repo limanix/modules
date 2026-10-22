@@ -1,0 +1,79 @@
+# Lazygit
+
+Installs Lazygit, a terminal interface for Git, and enables Git.
+
+The `terminal` shell preset includes Lazygit; there is no selector for it:
+
+```toml
+[shell]
+preset = "terminal"
+```
+
+[Apply the change](https://docs.limanix.dev/vms/update#apply-a-change) after
+editing `limanix.toml`.
+
+## Versions
+
+Lazygit comes from the catalog's
+[base Nixpkgs revision](../../README.md#package-pins-and-unfree-permissions).
+This module has no version lines. Inside the VM, `lazygit --version` shows the
+installed version.
+
+## Use
+
+Inside the VM, open a Git repository and run:
+
+```console
+lazygit
+```
+
+The interface lets you inspect changes, stage files, and work with commits and
+branches. Configure your commit identity as described in
+[CLI tools](../cli-tools/README.md#git).
+
+## Customize
+
+With the default `system` flavor, Lazygit keeps its own theme, which uses the
+terminal's colors and background. A Catppuccin flavor in `[theme]` of
+`limanix.toml` sets the colors of its palette in `/etc/xdg/lazygit/config.yml`.
+A personal `~/.config/lazygit/config.yml` takes precedence through Lazygit's
+native XDG lookup. Project `.lazygit.yml` and `.git/lazygit.yml` settings retain
+their native precedence. To change managed settings, assign
+`programs.lazygit.settings` in a custom NixOS module:
+
+```nix
+{ ... }:
+{
+  programs.lazygit.settings.gui.theme.activeBorderColor = [ "cyan" "bold" ];
+}
+```
+
+The package is configurable with `programs.lazygit.package`.
+
+## Configuration and integration
+
+| Boundary | Contract |
+| -- | -- |
+| Settings | `programs.lazygit.package` and `programs.lazygit.settings` |
+| Managed configuration | `/etc/xdg/lazygit/config.yml` |
+| Personal configuration | `~/.config/lazygit/config.yml`; project `.lazygit.yml` and `.git/lazygit.yml` |
+| Integration | Enables Git; AstroNvim opens the same Lazygit application |
+| Clipboard | Copy commands send text to the Mac clipboard through the platform's `pbcopy`; see [Terminal and clipboard](https://limanix.dev/terminal.html) |
+| Services and capabilities | No daemon or language-support declarations |
+
+## Corner cases
+
+| Case | Behavior or next step |
+| -- | -- |
+| Directory is not a Git repository | Open the project repository before starting Lazygit |
+| Personal theme wins | Native personal and project configuration precedence remains active |
+| Authentication or identity | Configure Git credentials and commit identity for the guest account |
+
+## Guarantees
+
+| Guarantee | Checked by |
+| -- | -- |
+| Lazygit and Git are enabled and their installed commands run | `eval.defaults`, `run.commands` |
+| The system flavor keeps Lazygit's terminal colors; a Catppuccin flavor sets all theme and author colors from its palette | `eval.defaults`, `eval.latte` |
+| An ordinary user setting replaces a managed theme color | `eval.themeOverride` |
+| Copy commands use the platform's `pbcopy` | `eval.clipboard` |

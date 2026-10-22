@@ -1,6 +1,7 @@
 { evalSystem, pkgs }:
 let
   palettes = builtins.fromTOML (builtins.readFile ../palette.toml);
+  terminal = builtins.fromTOML (builtins.readFile ../ansi.toml);
   flavors = builtins.attrNames palettes;
   colors = builtins.attrNames palettes.mocha;
   theme = modules: (evalSystem modules).lmx.capabilities.theme;
@@ -22,7 +23,19 @@ in
       let
         default = theme [ ];
       in
-      default.flavor == "mocha" && default.palette == palettes.mocha && builtins.length colors == 26;
+      default.flavor == "system" && default.palette == palettes.mocha && builtins.length colors == 26;
+    themeTerminal =
+      let
+        inherit ((theme [ ]).ansi) blue text base;
+      in
+      builtins.attrNames terminal == colors
+      && builtins.all (color: color == "default" || builtins.isInt color && color >= 0 && color <= 15) (
+        builtins.attrValues terminal
+      )
+      && blue == 4
+      && text == null
+      && base == null
+      && (chosen "latte").ansi == (theme [ ]).ansi;
     themeFlavors =
       flavors == [
         "frappe"
@@ -30,6 +43,7 @@ in
         "macchiato"
         "mocha"
       ]
+      && (chosen "system").palette == palettes.mocha
       && builtins.all (
         flavor:
         (chosen flavor).palette == palettes.${flavor} && builtins.attrNames palettes.${flavor} == colors
@@ -57,6 +71,13 @@ in
         force
       ];
       message = "lmx.capabilities.theme.palette' is read-only";
+    };
+    readOnlyTerminal = {
+      modules = [
+        { lmx.capabilities.theme.ansi.blue = 1; }
+        force
+      ];
+      message = "lmx.capabilities.theme.ansi' is read-only";
     };
   };
   run.themePalette =

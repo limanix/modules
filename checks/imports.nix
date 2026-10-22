@@ -1,19 +1,35 @@
 # Graph enforcement covers module imports; ordinary import/readFile need review.
-{ catalog, graph }:
+# A file belongs to the module whose directory contains it, whatever the depth of its kind.
+{
+  catalog,
+  graph,
+  root,
+}:
 let
-  root = toString (builtins.dirOf (builtins.head catalog).directory) + "/";
+  rootPrefix = toString root + "/";
   hasPrefix = prefix: value: builtins.substring 0 (builtins.stringLength prefix) value == prefix;
-  relative = key: builtins.substring (builtins.stringLength root) (builtins.stringLength key) key;
-  directoryFor = key: builtins.head (builtins.split "/" (relative key));
+  relative =
+    key: builtins.substring (builtins.stringLength rootPrefix) (builtins.stringLength key) key;
   sharedSchema =
     key:
     builtins.match "_shared/[^/]+[.]nix" (relative key) != null && relative key != "_shared/test.nix";
+  ownerOf =
+    key:
+    let
+      owners = builtins.filter (module: hasPrefix (toString module.directory + "/") key) catalog;
+    in
+    if hasPrefix (rootPrefix + "_shared/") key then
+      "_shared"
+    else if owners != [ ] then
+      toString (builtins.head owners).directory
+    else
+      null;
   entryPoints = builtins.concatMap (
     module:
     [ (toString module.path) ]
     ++ map (line: toString (module.directory + "/versions/${line}.nix")) module.lines
   ) catalog;
-  concreteCatalogImport = key: hasPrefix root key && builtins.pathExists key;
+  concreteCatalogImport = key: hasPrefix rootPrefix key && builtins.pathExists key;
   active = nodes: builtins.filter (node: !(node.disabled or false)) nodes;
   nodes = builtins.genericClosure {
     startSet = active graph;
@@ -22,18 +38,22 @@ let
 in
 builtins.all (
   node:
+  let
+    owner = ownerOf node.key;
+  in
   builtins.all (
     child:
     (child.disabled or false)
-    || !hasPrefix root node.key
+    || !hasPrefix rootPrefix node.key
     || !concreteCatalogImport child.key
     || (
       builtins.match ".*[.]nix" child.key != null
       && (
         sharedSchema child.key
         || (
-          directoryFor node.key != "_shared"
-          && (directoryFor child.key == directoryFor node.key || builtins.elem child.key entryPoints)
+          owner != null
+          && owner != "_shared"
+          && (ownerOf child.key == owner || builtins.elem child.key entryPoints)
         )
       )
     )

@@ -18,6 +18,18 @@ let
     config.sharedTestPinNames = builtins.attrNames pinned;
   };
   wiring = evalSystem [ probe ];
+  unstable = builtins.fromTOML (builtins.readFile ../unstable.toml);
+  platform = { unstableSource, ... }: {
+    options.sharedTestUnstable = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      internal = true;
+    };
+    config = {
+      sharedTestUnstable = unstableSource;
+      lmx.pins.${unstableSource.rev} = unstableSource.sha256;
+    };
+  };
+  unstableWiring = evalSystem [ platform ];
   declarations =
     (lib.evalModules {
       modules = [
@@ -33,6 +45,12 @@ in
     lazyPins = builtins.attrNames unused == [ "unused" ];
     pinDeclarations = declarations == { source = "same hash"; };
     pinWiring = wiring.lmx.pins == { } && wiring.sharedTestPinNames == [ ];
+    unstableSource =
+      unstableWiring.sharedTestUnstable == {
+        inherit (unstable) rev sha256;
+      }
+      && builtins.match "[0-9a-f]{40}" unstable.rev != null
+      && unstableWiring.lmx.pins == { ${unstable.rev} = unstable.sha256; };
   };
   fails.conflictingPins = {
     modules = [

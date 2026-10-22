@@ -13,6 +13,7 @@ in
   eval = interface.eval // {
     catalog = builtins.deepSeq catalog true;
     catalogMetadata = import ./catalog-tests.nix { inherit lib; };
+    catalogLayout = import ./catalog-layout-tests.nix { inherit lib; };
     testABI = import ./test-contract-tests.nix { inherit lib system; };
     buildPolicy = import ./build-policy-tests.nix { inherit lib system; };
     sharedSchemas = import ./shared.nix { inherit pkgs lib; };

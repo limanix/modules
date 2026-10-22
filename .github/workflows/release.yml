@@ -28,29 +28,6 @@ jobs:
         with:
           branch: main
 
-  docs:
-    name: Prepare docs
-    needs: verify
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Prepare documentation sources
-        uses: mr-chelyshkin/actions/task-run@v2
-        with:
-          task: docs/prepare
-          args: MODULES_REF=${{ github.ref_name }}
-      - name: Package documentation
-        run: tar -czf build/docs.tar.gz -C build/docs .
-      - name: Upload documentation archive
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: docs
-          path: build/docs.tar.gz
-          if-no-files-found: error
-          overwrite: true
-
   image:
     name: Build image (${{ matrix.arch }})
     needs: verify
@@ -83,7 +60,7 @@ jobs:
 
   release:
     name: Create GitHub release
-    needs: [verify, docs, image]
+    needs: [verify, image]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -91,11 +68,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Download docs archive
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: docs
-          path: build
       - name: Download the images
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -114,7 +86,6 @@ jobs:
           prerelease: false
           draft: false
           files: |
-            build/docs.tar.gz
             dist/limanix-*.qcow2
             dist/limanix-*.qcow2.sha256
             dist/image.json
