@@ -1,0 +1,31 @@
+# The terminal colors that stand for the palette's names with the system flavor: the number of one
+# of the terminal's 16 colors, 0 to 15, or "default" for its own foreground or background. Accents
+# take their ANSI hue; quiet text and surfaces take bright black, which terminal themes keep
+# readable on their background, light or dark.
+
+rosewater = 13
+flamingo = 13
+pink = 13
+mauve = 5
+red = 1
+maroon = 9
+peach = 11
+yellow = 3
+green = 2
+teal = 6
+sky = 14
+sapphire = 14
+blue = 4
+lavender = 12
+text = "default"
+subtext1 = "default"
+subtext0 = 8
+overlay2 = 8
+overlay1 = 8
+overlay0 = 8
+surface2 = 8
+surface1 = 8
+surface0 = 8
+base = "default"
+mantle = "default"
+crust = "default"

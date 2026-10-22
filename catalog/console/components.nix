@@ -1,9 +1,0 @@
-[
-  ../zsh/default.nix
-  ../tmux/default.nix
-  ../astronvim/default.nix
-  ../cli-tools/default.nix
-  ../lazygit/default.nix
-  ../gh/default.nix
-  ../yazi/default.nix
-]

@@ -48,7 +48,7 @@ the result:
 ```nix
 { evalSystem, pkgs, lib }:
 let
-  helpers = import ../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
+  helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   configuration = helpers.evaluate [ ./default.nix ];
 in
 {
@@ -80,7 +80,7 @@ For a module with `versions` in `module.toml`, [test/lines.nix](test/lines.nix)
 evaluates each line's public entry and calls your callbacks:
 
 ```nix
-lineTests = import ../_shared/test/lines.nix {
+lineTests = import ../../_shared/test/lines.nix {
   inherit evalSystem pkgs lib;
   moduleDirectory = ./.;
   checkLine = { line, configuration }: import ./test/check.nix { inherit line configuration; };
@@ -117,7 +117,7 @@ When several lines install the same command,
 the profile resolves to:
 
 ```nix
-run.newestCommand = import ../_shared/test/profile-commands.nix {
+run.newestCommand = import ../../_shared/test/profile-commands.nix {
   inherit pkgs;
   profile = helpers.profileFor lineTests.allConfiguration;
   expectedCommands.helm = "${newestHelm}/bin/helm";
@@ -150,6 +150,10 @@ Declare the revision and its hash in `lmx.pins`, then read packages from the
   declarations.
 - An unfree package needs its name in `nixpkgs.config.allowUnfreePackages`;
   pinned package sets follow that list.
+- The `unstableSource` module argument holds the `rev` and `sha256` of the
+  catalog's nixos-unstable revision from [unstable.toml](unstable.toml). A
+  platform that offers packages from it declares that pin, then reads
+  `pinned.${unstableSource.rev}`; modules use `lib/source.nix` instead.
 
 <details>
 <summary>How pinned package sets are built</summary>
@@ -158,7 +162,7 @@ Each revision is imported lazily, once per evaluated system, for the system's
 platform and without overlays. An unused revision is never downloaded. The
 unfree check compares names with the pinned source's own `lib.getName`. A shared
 source does not guarantee a binary-cache hit; local builds follow the
-[local-build policy](../../guides/catalog-contract.md#local-builds-and-runtime).
+[local-build policy](../README.md#local-builds-and-runtime).
 
 </details>
 
@@ -192,7 +196,7 @@ back with the line's package set, the pin it needs and its version check:
 ```nix
 { version, pinned, pkgs }:
 let
-  release = import ../_shared/lib/release.nix {
+  release = import ../../_shared/lib/release.nix {
     releases = ./releases.nix;
     line = version;
     inherit pkgs pinned;
@@ -213,7 +217,7 @@ A module without lines takes its packages from a source directly with
 ```nix
 { pkgs, pinned, ... }:
 let
-  unstable = import ../_shared/lib/source.nix {
+  unstable = import ../../_shared/lib/source.nix {
     source = "unstable";
     inherit pkgs pinned;
   };
@@ -291,7 +295,7 @@ node. Import it with your module's public entry:
 pkgs.testers.runNixOSTest {
   name = "zsh-activation";
   nodes.machine.imports = [
-    (import ../../_shared/test/platform.nix { userName = "tester"; })
+    (import ../../../_shared/test/platform.nix { userName = "tester"; })
     ../default.nix
   ];
   testScript = ''
@@ -309,12 +313,12 @@ a shell chosen by your module.
 - Choose the account through the parameters, not by redefining the read-only
   `limanix.user.name` or `limanix.user.home`.
 - VM tests run locally on Linux with KVM; see
-  [Automation](../../guides/automation.md#run-locally).
+  [Automation](../../README.md#development).
 
 ## Drive processes
 
 [test/terminal.py](test/terminal.py) runs a command in a pseudo-terminal with
-deadlines and bounded output. Add `PYTHONPATH = ../../_shared/test;` to the
+deadlines and bounded output. Add `PYTHONPATH = ../../../_shared/test;` to the
 `runCommand` environment:
 
 ```python
@@ -329,30 +333,39 @@ with TerminalProcess([program], env=environment) as process:
 it initializes and shuts down:
 
 ```sh
-python ${../../_shared/test/lsp-smoke.py} --timeout 10 ${profile}/bin/gopls
+python ${../../../_shared/test/lsp-smoke.py} --timeout 10 ${profile}/bin/gopls
 ```
 
 ## Theme colors
 
-`lmx.capabilities.theme` holds the guest's colors: a Catppuccin flavor and its
-colors. Read it in configuration values:
+`lmx.capabilities.theme` holds the guest's colors: the terminal's own colors, or
+a Catppuccin flavor and its colors. Read it in configuration values:
 
 ```nix
 { config, ... }:
 let
-  inherit (config.lmx.capabilities.theme) flavor palette;
+  inherit (config.lmx.capabilities.theme) flavor palette ansi;
 in
 {
-  # flavor == "mocha" by default; palette.blue == "#89b4fa" for Mocha
+  # flavor == "system" by default: ansi.blue == 4, the terminal's blue
+  # flavor == "mocha": palette.blue == "#89b4fa"
 }
 ```
 
-- `flavor` is `latte`, `frappe`, `macchiato` or `mocha`; the default is `mocha`.
-  A system has one flavor: equal definitions agree, different definitions at the
-  same priority fail. The user selects it with `[theme]` in `limanix.toml`;
-  modules never set it. Every catalog module with colors reads it.
+- `flavor` is `system`, the default, or `latte`, `frappe`, `macchiato` or
+  `mocha`. A system has one flavor: equal definitions agree, different
+  definitions at the same priority fail. The user selects it with `[theme]` in
+  `limanix.toml`; modules never set it. Every catalog module with colors reads
+  it.
 - `palette` is read-only: the flavor's 26 colors by name, such as `blue`, as
-  `#rrggbb`.
+  `#rrggbb`. With `system` it holds Mocha's colors, for a tool that knows only
+  explicit colors.
+- `ansi` is read-only: for each name of `palette`, the terminal color that
+  stands for it with `system`. A number from 0 to 15 is one of the terminal's 16
+  colors; `null` is its default foreground or background, so the terminal's own
+  background shows through. [ansi.toml](ansi.toml) holds the table.
+- With `system`, use `ansi` and leave backgrounds to the terminal: the colors
+  then follow the theme of the terminal on the Mac, and change with it.
 - [palette.toml](palette.toml) copies the four flavors of Catppuccin palette
   v1.8.0 from the revision that `pkgs.catppuccin` packages; a check compares the
   two.
@@ -401,6 +414,7 @@ helpers; module checks cover real tools. Pin checks do not download a source.
 | A non-Boolean line predicate fails | `eval.strictLinePredicate` |
 | PTY deadlines, fragmented I/O, bounded output and cleanup work | `run.terminal` |
 | JSON-RPC framing, unrelated messages, failure diagnostics and cleanup work | `run.protocol` |
-| The theme defaults to Mocha with 26 colors; each flavor gives its own table | `eval.themeDefaults`, `eval.themeFlavors` |
-| Unknown flavors, different flavors at one priority and palette definitions fail | `fails.unknownFlavor`, `fails.conflictingFlavors`, `fails.readOnlyPalette` |
+| The theme defaults to the system flavor with Mocha's 26 colors; each flavor gives its own table | `eval.themeDefaults`, `eval.themeFlavors` |
+| Each palette name has a terminal color, 0 to 15, or the terminal's default | `eval.themeTerminal` |
+| Unknown flavors, different flavors at one priority and palette or terminal color definitions fail | `fails.unknownFlavor`, `fails.conflictingFlavors`, `fails.readOnlyPalette`, `fails.readOnlyTerminal` |
 | The palette copy equals Catppuccin's palette in Nixpkgs | `run.themePalette` |

@@ -21,7 +21,7 @@ let
     key = toString key;
     disabled = false;
   };
-  check = graph: import ./imports.nix { inherit catalog graph; };
+  check = graph: import ./imports.nix { inherit catalog graph root; };
   rejects = graph: !(builtins.tryEval (check graph)).success;
   cycle = rec {
     parent = node component [ child ];

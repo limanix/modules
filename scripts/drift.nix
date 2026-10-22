@@ -67,9 +67,10 @@ let
     builtins.mapAttrs (_: lib.last) (lib.groupBy (lineOf depth) (byVersion versions));
 
   findingsOf =
-    name:
+    module:
     let
-      records = import (catalog + "/${name}/releases.nix");
+      inherit (module) name;
+      records = import (module.directory + "/releases.nix");
       lines = byVersion (builtins.attrNames records);
       oldest = builtins.head lines;
       newest = lib.last lines;
@@ -139,13 +140,13 @@ let
     builtins.concatMap check lines ++ map offer newLines;
 
   hasReleaseMap =
-    name:
+    module:
     let
-      file = catalog + "/${name}/releases.nix";
+      file = module.directory + "/releases.nix";
     in
     builtins.pathExists file
     && builtins.all (record: record ? source) (builtins.attrValues (import file));
-  modules = builtins.filter hasReleaseMap (builtins.attrNames (builtins.readDir catalog));
+  modules = builtins.filter hasReleaseMap (import ../checks/catalog.nix catalog);
 
   findings = builtins.concatMap findingsOf modules;
   short = revision: builtins.substring 0 7 revision;
@@ -165,7 +166,7 @@ in
     else
       document (
         [
-          "Lines that differ from their sources by the rule in [Support multiple versions](guides/writing-modules.md#support-multiple-versions)."
+          "Lines that differ from their sources by the rule in [Release maps](catalog/README.md#release-maps)."
           "Edit the module's `releases.nix`, its `module.toml` and README, then let CI check the change."
           ""
           revisions

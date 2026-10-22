@@ -1,4 +1,0 @@
-description = "Docker Engine and Compose, with root-equivalent Docker access for the VM user."
-
-versions = ["28", "29"]
-default = "29"
