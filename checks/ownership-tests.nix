@@ -8,8 +8,8 @@ let
     };
   rejects = modules: !(builtins.tryEval (check modules)).success;
   scalar = lib.mkOption { type = lib.types.str; };
-  ownFile = toString ../catalog/owner/default.nix;
-  otherFile = toString ../catalog/other/default.nix;
+  ownFile = toString ../catalog/modules/owner/default.nix;
+  otherFile = toString ../catalog/toolchains/other/default.nix;
   sharedFile = toString ../catalog/_shared/languageSupport.nix;
   pinFile = toString ../catalog/_shared/pins.nix;
   declare = file: path: {

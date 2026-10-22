@@ -28,8 +28,8 @@
       };
       providers = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = [ "lmx:tmux" ];
-        description = "Catalog selectors suggested when no session provider is configured.";
+        default = [ ''[shell] multiplexer = "tmux"'' ];
+        description = "Settings of limanix.toml suggested when no session provider is configured.";
       };
     };
 

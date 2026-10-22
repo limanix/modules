@@ -25,6 +25,7 @@ let
     assert import ./imports.nix {
       inherit catalog;
       inherit (evaluated) graph;
+      root = ../catalog;
     };
     if failed != [ ] then
       throw "Module assertions:\n${lib.concatMapStringsSep "\n" (item: item.message) failed}"
@@ -121,7 +122,7 @@ let
           value = configuration;
         }) lineConfigurations;
         inherit (builtins.fromTOML (builtins.readFile (item.directory + "/module.toml"))) description;
-        guide = "https://limanix.dev/categories/nixos/modules/${item.name}/README.html";
+        docs = "https://docs.limanix.dev/";
         helpCard =
           entry: configuration:
           let
@@ -134,9 +135,8 @@ let
           assert require (
             card.summary == description
           ) "${item.name}: limanix.help.${item.name}.summary must be the description in module.toml";
-          assert require (
-            card.guide == guide
-          ) "${item.name}: limanix.help.${item.name}.guide must be ${guide}";
+          assert require (lib.hasPrefix docs card.guide)
+            "${item.name}: limanix.help.${item.name}.guide must be a page of ${docs}";
           card;
         entryResults = lib.mapAttrs (
           entry: configuration:

@@ -1,5 +1,4 @@
-# LimaNix modules
-
+[![Release](https://img.shields.io/github/v/release/limanix/modules)](https://github.com/limanix/modules/releases)
 [![License: Apache-2.0](https://img.shields.io/github/license/limanix/modules?label=license)](LICENSE)
 
 <p align="center">
@@ -8,66 +7,50 @@
        width="100%">
 </p>
 
-The NixOS module catalog for [LimaNix](https://github.com/limanix/client), which
-runs Linux development environments on macOS. Select and combine language
-toolchains, services and terminal tools in `limanix.toml` without writing Nix.
+<p align="center">
+  <a href="https://docs.limanix.dev"><b>Docs</b></a>
+  &nbsp;|&nbsp;
+  <a href="https://docs.limanix.dev/modules/"><b>The catalog</b></a>
+  &nbsp;|&nbsp;
+  <a href="https://docs.limanix.dev/modules/custom"><b>Your own modules</b></a>
+  &nbsp;|&nbsp;
+  <a href="https://docs.limanix.dev/architecture"><b>How it works</b></a>
+  &nbsp;|&nbsp;
+  <a href="https://github.com/limanix/modules/releases"><b>Releases</b></a>
+</p>
 
-This repository provides the guest software, application configuration and
-integrations. The LimaNix client manages VM lifecycle and bundles one catalog
-release in each binary.
+<hr>
 
-[Documentation](https://limanix.dev/categories/nixos/index.html) |
-[Catalog](guides/catalog.md) |
-[Releases](https://github.com/limanix/modules/releases)
+The NixOS catalog of [LimaNix](https://limanix.dev), which runs NixOS
+development VMs on a Mac. It holds the shells, toolchains and services that
+`limanix.toml` chooses without any Nix, and the base disk that every new VM
+boots from. Each [`limanix`](https://github.com/limanix/client) release bundles
+one catalog release.
 
-## Get started
-
-Install the client using
-[Getting started](https://limanix.dev/categories/client/getting-started.html).
-Run `limanix modules list` on your Mac to see the selectors bundled with your
-client. Select tools in the `[nixos]` table of your `limanix.toml`:
-
-```toml
-[nixos]
-modules = ["lmx:go", "lmx:docker", "lmx:python-3.12"]
+```text
+┌─────────────┐  release vN   ┌────────────┐  limanix.toml   ┌─────────────────┐
+│   modules   │ ────────────> │  limanix   │ ──────────────> │        VM       │
+│  this repo  │  bundled in   │ on the Mac │ create, update  │ NixOS + catalog │
+└─────────────┘               └────────────┘                 └─────────────────┘
 ```
 
-Follow the
-[client module guide](https://limanix.dev/categories/client/modules.html) to
-create a VM, apply changes or import custom modules.
+| Kind | Chosen in `limanix.toml` | Modules |
+| -- | -- | -- |
+| `shell` | `[shell]` | zsh, tmux, astronvim, neovim, yazi, lazygit, cli-tools |
+| `toolchains` | `[toolchains]` | go, python, nodejs, rust |
+| `modules` | `[nixos] modules`, as `lmx:<name>` | docker, gcloud, postgres, posting, harlequin, claude |
 
-## Documentation
-
-| Guide | Contents |
-| -- | -- |
-| [Catalog](guides/catalog.md) | Available modules, version selectors and links to each module's reference. |
-| [Concepts](guides/concepts.md) | NixOS configuration, composition and package pins. |
-| [Write a module](guides/writing-modules.md) | Custom modules and adding them to the catalog. |
-| [Catalog contract](guides/catalog-contract.md) | Responsibilities, compatibility and required checks. |
-| [Troubleshooting](guides/troubleshooting.md) | Configuration errors, builds and catalog checks. |
-
-The guides and module references are published at
-[limanix.dev](https://limanix.dev/categories/nixos/index.html).
+Every module follows the [catalog contract](catalog/README.md), which the client
+relies on; its own README lists what it guarantees and the test that checks each
+promise.
 
 ## Base disk
 
-Each release carries the disk that LimaNix boots a new VM from: NixOS for
-`aarch64` and `x86_64`, built from this catalog's Nixpkgs with
-[`platform.nix`](platform.nix) and [`image.nix`](image.nix). Its assets are
-`limanix-<arch>.qcow2`, the `.sha256` next to it and `image.json`, which the
-client reads when it bundles the catalog.
-
-`platform.nix` is what the disk and every rebuilt guest agree on. Its partition
-layout is frozen: the labels, file systems and boot loader of a released disk
-never change.
-
-Build locally with [Task](https://taskfile.dev) and Docker. Images build
-natively: `aarch64` on an arm64 machine, `x86_64` on an x86_64 one. The image
-lands in `dist/`.
-
-```console
-task --yes release/build
-```
+Each release carries the disk a new VM boots from: NixOS for `aarch64` and
+`x86_64`, built from this catalog's Nixpkgs with [`platform.nix`](platform.nix)
+and [`image.nix`](image.nix). The labels, file systems and boot loader of a
+released disk never change. `task --yes release/build` builds the disk of the
+machine's architecture into `dist/`.
 
 ## Releases
 
@@ -81,14 +64,22 @@ A tag `v<N>` on `main` releases the catalog with its disks.
 | `flake.lock` or `catalog/_shared/unstable.toml` changes on `main` | The Tag flow creates the next `v<N>`, which releases |
 | Anything else | Create the next `v<N>` by hand |
 
+## Development
+
+You need [Task](https://taskfile.dev) 3.53.1 or newer and Docker; every task
+runs in a container.
+
+| Task | Does |
+| -- | -- |
+| `task ci/lint` | Checks Nix and Markdown formatting |
+| `task ci/test/modules MODE=eval MODULES="go docker"` | Tests the named modules, or all of them; `MODE` is `check`, `eval`, `run` or `vm` |
+| `task ci/test/layer SUITE=shared MODE=eval` | Tests the shared layer, or the platform with `SUITE=platform` |
+
+`MODE=vm` boots VMs and needs Linux with `/dev/kvm`.
+
 ## Contributing
 
 Follow the
-[contribution guide](https://github.com/limanix/.github/blob/main/CONTRIBUTING.md)
-and [catalog contract](guides/catalog-contract.md) when adding or changing a
-module. See [Check the result](guides/writing-modules.md#check-the-result) and
-[Taskfile.yml](Taskfile.yml) for local checks. Use
-[Issues](https://github.com/limanix/modules/issues) for questions, bug reports
-and feature requests.
-
-Licensed under [Apache 2.0](LICENSE).
+[contribution guide](https://github.com/limanix/.github/blob/main/CONTRIBUTING.md).
+Use [Issues](https://github.com/limanix/modules/issues) for questions, bug
+reports and feature requests. Licensed under [Apache 2.0](LICENSE).

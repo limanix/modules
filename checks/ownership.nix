@@ -2,6 +2,7 @@
 { lib, options }:
 let
   catalogPrefix = toString ../catalog + "/";
+  kinds = import ./catalog-kinds.nix;
   interfaceFile = toString ../interface.nix;
   platformFile = toString ../catalog/_shared/test/platform.nix;
   startsWith = prefix: path: lib.take (builtins.length prefix) path == prefix;
@@ -10,7 +11,12 @@ let
     let
       source = toString file;
       relative = lib.removePrefix catalogPrefix source;
-      owner = builtins.head (lib.splitString "/" relative);
+      segments = lib.splitString "/" relative;
+      owner =
+        if builtins.length segments > 2 && builtins.elem (builtins.head segments) kinds then
+          builtins.elemAt segments 1
+        else
+          builtins.head segments;
       publicArea = builtins.match "_shared/([^/]+)\\.nix" relative;
       catalogNamespace = startsWith [ "limanix" ] path || startsWith [ "lmx" ] path;
     in

@@ -33,7 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           changed=$(git diff --name-only HEAD^1 HEAD)
-          modules=$(ls catalog | grep -vx _shared)
+          modules=$(find catalog/shell catalog/toolchains catalog/modules -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
 
           every='^(catalog/_shared/|checks/|flake\.nix$|flake\.lock$|interface\.nix$|scripts/run_checks\.sh$)'
           plumbing='^(Taskfile\.yml|\.taskrc\.yml|\.github/workflows/pr\.yml|scripts/cache_nix_build\.sh|scripts/prune_nix_cache\.sh)$'
@@ -42,7 +42,7 @@ jobs:
           if [ "$EVENT_NAME" = workflow_dispatch ] || grep -qE "$every" <<< "$changed"; then
             targets="$modules common"
           else
-            targets=$(grep -oE '^catalog/[^/]+/' <<< "$changed" | cut -d/ -f2 | grep -Fx "$modules" | sort -u || true)
+            targets=$(grep -oE '^catalog/(shell|toolchains|modules)/[^/]+/' <<< "$changed" | cut -d/ -f3 | grep -Fx "$modules" | sort -u || true)
             if grep -qE "$plumbing" <<< "$changed"; then targets="$targets common"; fi
           fi
 
@@ -86,7 +86,7 @@ jobs:
           path: |
             .cache/nix
             .cache/nix-binary
-          key: nix-v1.0-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('flake.lock', 'flake.nix', 'interface.nix', 'catalog/_shared/**', format('catalog/{0}/**', matrix.target), 'checks/**', 'scripts/run_checks.sh', 'scripts/cache_nix_build.sh', 'scripts/prune_nix_cache.sh') }}
+          key: nix-v1.0-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('flake.lock', 'flake.nix', 'interface.nix', 'catalog/_shared/**', format('catalog/*/{0}/**', matrix.target), 'checks/**', 'scripts/run_checks.sh', 'scripts/cache_nix_build.sh', 'scripts/prune_nix_cache.sh') }}
           restore-keys: |
             nix-v1.0-${{ runner.arch }}-${{ matrix.target }}-
 
