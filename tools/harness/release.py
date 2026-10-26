@@ -79,9 +79,6 @@ def manifest(release: str, dist: Path) -> None:
 
 
 def build(arch: str, dist: Path) -> None:
-    subprocess.run(
-        ["git", "config", "--global", "--add", "safe.directory", str(Path.cwd())], check=True
-    )
     completed = subprocess.run(
         [
             "nix",

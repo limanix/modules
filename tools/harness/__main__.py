@@ -71,6 +71,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def run(arguments: argparse.Namespace) -> int:
     os.chdir(REPOSITORY)
+    if os.geteuid() == 0:
+        subprocess.run(
+            ["git", "config", "--global", "--add", "safe.directory", str(REPOSITORY)], check=True
+        )
     dist = REPOSITORY / "dist"
     match arguments.command:
         case "plan":
