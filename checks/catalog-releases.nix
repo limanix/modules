@@ -1,4 +1,8 @@
-# Pure validation of a module's releases.nix: it maps exactly the lines its module.toml declares.
+# Check that releases.nix covers exactly the declared version lines.
+#
+# catalog.nix passes the lines from module.toml and the release records here.
+# Missing or extra lines are rejected before module evaluation.
+# Package source details are checked by the source resolver, not by this file.
 name: lines: releases:
 let
   require =

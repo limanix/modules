@@ -1,4 +1,9 @@
-# Pure ABI regressions; fixtures do not instantiate or build Nix derivations.
+# Test the public test.nix format and its validation rules.
+#
+# Small values stand in for test groups and build derivations.
+# The cases cover required eval checks, optional groups, names, and target systems.
+# They also check that validation leaves private derivation values unevaluated.
+# No real derivations are created or built by these fixtures.
 { lib, system }:
 let
   validate = import ./test-contract.nix {

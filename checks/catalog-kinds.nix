@@ -1,5 +1,8 @@
-# Kinds of catalog modules, each a directory of modules under catalog/, in the order a LimaNix
-# configuration names them: [shell], [toolchains] and nixos.modules.
+# List the public module kinds and their directory order under catalog/.
+#
+# The order follows [shell], [toolchains], and nixos.modules in user settings.
+# Catalog discovery and option ownership checks use this list.
+# The Python planner and graph command also read it.
 [
   "shell"
   "toolchains"

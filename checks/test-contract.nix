@@ -1,4 +1,11 @@
-# Validate the public test ABI without forcing derivation implementation attrs.
+# Validate the groups returned by a public test.nix file.
+#
+# eval is required and must contain at least one check that returns true.
+# fails, run, and builds are optional and default to empty groups.
+# fails cases provide modules and an expected error message.
+# run and builds entries must be derivations for the requested target system.
+# Names and value types are checked without evaluating private derivation fields.
+# The Python harness runs the validated tests and checks build permissions.
 {
   lib,
   system,

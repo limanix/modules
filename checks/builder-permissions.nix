@@ -1,3 +1,9 @@
+# Check the permissions of the process that runs Nix build tests.
+#
+# This small build must run as a user other than root.
+# It checks that a read-only file cannot be changed.
+# It also checks that the shared HOME path stays absent and cannot be created.
+# These rules make permission checks in module tests meaningful.
 { pkgs }:
 pkgs.runCommand "contract-builder-permissions" { } ''
   printf 'Checking Nix builder privileges: uid=%s\n' "$EUID"

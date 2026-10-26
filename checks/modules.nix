@@ -1,4 +1,16 @@
-# Generic catalog orchestration. Application policy lives in each public test.nix.
+# Prepare catalog checks and their results for the Python harness.
+#
+# This file selects modules and evaluates their default and version entries.
+# Common checks cover imports, option ownership, assertions, and help cards.
+# Explicit version lines must replace the default in either import order.
+# Each module must also have a test.nix with a nonempty eval group.
+# Module-specific behavior is checked by that file's own test cases.
+#
+# The run group gets an automatic help-commands build for each public entry.
+# It checks that listed commands are executable in the profile; it does not run them.
+# The shared and platform suites load checks for the shared layer and harness.
+# Returned manifests contain eval results, expected errors, and run build paths.
+# The Python harness uses these manifests to run checks and report failures.
 {
   modules ? "[]",
   suite ? "module",
