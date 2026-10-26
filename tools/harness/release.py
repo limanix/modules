@@ -1,12 +1,14 @@
 """Prepare version names and disk files for a catalog release.
 
 The release command has three actions:
-- tag: read Git tags and print the next vN name if HEAD has no release tag.
+- tag: print the next vN name when pinned inputs change and HEAD has no release tag.
 - build: ask Nix for the disk image and copy it into dist/ with its SHA-256 hash.
 - manifest: write dist/image.json with download links and hashes for both systems.
 
 These helpers give the workflows the names and files they need.
 The workflows create the Git tag and publish the GitHub release.
+The tag check reads JSON and TOML from Git before and after the push.
+Comments and file formatting do not cause a release.
 """
 
 import hashlib
@@ -15,6 +17,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -38,7 +41,23 @@ def git_tags(arguments: list[str]) -> list[str]:
     return completed.stdout.split()
 
 
-def tag() -> None:
+def pinned_inputs(revision: str) -> tuple[object, object]:
+    def read(path: str) -> str:
+        return subprocess.run(
+            ["git", "show", f"{revision}:{path}"],
+            stdout=subprocess.PIPE,
+            text=True,
+            check=True,
+        ).stdout
+
+    return json.loads(read("flake.lock")), tomllib.loads(read("catalog/_shared/unstable.toml"))
+
+
+def tag(base: str = "HEAD^1") -> None:
+    if pinned_inputs(base) == pinned_inputs("HEAD"):
+        print("Pinned inputs have not changed", file=sys.stderr)
+        print("tag=")
+        return
     print(f"tag={next_tag(git_tags(['--points-at', 'HEAD']), git_tags(['--list', 'v*']))}")
 
 
