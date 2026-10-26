@@ -15,6 +15,7 @@ FINDING = {"name": "go", "line": "1.25", "text": "Freeze it on a snapshot"}
 def test_markdown_identifies_revisions_and_findings() -> None:
     assert "The catalog's lines match their sources." in drift.markdown(REPORT)
     rendered = drift.markdown({**REPORT, "findings": [FINDING]})
+    assert "https://github.com/limanix/modules/blob/main/catalog/README.md#release-maps" in rendered
     assert "Base: `0d9e9b8` (nixos-26.05). nixos-unstable: `abcdef1`." in rendered
     assert "| go | 1.25 | Freeze it on a snapshot |" in rendered
 

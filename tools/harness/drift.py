@@ -44,7 +44,8 @@ def markdown(report: dict[str, Any]) -> str:
     else:
         lines = [
             "Lines that differ from their sources by the rule in "
-            "[Release maps](catalog/README.md#release-maps).",
+            "[Release maps](https://github.com/limanix/modules/blob/main/"
+            "catalog/README.md#release-maps).",
             "Edit the module's `releases.nix`, its `module.toml` and README, "
             "then let CI check the change.",
             "",

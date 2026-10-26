@@ -14,4 +14,9 @@
     package = "python314";
     endOfLife = false;
   };
+  "3.15" = {
+    source = "base";
+    package = "python315";
+    endOfLife = false;
+  };
 }

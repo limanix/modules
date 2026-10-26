@@ -7,7 +7,7 @@ standard-library help remain available.
 
 ```toml
 [toolchains]
-python = "3.14"
+python = "3.15"
 ```
 
 Choose the line in the `[toolchains]` table of `limanix.toml` and
@@ -21,18 +21,20 @@ The value selects one line:
 
 | Value | Python | virtualenv | Notes |
 | -- | -- | -- | -- |
-| `3.14` | 3.14.x | Base | Recommended |
+| `3.15` | 3.15.x | Base | Recommended |
+| `3.14` | 3.14.x | Base |  |
 | `3.13` | 3.13.x | Base |  |
 | `3.12` | 3.12.x | Base |  |
 
 Lines marked `.x` and their virtualenv come from the
 [base Nixpkgs revision](../../README.md#package-pins-and-unfree-permissions) and
-receive its updates with each catalog release.
+receive its updates with each catalog release. The `virtualenv` command creates
+environments with the selected Python line.
 
 Upstream support stages and EOL dates are listed in
 [Status of Python versions](https://devguide.python.org/versions/).
 
-Each line also adds a command with its version, such as `python-3.14`.
+Each line also adds a command with its version, such as `python-3.15`.
 
 ## Use
 
@@ -94,9 +96,9 @@ installed in the system profile.
 
 | Guarantee | Checked by |
 | -- | -- |
-| Each selected line installs its interpreter and language server, offers the parser and reports end-of-life warnings | `eval.line-3.12`, `eval.line-3.13`, `eval.line-3.14` |
+| Each selected line installs its interpreter and language server, offers the parser and reports end-of-life warnings | `eval.line-3.12`, `eval.line-3.13`, `eval.line-3.14`, `eval.line-3.15` |
 | Installed interpreters retain their identity and priority without implicit HTML documentation | `eval.runtimeOutputSelection` |
 | Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
 | The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
-| Each interpreter creates working venv and offline virtualenv environments with pip | `run.commands-3.12`, `run.commands-3.13`, `run.commands-3.14` |
+| Each interpreter creates working venv and offline virtualenv environments with pip | `run.commands-3.12`, `run.commands-3.13`, `run.commands-3.14`, `run.commands-3.15` |
 | The declared and user-supplied servers answer an LSP initialization request | `run.languageServer`, `run.userOverride` |
