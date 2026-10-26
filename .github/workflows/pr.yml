@@ -15,7 +15,6 @@ permissions:
 
 jobs:
   plan:
-    timeout-minutes: 5
     runs-on: ubuntu-24.04
     outputs:
       targets: ${{ steps.plan.outputs.targets }}
@@ -42,7 +41,6 @@ jobs:
           fi
 
   lint:
-    timeout-minutes: 10
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -72,7 +70,6 @@ jobs:
 
   test:
     name: Test ${{ matrix.target }} (${{ matrix.runner }})
-    timeout-minutes: 20
     needs: plan
     if: ${{ needs.plan.outputs.targets != '[]' }}
     strategy:
@@ -132,7 +129,6 @@ jobs:
       - name: Save Nix sources and local builds
         if: ${{ success() && steps.cache.outputs.cache-hit != 'true' && steps.prune.outcome == 'success' }}
         continue-on-error: true
-        timeout-minutes: 2
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |

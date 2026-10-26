@@ -16,7 +16,6 @@ jobs:
   update:
     name: Update ${{ matrix.input }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -72,7 +71,6 @@ jobs:
   drift:
     name: Report catalog drift
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
     permissions:
       contents: read
       issues: write

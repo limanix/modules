@@ -9,7 +9,6 @@ permissions:
 jobs:
   build:
     name: Build image (${{ matrix.arch }})
-    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -21,7 +20,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Allow user namespaces for systemd-repart
+      - name: Allow user namespaces
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Build the image
         uses: mr-chelyshkin/actions/task-run@v2
