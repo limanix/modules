@@ -1,3 +1,19 @@
+"""Run catalog checks through Nix and report their results.
+
+The check command selects module, shared, or platform checks.
+The common suite runs the shared and platform checks together.
+checks/modules.nix supplies the checks for the selected Linux system.
+
+The phases are:
+- eval: check configuration values and expected error messages.
+- run: ask Nix to build the selected test results or reuse them from a cache.
+- check: run both phases.
+
+Before a build, the runner checks which local builds are allowed.
+It also sets build limits, connects the cache, and records paths to keep.
+Each run reports its result, exit code, and time spent.
+"""
+
 import json
 import os
 import re

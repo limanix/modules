@@ -1,3 +1,15 @@
+"""Keep a file-based Nix cache for later CI runs.
+
+The post-build hook passes new output paths to this module.
+It copies these paths and their dependencies into NIX_BUILD_CACHE with nix copy.
+A failed copy or a copy timeout is reported as a skipped cache write.
+GitHub Actions saves and restores the cache directory between runs.
+
+After checks, the runner writes paths to keep into the .live file.
+The prune command removes other cache entries and unused archives.
+It keeps the cache data when that list is missing or marked as incomplete.
+"""
+
 import os
 import subprocess
 import sys

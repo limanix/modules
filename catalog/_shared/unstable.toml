@@ -1,4 +1,4 @@
 # The catalog's nixos-unstable revision: lines with the source "unstable" in their
-# module's releases.nix come from it. The Update flow moves it every Monday.
+# module's releases.nix come from it. The Check update flow moves it every Monday.
 rev = "fe13242281a67641c0102cdb1087f0ebe586c7df"
 sha256 = "sha256-zp8ToDMnqZcu4o4IH9pdwXFXGp7yLm/M0dEnNWnyd7I="

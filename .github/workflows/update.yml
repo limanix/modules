@@ -1,4 +1,4 @@
-name: Update flow
+name: Check update flow
 
 on:
   schedule:

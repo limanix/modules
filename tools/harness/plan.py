@@ -1,8 +1,16 @@
-"""Select checks from changed paths and literal Nix references, including test sources.
+"""Select the catalog checks and disk builds for a PR.
 
-This is deliberately not a Nix parser: references in comments can select extra checks.
-A reference to a directory selects its descendants, including a literal prefix before
-a computed version path. Removed or unknown module directories select the whole catalog.
+The plan command reads changed paths from Git and finds the affected modules.
+It also selects modules that depend on them, following each dependency in turn.
+The search reads relative paths in all module Nix files, including test files.
+Directory paths and fixed path prefixes before computed version names also count.
+
+Changes to shared code and removed or unknown module directories select all modules.
+A separate set of file paths controls whether to build the disk images.
+The command prints the selected targets and image flag for GitHub Actions.
+
+The search reads source text without evaluating Nix expressions.
+Paths in comments can select extra checks; fully computed paths may be missed.
 """
 
 import json

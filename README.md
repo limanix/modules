@@ -78,9 +78,9 @@ A tag `v<N>` on `main` releases the catalog with its disks.
 
 | Change | What happens |
 | -- | -- |
-| Nixpkgs moves within the NixOS release | Every Monday the Update flow opens a pull request that merges itself once the checks pass |
-| nixos-unstable moves | Every Monday the Update flow opens a separate pull request that merges itself once the checks pass |
-| A new NixOS release is published | The Update flow opens a pull request that waits: boot the image artifact of its checks in Lima, then merge |
+| Nixpkgs moves within the NixOS release | Every Monday the Check update flow opens a pull request that merges itself once the checks pass |
+| nixos-unstable moves | Every Monday the Check update flow opens a separate pull request that merges itself once the checks pass |
+| A new NixOS release is published | The Check update flow opens a pull request that waits: boot the image artifact of its checks in Lima, then merge |
 | `flake.lock` or `catalog/_shared/unstable.toml` changes on `main` | The Tag flow creates the next `v<N>`, which releases |
 | Anything else | Create the next `v<N>` by hand |
 

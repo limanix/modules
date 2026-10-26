@@ -1,3 +1,14 @@
+"""Prepare version names and disk files for a catalog release.
+
+The release command has three actions:
+- tag: read Git tags and print the next vN name if HEAD has no release tag.
+- build: ask Nix for the disk image and copy it into dist/ with its SHA-256 hash.
+- manifest: write dist/image.json with download links and hashes for both systems.
+
+These helpers give the workflows the names and files they need.
+The workflows create the Git tag and publish the GitHub release.
+"""
+
 import hashlib
 import json
 import re

@@ -1,3 +1,14 @@
+"""Keep the Catalog drift issue up to date on GitHub.
+
+Check update flow runs this command alongside the input update jobs.
+It calls tools/drift.nix to compare catalog versions with their pinned sources.
+The comparison uses files from this job's checkout.
+
+This module turns the JSON result into a Markdown report.
+It creates or updates the issue when there are findings.
+It adds a comment and closes the issue when the findings are gone.
+"""
+
 import json
 import os
 import subprocess

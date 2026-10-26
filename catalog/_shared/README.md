@@ -267,7 +267,7 @@ in
 ```
 
 - Lines from the base and unstable record no version and receive their patch
-  releases: the Update flow moves both revisions every Monday.
+  releases: the Check update flow moves both revisions every Monday.
 - A snapshot keeps its exact version and never moves.
 - The harness requires `releases.nix` to map exactly the lines of `module.toml`.
   The resolver rejects a record without a valid source, package or `endOfLife`,

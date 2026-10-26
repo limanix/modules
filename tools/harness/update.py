@@ -1,3 +1,15 @@
+"""Update the source versions pinned by the catalog.
+
+Check update flow calls this module with one input name:
+- nixpkgs: refresh flake.lock within the current NixOS release.
+- unstable: update the revision and hash in catalog/_shared/unstable.toml.
+- nixos: look for the next published NixOS release, then update flake.nix and its lock.
+
+Nix updates the lock file and fetches source hashes.
+Python reads channel information, edits the other files, and prints workflow outputs.
+The workflow uses these outputs to decide whether to open an update PR.
+"""
+
 import json
 import re
 import subprocess

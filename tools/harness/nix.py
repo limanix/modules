@@ -1,3 +1,17 @@
+"""Provide shared helpers for calling Nix and reading its output.
+
+This file holds common command flags and the supported Nix versions and systems.
+It can read the installed Nix version and the current system name.
+
+The check runner uses these helpers to:
+- Find the main error message for an expected failure.
+- Read the local builds listed by a dry run.
+- Turn Python values into escaped Nix strings and lists.
+
+An unsupported Nix version or an unknown build-plan format raises an error.
+This keeps format checks and text parsing in one place.
+"""
+
 import re
 import subprocess
 from collections.abc import Sequence

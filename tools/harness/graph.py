@@ -1,3 +1,13 @@
+"""Build the catalog graph shown on the site.
+
+The graph command reads graph.toml files from modules and catalog/_shared.
+It collects node names, descriptions, and links into catalog/graph.json.
+The output uses a stable order and layout to make changes easy to review.
+
+Module kinds come from checks/catalog-kinds.nix.
+The CI planner also uses this file's helpers to find module directories.
+"""
+
 import json
 import re
 import tomllib
