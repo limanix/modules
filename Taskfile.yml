@@ -103,7 +103,6 @@ tasks:
             {{.nix_build_caps}}
             {{.CONTAINER_RUN_ARGS | default ""}}
           CONTAINER_ENVS: >-
-            GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0=/workspace
             GH_TOKEN GITHUB_REPOSITORY PYTHONDONTWRITEBYTECODE=1
             {{.CONTAINER_ENVS | default ""}}
 
