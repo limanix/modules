@@ -34,6 +34,6 @@ in
         text = "cargo fmt && cargo clippy";
       }
     ];
-    guide = "https://docs.limanix.dev/inside/languages#rust";
+    guide = "https://docs.limanix.dev/modules/rust";
   };
 }

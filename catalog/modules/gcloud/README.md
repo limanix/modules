@@ -1,6 +1,9 @@
 # Google Cloud CLI
 
-Installs the Google Cloud CLI.
+Installs the Google Cloud CLI with `gcloud`, `gsutil`, `bq` and
+`gke-gcloud-auth-plugin`.
+
+## Select
 
 ```toml
 [nixos]
@@ -22,8 +25,16 @@ gcloud version
 
 ## Use
 
-Authenticate for the guest account using your organization's approved method.
-For an existing configuration:
+Credentials on your Mac are not copied into the VM. Sign in inside the VM using
+your organization's approved method. For interactive sign-in and project
+selection:
+
+```console
+gcloud auth login
+gcloud config set project PROJECT_ID
+```
+
+Check the active configuration:
 
 ```console
 gcloud config list
@@ -32,7 +43,11 @@ gcloud auth list
 
 Check the active account and project before running project commands.
 Application Default Credentials are separate from the CLI's own login. Configure
-them when your application requires them.
+them when your application requires them:
+
+```console
+gcloud auth application-default login
+```
 
 ## Configuration and integration
 
@@ -43,8 +58,7 @@ them when your application requires them.
 | Integration | Needs no other module; `[env]` and a mount can select a configuration directory from the Mac |
 | Activation | Adds no startup units, activation commands or cloud resources |
 
-Host credentials are not copied into the guest. Keep credentials out of Nix
-modules and guest-wide TOML environment settings.
+Keep credentials out of Nix modules and guest-wide TOML environment settings.
 
 ## Corner cases
 

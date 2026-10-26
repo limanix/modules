@@ -58,5 +58,5 @@
       text = "go test -race ./...";
     }
   ];
-  page = "inside/languages#go";
+  page = "modules/go";
 }

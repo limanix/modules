@@ -1,10 +1,9 @@
 # Harlequin
 
 Installs Harlequin, a terminal SQL IDE, with its PostgreSQL adapter in the same
-Python environment. DuckDB and SQLite adapters are included by Harlequin. The
-default theme is Catppuccin in the guest's flavor. Harlequin refuses Textual's
-terminal theme, so with the default `system` flavor it stays Catppuccin Mocha,
-with its own background.
+Python environment. DuckDB and SQLite adapters are included by Harlequin.
+
+## Select
 
 ```toml
 [nixos]
@@ -48,6 +47,12 @@ home-directory TOML files. The user configuration directory respects
 another theme. The command-line theme takes precedence over the profile. See the
 [Harlequin configuration guide](https://harlequin.sh/docs/config-file/) for
 profile discovery and precedence.
+
+## Theme
+
+The default theme is Catppuccin in the guest's flavor. Harlequin refuses
+Textual's terminal theme. With the default `system` flavor it stays Catppuccin
+Mocha, with its own background.
 
 ## Configuration and integration
 

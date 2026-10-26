@@ -50,5 +50,5 @@
       text = "deactivate";
     }
   ];
-  page = "inside/languages#python";
+  page = "modules/python";
 }

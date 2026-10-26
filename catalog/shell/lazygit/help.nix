@@ -24,6 +24,6 @@ in
         text = "Personal settings go in ~/.config/lazygit/config.yml.";
       }
     ];
-    guide = "https://docs.limanix.dev/inside/terminal#git-and-lazygit";
+    guide = "https://docs.limanix.dev/modules/lazygit";
   };
 }

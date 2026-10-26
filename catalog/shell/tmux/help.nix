@@ -24,6 +24,6 @@ in
         text = "Press Ctrl-B, then ? for the key bindings.";
       }
     ];
-    guide = "https://docs.limanix.dev/inside/terminal#tmux";
+    guide = "https://docs.limanix.dev/modules/tmux";
   };
 }

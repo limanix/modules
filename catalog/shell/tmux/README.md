@@ -3,6 +3,8 @@
 Adds terminal windows and split panes, mouse support, vi copy mode, OSC 52
 clipboard support, and saved sessions through tmux-resurrect and tmux-continuum.
 
+## Select
+
 The `terminal` shell preset includes tmux, and `multiplexer` chooses it in
 either preset:
 
@@ -13,26 +15,6 @@ multiplexer = "tmux" # or "none"
 
 [Apply the change](https://docs.limanix.dev/vms/update#apply-a-change) after
 editing `limanix.toml`.
-
-## Configuration and integration
-
-| Boundary | Contract |
-| -- | -- |
-| Public option | `lmx.tmux.navigation.enable`, Boolean default `true` |
-| Standard settings | `programs.tmux.*`, including key mode, terminal, escape delay and extra configuration |
-| Personal state | `~/.tmux.conf` and snapshots under `~/.tmux/resurrect/` |
-| Integration | Supplies `limanix.session.command`; AstroNvim uses smart-splits pane markers |
-| Services | Tmux starts on demand; selecting the module does not attach ordinary shells |
-
-## Corner cases
-
-| Case | Behavior or next step |
-| -- | -- |
-| Session name contains `.` or `:` | The tmux provider rejects it rather than attaching a normalized name |
-| Host clipboard does not work | Check OSC 52 support and terminal permission on the Mac |
-| Navigation replaces shell keys | Use prefix forwarding or disable `lmx.tmux.navigation.enable` |
-| VM restart | Restore the saved layout; interrupted processes and unsaved buffers are not restored |
-| Custom status line | Keep continuum's status hook when changing it |
 
 ## Versions
 
@@ -48,6 +30,8 @@ Inside the VM, create or attach to a named session:
 ```console
 tmux new-session -A -s work
 ```
+
+The platform's `limanix-session work` command opens the same named session.
 
 The module provides the guest session interface used by
 `limanix shell --session`. Create or attach to that session directly from the
@@ -146,8 +130,8 @@ normal paste shortcut.
 
 The platform's `pbcopy` and `pbpaste` work inside tmux too: they go through the
 attached client's terminal.
-[Terminal and clipboard](https://limanix.dev/terminal.html) lists the settings
-for common Mac terminals; see
+[Terminal and clipboard](https://docs.limanix.dev/inside/clipboard) explains the
+required terminal permissions; see
 [tmux's clipboard guide](https://github.com/tmux/tmux/wiki/Clipboard) for
 others.
 
@@ -168,6 +152,26 @@ See
 
 Personal overrides belong in `~/.tmux.conf` inside the VM. Keep the status line
 enabled and preserve continuum's `status-right` hook if you customize it.
+
+## Configuration and integration
+
+| Boundary | Contract |
+| -- | -- |
+| Public option | `lmx.tmux.navigation.enable`, Boolean default `true` |
+| Standard settings | `programs.tmux.*`, including key mode, terminal, escape delay and extra configuration |
+| Personal state | `~/.tmux.conf` and snapshots under `~/.tmux/resurrect/` |
+| Integration | Supplies `limanix.session.command`; AstroNvim uses smart-splits pane markers |
+| Services | Tmux starts on demand; selecting the module does not attach ordinary shells |
+
+## Corner cases
+
+| Case | Behavior or next step |
+| -- | -- |
+| Session name contains `.` or `:` | The tmux provider rejects it rather than attaching a normalized name |
+| Host clipboard does not work | Check OSC 52 support and terminal permission on the Mac |
+| Navigation replaces shell keys | Use prefix forwarding or disable `lmx.tmux.navigation.enable` |
+| VM restart | Restore the saved layout; interrupted processes and unsaved buffers are not restored |
+| Custom status line | Keep continuum's status hook when changing it |
 
 ## Guarantees
 

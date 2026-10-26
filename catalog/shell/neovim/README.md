@@ -2,6 +2,8 @@
 
 Enables the Neovim text editor through the NixOS `programs.neovim` option.
 
+## Select
+
 Choose it as the editor in the `[shell]` table:
 
 ```toml

@@ -3,6 +3,8 @@
 Runs Docker Engine as a system service in the VM, with the Docker CLI, the
 Compose plugin, and Lazydocker.
 
+## Select
+
 ```toml
 [nixos]
 modules = ["lmx:docker"]
