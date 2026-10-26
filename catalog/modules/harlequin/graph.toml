@@ -1,0 +1,4 @@
+[harlequin]
+name = "Harlequin"
+text = "Harlequin comes with the PostgreSQL adapter."
+with = ["postgres", "theme"]

@@ -1,0 +1,19 @@
+[zsh]
+name = "Zsh"
+text = "Zsh comes with Oh My Zsh, a Pure or Starship prompt, and fzf on Ctrl-T and Alt-C."
+with = ["ohmyzsh", "pure", "starship", "fzf", "yazi"]
+
+[ohmyzsh]
+name = "Oh My Zsh"
+text = "Oh My Zsh comes with the Zsh module, along with completion and history."
+with = ["zsh"]
+
+[pure]
+name = "Pure"
+text = "The default Zsh prompt, in the colors of the theme."
+with = ["zsh", "theme"]
+
+[starship]
+name = "Starship"
+text = '`prompt = "starship"` swaps Pure for Starship with the theme palette.'
+with = ["zsh", "theme"]

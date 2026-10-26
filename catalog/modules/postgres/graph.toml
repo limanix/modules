@@ -1,0 +1,4 @@
+[postgres]
+name = "PostgreSQL"
+text = "Open the database in Harlequin, a terminal SQL IDE."
+with = ["harlequin"]

@@ -1,0 +1,4 @@
+[go]
+name = "Go"
+text = "`gopls` reaches AstroNvim when both are on."
+with = ["astronvim"]

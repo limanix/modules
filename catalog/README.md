@@ -1,6 +1,6 @@
 # Catalog contract
 
-This document defines the module contract, revision 5.
+This document defines the module contract, revision 6.
 
 ## NixOS foundation
 
@@ -40,13 +40,25 @@ catalog/
 ├── _shared/             schemas, data and helpers for every module
 ├── shell/<name>/        components of the client's [shell] presets
 ├── toolchains/<name>/   languages of the client's [toolchains] table
-└── modules/<name>/      modules that users select by name
+├── modules/<name>/      modules that users select by name
+└── graph.json           the site's catalog graph, written by task generate/graph
 ```
 
 A module's kind is the directory that contains it. The harness discovers exactly
 these three kinds and rejects any other directory at the top of `catalog/`. A
 module name is unique across all kinds, so `lmx:<name>` and `lmx help <name>`
-stay unambiguous. Each module directory has the same layout:
+stay unambiguous.
+
+| Kind | For | Chosen by |
+| -- | -- | -- |
+| `shell` | The development account's terminal: the login shell, the editor, the multiplexer and the tools every preset installs | The `preset`, `editor` and `multiplexer` of `[shell]` |
+| `toolchains` | One language: its compiler or runtime, package manager, debugger and the language server it offers to editors | One version per language in `[toolchains]` |
+| `modules` | System features and standalone tools: services such as Docker and PostgreSQL, tools such as the Google Cloud CLI | Selectors in `[nixos] modules` |
+
+A kind says what a module is for and how `limanix.toml` chooses it. The
+contract, the ownership rules and the import boundary are the same in every
+kind; the harness enforces no other difference between kinds. Each module
+directory has the same layout:
 
 ```text
 catalog/<kind>/<name>/
@@ -57,12 +69,17 @@ catalog/<kind>/<name>/
 ├── test.nix             public test export
 ├── test/                private test code and fixtures
 ├── README.md            usage, guarantees and corner cases
+├── graph.toml           the module's nodes in the site's catalog graph
 └── ...                  private implementation
 ```
 
 `module.toml`, `releases.nix`, entry points, documented options and `test.nix`
-are the machine interface. The README is the public human interface. Other
-filenames are private; a harness must not depend on their names or layout.
+are the machine interface. The README is the public human interface. The
+optional `graph.toml` describes the module for the site's catalog graph: each
+table is a node with a `name`, a `text` and the node ids it works `with`.
+`task generate/graph` collects the tables of every module and of `_shared` into
+`catalog/graph.json`. Other filenames are private; a harness must not depend on
+their names or layout.
 
 ### Discovery metadata
 
@@ -295,7 +312,10 @@ fixtures stay offline and do not use a VM or `system.build.toplevel`.
 Choose the cheapest sufficient level. Configuration assertions do not prove
 startup, application settings or service health. Native execution can prepare an
 isolated application environment, but does not prove NixOS login or `/etc`
-activation. Those promises need a VM test.
+activation. Those promises need a VM test. `vm` is optional: export it only for
+a promise that needs activation, such as the login shell or a system service.
+The PR flow never runs it; [Cost and reports](#cost-and-reports) says when it
+runs.
 
 ## Shared helpers and VM tests
 
@@ -356,11 +376,12 @@ and VM status. They separate newly executed checks from reused results where
 known; unknown cache state stays unknown. A cancelled or interrupted run is
 incomplete evidence.
 
-The PR flow checks changed modules, not the consumers of their public imports.
-Changes to `_shared`, `interface.nix`, the flake or the harness check every
-module. Platform `eval` and `run` check the generic harness and base interface,
-including its builder permissions. Required compositions belong in their own
-module tests.
+The PR flow checks changed modules and their consumers: a module whose entry
+points or test files import a changed module's public entry point is checked
+with it. Changes to `_shared`, `interface.nix`, the flake or the harness check
+every module. Platform `eval` and `run` check the generic harness and base
+interface, including its builder permissions. Required compositions belong in
+their own module tests.
 
 ## README guarantees
 

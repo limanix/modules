@@ -44,6 +44,25 @@ Every module follows the [catalog contract](catalog/README.md), which the client
 relies on; its own README lists what it guarantees and the test that checks each
 promise.
 
+## Repository layout
+
+```text
+modules/
+├── catalog/        the catalog: _shared/, shell/, toolchains/, modules/ and graph.json
+├── checks/         the harness in Nix: discovery, contract validation and test aggregation
+├── scripts/        orchestration: the check runner, updates, the image build and release helpers
+├── interface.nix   the options every VM gets: account identity, sessions and help cards
+├── platform.nix    the guest platform: disk layout, boot loader and Lima integration
+├── image.nix       the base disk, built from platform.nix
+└── flake.nix       the Nixpkgs and nixos-lima pins, and the disk outputs
+```
+
+A client bundles `LICENSE`, `flake.lock`, `interface.nix`, `platform.nix` and
+`catalog/`; everything else stays here. Nix evaluates and builds: every check is
+an evaluation or a derivation that `checks/` assembles from the `test.nix`
+exports of the modules. The scripts only orchestrate: they select what to check,
+call Nix and report.
+
 ## Base disk
 
 Each release carries the disk a new VM boots from: NixOS for `aarch64` and
@@ -74,8 +93,10 @@ runs in a container.
 | `task ci/lint` | Checks Nix and Markdown formatting |
 | `task ci/test/modules MODE=eval MODULES="go docker"` | Tests the named modules, or all of them; `MODE` is `check`, `eval`, `run` or `vm` |
 | `task ci/test/layer SUITE=shared MODE=eval` | Tests the shared layer, or the platform with `SUITE=platform` |
+| `task generate/graph` | Writes `catalog/graph.json`, the site's catalog graph, from the `graph.toml` of each module |
 
-`MODE=vm` boots VMs and needs Linux with `/dev/kvm`.
+`MODE=vm` boots VMs and needs `/dev/kvm`, which the container does not get: run
+`bash scripts/run_checks.sh module vm <name>` on Linux with Nix installed.
 
 ## Contributing
 

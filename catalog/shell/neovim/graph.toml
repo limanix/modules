@@ -1,0 +1,4 @@
+[neovim]
+name = "Neovim"
+text = "AstroNvim runs on it; on its own, Neovim is a plain editor."
+with = ["astronvim"]

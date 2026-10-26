@@ -1,0 +1,3 @@
+[theme]
+name = "`[theme]`"
+text = "One `[theme]` in `limanix.toml` colors the editor, the prompt, tmux, Lazygit, Yazi, bat, delta, Harlequin and Posting."

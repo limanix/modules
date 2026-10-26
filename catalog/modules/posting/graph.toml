@@ -1,0 +1,4 @@
+[posting]
+name = "Posting"
+text = "A terminal HTTP client in the colors of the theme."
+with = ["theme"]

@@ -1,0 +1,4 @@
+[astronvim]
+name = "AstroNvim"
+text = "AstroNvim brings Neovim and Lazygit and picks up language servers from the toolchains."
+with = ["neovim", "lazygit", "tmux", "go", "rust", "python", "nodejs", "theme"]

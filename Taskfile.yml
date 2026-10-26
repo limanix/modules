@@ -93,6 +93,15 @@ tasks:
         vars:
           FMT_ARGS: '{{.markdown_paths}}'
 
+  generate/graph:
+    desc: Write catalog/graph.json from the graph.toml files of the catalog
+    cmds:
+      - task: nix:exec
+        vars:
+          CMD: >-
+            sh -c 'graph=$(nix eval --extra-experimental-features nix-command --raw --file scripts/graph.nix)
+            && printf "%s\n" "$graph" > catalog/graph.json'
+
   release/build:
     desc: Build image
     requires:
