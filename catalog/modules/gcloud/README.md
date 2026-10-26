@@ -14,7 +14,7 @@ Add the selector to `nixos.modules` and
 
 The package comes from the catalog's
 [nixos-unstable revision](../../README.md#package-pins-and-unfree-permissions),
-which the Update flow moves every week. This module has no version lines.
+which the Check update flow moves every week. This module has no version lines.
 
 ```console
 gcloud version

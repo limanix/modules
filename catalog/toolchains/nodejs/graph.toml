@@ -1,0 +1,4 @@
+[nodejs]
+name = "Node.js"
+text = "The TypeScript server reaches AstroNvim when both are on."
+with = ["astronvim"]

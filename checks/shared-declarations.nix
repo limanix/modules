@@ -1,4 +1,9 @@
-# Root shared schemas cannot import application or private test modules.
+# Validate shared option schemas without a complete NixOS system.
+#
+# The supplied modules are evaluated with lib.evalModules and the test packages.
+# Every imported file must be a public schema listed by shared-files.nix.
+# Application modules and private test helpers are rejected.
+# Option declarations must also pass the ownership rules.
 {
   lib,
   pkgs,

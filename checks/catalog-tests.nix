@@ -1,3 +1,9 @@
+# Test the rules for catalog names, metadata, and release lines.
+#
+# Small values represent directory entries and module.toml contents.
+# The cases cover accepted values, rejected values, and numeric version order.
+# Release records must have the same lines as the module metadata.
+# These tests do not load NixOS or build packages.
 { lib }:
 let
   validate = import ./catalog-metadata.nix;

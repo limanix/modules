@@ -1,4 +1,11 @@
-# Validate the public test ABI without forcing derivation implementation attrs.
+# Validate the groups returned by a public test.nix file.
+#
+# eval is required and must contain at least one check that returns true.
+# fails, run, and builds are optional and default to empty groups.
+# fails cases provide modules and an expected error message.
+# run and builds entries must be derivations for the requested target system.
+# Names and value types are checked without evaluating private derivation fields.
+# The Python harness runs the validated tests and checks build permissions.
 {
   lib,
   system,
@@ -11,7 +18,6 @@ let
     "fails"
     "run"
     "builds"
-    "vm"
   ];
   require = condition: message: if condition then true else throw "Module tests: ${name}: ${message}";
   validKey = key: builtins.match "[a-z][A-Za-z0-9._-]*" key != null;
@@ -62,9 +68,6 @@ let
     let
       values = validateKeys group (groupFor group);
     in
-    assert require (
-      group != "vm" || builtins.all (key: key == "activation") (builtins.attrNames values)
-    ) "vm may export only activation";
     assert builtins.all (
       key:
       let
@@ -88,5 +91,4 @@ assert require (
   fails = validateFails;
   run = validateDerivations "run";
   builds = validateDerivations "builds";
-  vm = validateDerivations "vm";
 }

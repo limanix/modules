@@ -1,0 +1,3 @@
+[gcloud]
+name = "Google Cloud CLI"
+text = "`gcloud` for projects and accounts."

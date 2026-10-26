@@ -1,0 +1,4 @@
+[yazi]
+name = "Yazi"
+text = "Leave Yazi with `q`, and your shell moves to its folder."
+with = ["zsh", "theme"]

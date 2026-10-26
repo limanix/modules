@@ -98,9 +98,9 @@ default theme's wrapper. See Yazi's
 
 | Guarantee | Checked by |
 | -- | -- |
-| Enables the configured Yazi package and accepts an ordinary package override | `eval.installed`, `eval.packageOverride` |
+| Enables Yazi and installs its configured preview dependencies | `eval.installed` |
 | Bash and Zsh receive `y` without selecting Zsh as a dependency | `eval.independentShell`, `run.shellHandoff` |
-| The default theme respects explicit directories, personal themes, managed overrides and managed Yazi flavors | `eval.managedOverride`, `eval.managedFlavor`, `run.shellHandoff` |
+| The default theme respects explicit directories, personal themes, managed overrides and managed Yazi flavors | `run.shellHandoff` |
 | The system flavor runs Yazi with its own presets, on the terminal's background | `eval.systemTheme`, `run.shellHandoff` |
 | The default theme follows the guest's flavor | `run.shellHandoff` |
 | `q` passes the selected directory back to the shell, including spaces and newlines; `Q` retains the shell directory | `run.shellHandoff` |

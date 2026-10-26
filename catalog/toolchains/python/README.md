@@ -94,10 +94,9 @@ installed in the system profile.
 
 | Guarantee | Checked by |
 | -- | -- |
-| Interpreter and virtualenv versions, the parser and end-of-life warnings match the selected line | `eval.line-3.12`, `eval.line-3.13`, `eval.line-3.14` |
+| Each selected line installs its interpreter and language server, offers the parser and reports end-of-life warnings | `eval.line-3.12`, `eval.line-3.13`, `eval.line-3.14` |
 | Installed interpreters retain their identity and priority without implicit HTML documentation | `eval.runtimeOutputSelection` |
 | Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
 | The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
 | Each interpreter creates working venv and offline virtualenv environments with pip | `run.commands-3.12`, `run.commands-3.13`, `run.commands-3.14` |
-| Installing this module does not enable an editor | `eval.allLines` |
 | The declared and user-supplied servers answer an LSP initialization request | `run.languageServer`, `run.userOverride` |

@@ -1,383 +1,217 @@
 # Catalog contract
 
-This document defines the module contract, revision 5.
+Rules for catalog module authors, revision 6. NixOS combines modules into one
+configuration. Nix evaluates that configuration; builds and system activation
+are separate steps.
 
-## NixOS foundation
+## Add a module
 
-A module declares options, assigns configuration and imports other modules.
-NixOS combines these definitions into one system. Evaluation, building and
-activation are separate operations.
+Create `catalog/<kind>/<name>/` with four files:
 
-```mermaid
-flowchart LR
-    selectors[Public selectors] --> module[Module entry points]
-    module --> config[NixOS configuration]
-    config --> recipes[Build recipes]
-    recipes --> system[Activated system]
-    module --> tests[Public test.nix]
-    tests --> eval[Configuration assertions]
-    tests --> run[Native execution]
-    tests --> vm[Activation tests]
-```
+| File | Purpose |
+| -- | -- |
+| `module.toml` | Describe the module and any version lines |
+| `default.nix` | Provide the module's default configuration and help card |
+| `test.nix` | Check the module's own behavior; at least one `eval` check is required |
+| `README.md` | Explain usage, public settings and guarantees |
 
-## Ownership
+Choose the kind that matches how the client selects the module:
 
-| Component | Owns | Uses from other components |
+| Kind | Purpose | Selected through |
 | -- | -- | -- |
-| Module | Its packages, pins, settings, adapters, tests and README | Public entry points, options and capabilities |
-| `_shared` | Generic schemas, data and test helpers | Explicit arguments; no named module policy |
-| Platform | Base Nixpkgs, account identity and public schemas | Module entry points |
-| Harness | Discovery, contract validation, scheduling and results | Public metadata and `test.nix` exports |
+| `shell` | Shell, editor, multiplexer and preset tools | `[shell]` |
+| `toolchains` | Language compilers, runtimes and tools | `[toolchains]` |
+| `modules` | Services and standalone tools | `[nixos] modules` |
 
-An aggregate is also a module. Its component choices and integration scenarios
-stay in its directory. External code does not read another module's private
-package map, tests or `lmx.internal.<name>` values.
+The client owns shell presets and toolchain keys. Only the `modules` kind
+accepts user selectors in `[nixos] modules`. All kinds follow the same ownership
+and import rules. The catalog also has `_shared` for common schemas, data and
+helpers. Other top-level directories are rejected.
 
-## Catalog layout and imports
+Module names must be unique across kinds and match
+`[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*`. Names have at most 63 characters. `_shared`,
+`internal`, `capabilities` and `pins` are reserved.
 
-```text
-catalog/
-├── _shared/             schemas, data and helpers for every module
-├── shell/<name>/        components of the client's [shell] presets
-├── toolchains/<name>/   languages of the client's [toolchains] table
-└── modules/<name>/      modules that users select by name
-```
-
-A module's kind is the directory that contains it. The harness discovers exactly
-these three kinds and rejects any other directory at the top of `catalog/`. A
-module name is unique across all kinds, so `lmx:<name>` and `lmx help <name>`
-stay unambiguous. Each module directory has the same layout:
-
-```text
-catalog/<kind>/<name>/
-├── module.toml          discovery metadata
-├── default.nix          default public entry point
-├── versions/<line>.nix  one public entry point per declared line
-├── releases.nix         where each line's packages come from
-├── test.nix             public test export
-├── test/                private test code and fixtures
-├── README.md            usage, guarantees and corner cases
-└── ...                  private implementation
-```
-
-`module.toml`, `releases.nix`, entry points, documented options and `test.nix`
-are the machine interface. The README is the public human interface. Other
-filenames are private; a harness must not depend on their names or layout.
-
-### Discovery metadata
-
-| Field | Rule |
+| `module.toml` field | Rule |
 | -- | -- |
 | `description` | Required nonempty string |
-| `versions` | Optional list of unique numeric strings |
+| `versions` | Optional list of unique lines matching `[0-9]+(\.[0-9]+)*`, each at most 63 characters |
 | `default` | Required member of nonempty `versions`; absent otherwise |
-| Unknown field | Error |
 
-A module name matches `[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*`; each segment starts
-with a letter. A line matches `[0-9]+(\.[0-9]+)*`. Both are at most 63
-characters. `_shared`, `internal`, `capabilities` and `pins` are reserved names.
-Each declared line has its entry point under `versions/`.
+Unknown metadata fields are errors. A module without version lines needs only
+`description`. Add a `versions/<line>.nix` entry for each declared line. The
+`test/` directory is optional; use it when tests need separate files or data.
+Other implementation filenames are private.
 
-## Selectors and system assembly
+Run from the repository root, with your module name in place of `example`:
 
-`lmx:<name>` imports `default.nix`; `lmx:<name>-<line>` imports the matching
-`versions/<line>.nix`. Unknown modules and lines are errors.
+```sh
+task ci/catalog/modules MODULES=example
+```
 
-The client accepts selectors in `[nixos] modules` only for modules of kind
-`modules`. Its `[shell]` and `[toolchains]` tables choose the other kinds, and
-it imports them through the same entry points. A selector of another kind fails
-with the table that chooses it. Kinds change how users choose a module, not its
-contract.
+This runs configuration and execution checks in a container. Use `MODE=eval` for
+configuration and expected-error checks only. See
+[development setup](../README.md#development) for Task and Docker requirements.
 
-A conforming platform must:
+## Module boundaries
 
-1. Import `interface.nix` and root `_shared/*.nix`, excluding
-   `_shared/test.nix`.
-1. Set `limanix.user.name` and `limanix.user.home`.
-1. Import the selected public entry points.
-1. Evaluate and build the system, preserving evaluation diagnostics.
+A module owns its packages, settings, tests and README. An aggregate owns its
+component choices and their integration tests. `_shared` provides generic
+helpers and does not contain policy for named modules.
 
-The platform does not supply a preconstructed `nixpkgs.pkgs`. NixOS creates the
-base package set from that system's effective `nixpkgs.config`, including unfree
-declarations.
+Import another module through its `default.nix` or a declared version entry. Use
+its documented public options and shared capabilities. Do not read its private
+files, tests or `lmx.internal.<name>` values. Keep cross-module paths explicit;
+the CI planner cannot follow fully computed paths.
 
-After option merging, the platform sorts `environment.systemPackages` by
-`toString package`, then by ascending `meta.priority` for equal paths. Strings
-and records without a priority use `lib.meta.defaultPriority`. It preserves
-values, string context, metadata and duplicates, including the result of
-`mkForce`. Distinct packages that provide the same command need an explicit
-package priority; import order and `mkBefore` do not define their winner.
-
-## Option classes and availability
-
-| Namespace | Declares | Reads and writes |
+| Options | Declared by | Use |
 | -- | -- | -- |
-| `limanix.*` | `interface.nix` | Platform identity; module shell and session declarations |
+| `limanix.*` | `interface.nix` | Account identity, shell, sessions and help cards |
 | `lmx.<name>.*` | The named module | Documented public settings |
-| `lmx.capabilities.<area>.*` | Root `_shared/<area>.nix` | Providers and consumers |
-| `lmx.pins` | `_shared/pins.nix` | Modules declare their revisions; shared infrastructure resolves them |
 | `lmx.internal.<name>.*` | The named module | That module only |
-| Standard NixOS options | Nixpkgs | Normal NixOS definitions |
+| `lmx.capabilities.<area>.*` | Root `_shared/<area>.nix` | Typed data shared by providers and consumers |
+| `lmx.pins` | `_shared/pins.nix` | Additional Nixpkgs revisions |
+| Standard NixOS options | Nixpkgs | Normal NixOS settings |
 
-`limanix.session.command` is the absolute path of an executable, or `null` when
-no selected module provides sessions. It receives exactly one literal session
-name and returns status 64 for an invalid name. Its provider owns the
-application behavior. `limanix.session.providers` lists the `limanix.toml`
-settings that the guest suggests while the command is `null`; it defaults to
-`[ ''[shell] multiplexer = "tmux"'' ]`.
+The platform supplies the account name, home and shared schemas. Modules may set
+existing public options; ownership checks apply to declarations. Use option
+defaults or `lib.mkDefault` for settings that users may replace. Use an
+assertion with a clear message for a required condition. Give packages that
+provide the same command explicit package priorities. Import order and
+`mkBefore` must not choose the winner.
 
-`limanix.help.<topic>` is the help card that `lmx help TOPIC` shows in the
-guest: a `title`, a one-sentence `summary`, the `commands` the topic puts on
-`PATH`, up to four `tips` with labels of at most 10 characters, and an optional
-`guide` address. The platform renders the cards of the evaluated system into
-`/etc/lmx/help.json`. A catalog module declares the card of its own name; any
-module, catalog or not, may declare others.
+Declare `limanix.help.<name>` for every public entry of your module:
 
-## Capability providers and consumers
+- Use `description` from `module.toml` as `summary`.
+- List the commands the module adds to `PATH`.
+- Link `guide` to the module's page under `https://docs.limanix.dev/`.
+- Use at most four tips, with labels no longer than 10 characters.
 
-A dependency imports another module's public entry point. NixOS handles repeat
-imports of the same file. A capability exchanges typed data without naming its
-provider or consumer module.
+The harness checks the guide's address prefix; reviewers check the page itself.
+See [interface.nix](../interface.nix) for option types and defaults. A session
+command takes one literal session name and returns status 64 for an invalid
+name. See [language tools](_shared/README.md#share-language-tools) and
+[theme colors](_shared/README.md#theme-colors) when your module uses
+capabilities. A tool provider must not enable an editor just by declaring its
+tools.
 
-Every capability schema defines record identity, merge behavior and conflicts.
-Document these rules at the start of each root schema. The platform loads the
-schema even without providers; consumers can read its empty defaults. An atomic
-tool record selects its package, command and arguments from the same
-declaration. Different records at the same priority fail under that schema; they
-do not merge field by field. Other contributions may combine according to their
-schema, such as the additive parser declarations.
+## Version lines
 
-Provider recommendations use `lib.mkOverride (1000 - n)`, where `0 <= n < 100`.
-An ordinary user definition and `mkForce` take precedence. A provider does not
-enable an editor or another consumer merely by declaring its tools.
+`lmx:<name>` selects `default.nix`; `lmx:<name>-<line>` selects
+`versions/<line>.nix`. Unknown modules and lines are errors. `default.nix` loads
+the implementation and recommends the metadata's default line with
+`lib.mkDefault`. An explicit entry uses the same implementation and selects its
+line. Adding `default.nix` before or after it must not change the selected
+line's result.
 
-## Defaults and overrides
-
-Replaceable preferences use option defaults or `lib.mkDefault`. Additive values
-follow their option type. A required condition uses a meaningful assertion.
-Ordinary NixOS merging, type checks and repeat-import handling are not repeated
-as module-specific tests. A module tests its own defaults, wrappers, patches and
-integration behavior.
-
-NixOS definition priority and package-file priority are different. Modules that
-rank several command providers must keep their declaration and installed command
-choices consistent.
-
-## Composition and version selection
-
-For a versioned module, `default.nix` only recommends the metadata's default
-line with `lib.mkDefault` and adds no other behavior. An explicit line replaces
-that recommendation, including when an aggregate imports the default. The
-default and explicit entry points provide the same line's behavior.
-
-Several explicit lines either coexist as documented in the README or fail with a
-module-owned assertion. They must not silently discard a selection or choose a
-winner through import order. A module that supports coexistence checks its own
-aliases and ordinary-command priority.
-
-### Guarantees and version lines
-
-Adding or removing lines and changing `default` require a catalog release.
-Removing a line is incompatible: release notes explain the migration and link to
-the previous release.
+Several explicit lines must either work together as documented or fail with a
+clear assertion. Do not drop a selection or choose a line through import order.
+If lines coexist, check their aliases and the priority of ordinary commands. See
+[toolchain helpers](_shared/README.md#define-a-toolchain) and
+[version tests](_shared/README.md#test-version-lines) for examples.
 
 ### Release maps
 
-A versioned module whose lines come from Nixpkgs maps exactly its declared lines
-in `releases.nix`; the harness compares them with `module.toml`. Each record
-names its `source`, its `package` attribute and its `endOfLife` status: `true`,
-`false` or `null` when unknown.
+Modules with version lines from Nixpkgs provide `releases.nix`. It must map
+exactly the lines in `module.toml`. Each record declares `source`, `package` and
+`endOfLife` (`true`, `false` or `null`). Base and unstable sources follow their
+line without an exact version field. A snapshot `{ rev, sha256 }` requires an
+exact `version`. See [release sources](_shared/README.md#resolve-a-version-line)
+for the format and helpers.
 
-| Source | Packages | Version |
-| -- | -- | -- |
-| `"base"` | The system's `pkgs`, from `flake.lock` | Not recorded: the package must stay on the line |
-| `"unstable"` | The catalog's nixos-unstable revision in `_shared/unstable.toml` | Not recorded: the package must stay on the line |
-| `{ rev, sha256 }` | A snapshot of that Nixpkgs revision | The exact `version`, which the package must match |
+### Package pins and unfree permissions
 
-The shared resolver `_shared/lib/release.nix` returns the record with the line's
-package set, its pin and its version check, and rejects a record that breaks
-these rules. Other fields of a record belong to its module.
-
-## Package pins and unfree permissions
-
-The base Nixpkgs revision comes from `flake.lock`. A module declares any
-additional revision and hash in `lmx.pins`; it consumes
-`_module.args.pinned.<revision>` in configuration values. It does not use
-`pinned` to choose `imports` or declare `options`, which resolve earlier.
-
-Pins are ordinary constant declarations, without `mkDefault`, `mkOverride` or
-`mkForce` around the registry, an entry or a containing definition. Different
-ordinary hashes for one revision fail NixOS string merging; equal declarations
-agree. The schema does not reject priority overrides separately; using them
-breaks this contract.
-
-Within a system, all modules share the same lazy package set for one revision.
-Every declared revision uses the same architecture, empty overlays and effective
-unfree policy. The catalog's nixos-unstable revision in `_shared/unstable.toml`
-is the only revision registered centrally; module package recipes stay in their
-modules. `_shared/pins.nix` passes it to every module as the `unstableSource`
-argument, `{ rev, sha256 }`. A platform that installs named packages from it, as
-the client's `unstable:` packages do, declares that pin in `lmx.pins` and reads
-`pinned.${unstableSource.rev}`.
-
-An unfree module declares a constant list through
-`nixpkgs.config.allowUnfreePackages`. The base package set applies it; the
-shared loader applies it to every pin using that source's `lib.getName`. Unfree
-permission and local-build permission are separate. Build this list from
-constant package names, without evaluating `pkgs` or `pinned`. Each system
-fixture applies its own merged list.
-
-| Shared location | Contents |
-| -- | -- |
-| Root `*.nix`, except `test.nix` | Always-loaded schemas and infrastructure |
-| `test.nix` | Shared checks using the same test ABI, without module metadata or a selector |
-| `lib/` | Pure generic functions |
-| `test/` | Generic fixtures and test helpers |
-| Non-Nix files | Common data such as the palette and the unstable revision |
+The base Nixpkgs revision comes from [flake.lock](../flake.lock). The shared
+unstable revision comes from [\_shared/unstable.toml](_shared/unstable.toml).
+Declare other revisions in `lmx.pins` and read them through the `pinned`
+argument. Pins are plain constants, without priority overrides. Use `pinned` in
+configuration values, never in `imports` or option declarations. Declare unfree
+package names as constants in `nixpkgs.config.allowUnfreePackages`. Permission
+to use an unfree package does not permit a local build. See
+[using another revision](_shared/README.md#use-another-nixpkgs-revision) for
+details.
 
 ## Required checks for every module
 
-The harness checks metadata and evaluates every public entry point on its own.
-For each version line, it compares `system.build.toplevel.drvPath` for
-`[default, line]` and `[line, default]` with `[line]`; both must match. This
-evaluates system derivations without building them. The module import graph
-allows only the owning module's files, root `_shared` schemas and other modules'
-public entry points. Ordinary `import` and `readFile` boundaries need review;
-that graph cannot see them. Module-specific scenarios stay inside the module.
+The harness checks metadata and each public entry's configuration, assertions,
+option declarations, module imports and help card. For each version, it checks
+that an explicit line replaces the default in either import order. The module
+import graph cannot check ordinary Nix `import` and `readFile` expressions;
+review them separately.
 
-Every entry point must declare `limanix.help.<name>` for its module, with the
-`description` of `module.toml` as its summary and, as its guide, the page of
-`https://docs.limanix.dev` that covers it. The run phase builds one
-`help-commands` check per entry point: every command the card names must be in
-`bin/` of that entry point's system profile.
-
-Public invocation:
+The run phase adds a `help-commands` check for each public entry. It checks that
+the listed commands are executable in the system profile's `bin/`. It does not
+run those commands or prove the module's own behavior. That behavior belongs in
+`test.nix`, which the harness calls as:
 
 ```nix
 import (moduleDirectory + "/test.nix") { inherit evalSystem pkgs lib; }
 ```
 
-| Argument | Meaning |
-| -- | -- |
-| `evalSystem` | List of public NixOS modules to checked `config`; evaluates without building |
-| `pkgs`, `lib` | Base packages and library for the native runner |
+`evalSystem` takes a list of NixOS modules and returns their checked `config`
+without building it. `pkgs` and `lib` are the runner's base packages and
+library. Reuse a configuration across related checks. See
+[configuration helpers](_shared/README.md#check-a-configuration) for an example.
 
-The harness memoizes one application of a module's `test.nix` within one Nix
-evaluation/test context. It does not reimport the export for each line. Separate
-phase jobs and expected-error subprocesses evaluate the same public contract in
-their own contexts. The shared export has a separate context. `evalSystem`
-returns the checked configuration for its supplied module list. Related
-assertions should reuse that configuration; the harness may reuse identical
-public-entry evaluations.
-
-| Export | Value | Evidence |
+| Group | Required | Contents |
 | -- | -- | -- |
-| `eval` | Required nonempty attribute set; every value is Boolean `true` | Configuration |
-| `fails` | Records with a module list and nonempty diagnostic string | The supplied modules fail with that diagnostic |
-| `run` | Native derivations | Actual command and application behavior in an isolated fixture |
-| `builds` | Exact derivations allowed to build locally | Permission only |
-| `vm` | Native `pkgs.testers.runNixOSTest` derivations | Real NixOS activation |
+| `eval` | Yes | Nonempty set of configuration checks; each must return Boolean `true` |
+| `fails` | No | Records containing exactly `modules` (a list of NixOS modules) and `message` (a nonempty string) |
+| `run` | No | Test derivations for the runner's Linux system |
+| `builds` | No | Exact derivations for that system allowed to build locally; permission only |
 
-Optional groups default to `{}`. Unknown top-level fields fail. Each `fails`
-record contains exactly `modules` (a list of NixOS modules) and `message` (a
-nonempty string). A failure case does not pass on a timeout, crash or unrelated
-diagnostic. A printed derivation path does not establish execution. Native `run`
-fixtures stay offline and do not use a VM or `system.build.toplevel`.
+Optional groups default to `{}`; unknown groups fail. Test names must match
+`[a-z][A-Za-z0-9._-]*`. Names such as `packages`, `commands`, `line-<line>` and
+`artifact` are conventions, not extra requirements. A `fails` case must fail
+with the expected diagnostic; a crash or unrelated error does not pass.
 
-| Group | Names |
-| -- | -- |
-| `eval` | camelCase promise, `line-<line>`, or `allLines` |
-| `fails` | camelCase reason; `twoLines` for incompatible lines |
-| `run` | `commands`, `commands-<line>`, or a camelCase feature |
-| `builds` | `artifact` or `artifact-<line>` |
-| `vm` | `activation` |
+Test key module behavior and concrete regressions at the cheapest sufficient
+level. Do not repeat NixOS merge tests or shared scenarios in every module.
+Configuration and execution checks prove different things; keep both when
+needed. Remove tests that no longer protect a required guarantee. Run fixtures
+offline, without personal host state or external services. They must not use a
+VM or `system.build.toplevel`. These checks do not prove NixOS login, service
+activation or `/etc` activation.
 
-Choose the cheapest sufficient level. Configuration assertions do not prove
-startup, application settings or service health. Native execution can prepare an
-isolated application environment, but does not prove NixOS login or `/etc`
-activation. Those promises need a VM test.
+### Local builds and runtime
 
-## Shared helpers and VM tests
-
-[Shared helpers](_shared/README.md) describes the line helper, the configuration
-helpers and the VM platform. They remove repetition; the checks remain the
-module's own:
-
-- The line helper checks each line separately. The module decides whether lines
-  coexist and exports `allLines` or the incompatible-pair failure.
-- VM nodes import the shared platform and the module's public entry points.
-  Choose another account through its `userName` and `userHome` parameters; do
-  not redeclare the read-only account name or home in an extra module.
-- VM resources and assertions remain under the module's `test/`. Do not import
-  the VM platform into `evalSystem`, where it already exists, and do not pass a
-  fourth platform argument to `test.nix`.
-
-## Local builds and runtime
-
-Before realising `run`, the harness checks its dry-run. Local builds are allowed
-only for:
-
-1. The selected `run` derivations themselves.
-1. Derivations with `preferLocalBuild = true`, including trivial builders and
-   system profiles.
-1. Exact `drvPath` values declared in `builds`.
-
-The `builds` permission set comes from selected modules and the modules actually
-imported by their default and individual version entry points. The harness reads
-that public import graph; a dependency used only by a test fixture does not
-extend this permission set. Reading a dependency's public `builds` does not
-schedule its `eval` or `run`. Permission does not include transitive derivation
-inputs. Any other uncached build fails before execution and is reported. A cache
-hit does not prove a fresh run; report reuse separately. No native fixture uses
-personal host state or provisions external services. VM builds skip the native
-runtime dry-run.
-
-## Cost and reports
-
-| Level | When | Target per module |
-| -- | -- | -- |
-| Structure, entry points, recommendation, `eval`, `fails` | Changed modules on PRs | 2 minutes |
-| `run` | Changed modules, both native Linux architectures | 5 minutes with prepared cache |
-| `vm` | Manual execution on native Linux with KVM | 15 minutes |
-
-The PR flow runs `eval`, `fails` and `run`; the release flow runs no tests. VM
-exports remain part of the module test interface and run manually on native
-Linux with KVM. A green CI run does not establish activation; record VM checks
-as not run unless a separate execution supplies evidence.
-
-Reuse one default fixture, one per needed line and one for each different
-scenario. Fixture counts guide cost; they are not hard limits on correctness.
-Each README promise and relevant regression determines the required coverage.
-
-The PR flow targets ten minutes on its critical path with a prepared cache.
-Targets are measured, not enforced: checks run without time limits. Reports
-identify the suite, stage, architecture, actual duration, cache state, builds
-and VM status. They separate newly executed checks from reused results where
-known; unknown cache state stays unknown. A cancelled or interrupted run is
-incomplete evidence.
-
-The PR flow checks changed modules, not the consumers of their public imports.
-Changes to `_shared`, `interface.nix`, the flake or the harness check every
-module. Platform `eval` and `run` check the generic harness and base interface,
-including its builder permissions. Required compositions belong in their own
-module tests.
+Before running builds, the harness checks the dry-run plan. It allows only the
+selected test derivations, derivations with `preferLocalBuild = true`, and exact
+derivations listed in `builds`. The `builds` list also includes declarations
+from modules imported by the selected public entries. Test-only imports do not
+add permissions, and permission for a derivation does not cover its
+dependencies. Reading another module's `builds` does not schedule its tests.
+Other uncached builds fail before execution. A cached result does not prove a
+new execution. See [build policy](../checks/build-plan.nix) for the
+implementation.
 
 ## README guarantees
 
-A module page explains what is installed, selectors, public settings, several
-line behavior, generated files, services, persistent data and corner cases. The
-harness requires a `## Guarantees` heading. Its table uses exact existing keys
-in `Checked by`, such as `eval.packages`, `run.commands` or `vm.activation`. A
-row may list one or more exact keys. Several promises can share a fixture when
-it explicitly asserts each property. Corner cases and regressions must relate to
-a stated promise.
+Explain what the module installs, how to select it and which settings users may
+change. Describe multiple-line behavior, files, services, persistent data and
+corner cases where relevant. Include a `## Guarantees` table with exact test
+keys in `Checked by`, such as `eval.packages` or `run.commands`. Several
+guarantees may share a fixture if it checks each property. `builds.*`, private
+filenames and wildcard keys are not test evidence. The harness checks the
+heading; authors and reviewers check the table's claims and keys. Do not add a
+generic test section that repeats this contract.
 
-`builds.*` is not evidence. Private filenames and wildcard keys are not test
-exports. Do not add a generic `Tests` section that repeats this ABI.
+An optional `graph.toml` describes the module on the site's catalog graph. Each
+node has `name`, `text` and related node ids in `with`. Run
+`task generate/graph` after editing it.
 
-## Client and catalog compatibility
+## Compatibility and CI
 
-Each client build bundles one catalog release and is tested with it. An
-incompatible change to selector grammar, metadata, public options, capabilities
-or the test ABI ships together with the client changes that support it. Private
-layout changes and catalog version-line changes need no client change.
+Each client build bundles one catalog release and is tested with it. Changes to
+selector grammar, metadata, public options, capabilities or the test interface
+must ship with client support when they break compatibility. Private layout and
+version-line changes need no client change. Adding or removing lines and
+changing the default require a catalog release. When removing a line, explain
+the migration and link to the previous release in release notes.
+
+PR checks run on both Linux architectures and include affected dependent
+modules. Scheduling, cache handling and reports are described in the
+implementation: [planner](../tools/harness/plan.py),
+[runner](../tools/harness/checks.py), [cache](../tools/harness/cache.py) and
+[PR workflow](../.github/workflows/pr.yml). The
+[release workflow](../.github/workflows/release.yml) does not run module tests.

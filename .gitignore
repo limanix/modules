@@ -9,12 +9,12 @@
 .cache/
 .task/
 
-# Python cache
+# Python caches
 __pycache__/
 *.py[cod]
-
-# Build artifacts
-/build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # Base disk builds
 /dist/

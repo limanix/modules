@@ -141,12 +141,10 @@ persistent terminal sessions.
 | -- | -- |
 | Suggests Zsh as the account shell; an ordinary `limanix.user.shell` assignment can choose another shell | `eval.defaults`, `eval.shell` |
 | Managed startup loads Oh My Zsh, Carapace, fzf-tab, autosuggestions and highlighting | `eval.defaults`, `run.startup` |
-| Managed startup keeps Tab completion, Atuin Ctrl-R, fzf Ctrl-T, zoxide and direnv hooks available together | `run.startup`, `vm.activation` |
+| Managed startup keeps Tab completion, Atuin Ctrl-R, fzf Ctrl-T, zoxide and direnv hooks available together | `run.startup` |
 | Pure is the default prompt; each choice installs only its prompt and names only its commands on the help card | `eval.defaults`, `eval.prompts`, `run.startup` |
-| An ordinary `programs.zsh.promptInit` assignment replaces the managed prompt | `eval.promptOverride` |
-| Pure and Starship use the terminal's colors with the system flavor and the palette of a Catppuccin flavor; Starship shows the hostname and failed status and accepts ordinary overrides | `eval.theme`, `eval.preferences`, `run.startup`, `run.starship` |
+| Pure and Starship use the terminal's colors with the system flavor and the palette of a Catppuccin flavor; Starship shows the hostname and failed status | `eval.theme`, `eval.prompts`, `run.startup`, `run.starship` |
 | Outside tmux, the prompt shows the words of `lmx status --short` | `eval.segment`, `run.startup` |
-| Atuin synchronization and update checks default off and accept ordinary overrides | `eval.defaults`, `eval.preferences`, `run.startup` |
-| Fresh and repeat logins skip the automatic wizard without creating personal startup files | `run.startup`, `vm.activation` |
-| Personal startup settings, custom `ZDOTDIR` and an existing new-user handler remain unchanged | `run.startup`, `vm.activation` |
-| The activated account uses Zsh and reads its installed global startup files | `vm.activation` |
+| Atuin synchronization and update checks default off | `eval.defaults`, `run.startup` |
+| Fresh and repeat logins skip the automatic wizard without creating personal startup files | `run.startup` |
+| Personal startup settings, custom `ZDOTDIR` and an existing new-user handler remain unchanged | `run.startup` |

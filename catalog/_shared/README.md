@@ -31,12 +31,12 @@ import.
 | -- | -- |
 | Check that my module installs a package or sets an option | [`test/helpers.nix`](#check-a-configuration) |
 | Check each version line of my module | [`test/lines.nix`](#test-version-lines) |
+| Add a language to `[toolchains]` | [`lib/toolchain.nix` and `test/toolchain.nix`](#define-a-toolchain) |
 | Check which line's executable a command runs | [`test/profile-commands.nix`](#check-profile-commands) |
 | Take packages from another Nixpkgs revision | [`lmx.pins` and `pinned`](#use-another-nixpkgs-revision) |
 | Take each version line from the base, unstable or a snapshot | [`lib/release.nix`](#resolve-a-version-line) |
 | Take a module without lines from nixos-unstable | [`lib/source.nix`](#resolve-a-version-line) |
 | Offer a language server or parsers to editors | [`languageSupport`](#share-language-tools) |
-| Prove activation in a NixOS VM | [`test/platform.nix`](#write-a-vm-test) |
 | Use the guest's theme colors | [`theme`](#theme-colors) |
 | Drive a terminal program or a language server in `run` | [Process helpers](#drive-processes) |
 
@@ -109,6 +109,44 @@ Reading `lines` or `metadata` evaluates no system. Each configuration is
 evaluated once and shared by the callbacks that use it.
 
 </details>
+
+## Define a toolchain
+
+[lib/lines.nix](lib/lines.nix) is the module with version lines: it declares
+`lmx.internal.<name>.versions` and `.packages`, recommends the default line,
+resolves each selected line through `lib/release.nix`, installs what the line
+supplies, warns at end of life and writes the help card with the selected
+versions in its title. The module keeps one file with what differs between
+modules and makes `default.nix` the module itself:
+
+```nix
+# default.nix
+import ../../_shared/lib/lines.nix (import ./lines.nix)
+
+# versions/18.nix, through module.nix
+version: {
+  imports = [ ./default.nix ];
+  lmx.internal.postgres.versions = [ version ];
+}
+```
+
+| Field of `lines.nix` | Meaning |
+| -- | -- |
+| `name`, `title`, `directory`, `page` | The module name, its product name, its directory and its page under `docs.limanix.dev` |
+| `main`, `packages` | The package whose version names the line, and the `packages.nix` function that resolves a line's packages |
+| `line` | A function of `{ version, tools, rank, priority, config, lib, pkgs }` with the line's own configuration |
+| `commands`, `versioned`, `tips` | The help card: commands on PATH, the per-line command names, the tips |
+| `single`, `priorityOffset`, `product`, `extra` | One line at a time; a lower package priority; another product name in warnings; configuration outside any line |
+
+[lib/toolchain.nix](lib/toolchain.nix) is a lines module that also offers a
+language server: `tool`, `parsers`, `provider` and `systemPackages` describe the
+server, the Tree-sitter parsers and the installed packages of a line, and the
+newest selected line's server wins. [test/toolchain.nix](test/toolchain.nix)
+exports the tests of such a module: `eval.line-<line>`, `eval.allLines`,
+`eval.userOverride`, `run.commands-<line>`, `run.languageServer`,
+`run.userOverride` and `run.allLines`. The module adds its `commands` smoke
+test, the `coexisting` package attributes, the `profileCommands` of the shared
+profile and, when it has them, extra `eval` cases and `builds`.
 
 ## Check profile commands
 
@@ -229,7 +267,7 @@ in
 ```
 
 - Lines from the base and unstable record no version and receive their patch
-  releases: the Update flow moves both revisions every Monday.
+  releases: the Check update flow moves both revisions every Monday.
 - A snapshot keeps its exact version and never moves.
 - The harness requires `releases.nix` to map exactly the lines of `module.toml`.
   The resolver rejects a record without a valid source, package or `endOfLife`,
@@ -285,35 +323,6 @@ The tool identity names the tool itself, such as `gopls`, not the module that
 provides it.
 
 </details>
-
-## Write a VM test
-
-[test/platform.nix](test/platform.nix) is the platform for a `runNixOSTest`
-node. Import it with your module's public entry:
-
-```nix
-pkgs.testers.runNixOSTest {
-  name = "zsh-activation";
-  nodes.machine.imports = [
-    (import ../../../_shared/test/platform.nix { userName = "tester"; })
-    ../default.nix
-  ];
-  testScript = ''
-    machine.wait_for_unit("multi-user.target")
-  '';
-}
-```
-
-The platform adds `interface.nix`, the shared schemas and a user account with
-UID 1000. The account is named `dev` with home `/home/<name>` unless you pass
-`userName` or `userHome`; it follows the final `limanix.user` settings, such as
-a shell chosen by your module.
-
-- Import it only into VM nodes. `evalSystem` already contains this platform.
-- Choose the account through the parameters, not by redefining the read-only
-  `limanix.user.name` or `limanix.user.home`.
-- VM tests run locally on Linux with KVM; see
-  [Automation](../../README.md#development).
 
 ## Drive processes
 
@@ -405,7 +414,7 @@ helpers; module checks cover real tools. Pin checks do not download a source.
 | Resolving a pin never evaluates a package set | `eval.releaseLazyPins` |
 | Invalid records and unknown lines fail | `eval.releaseRejects` |
 | A module without lines resolves the base or unstable as a source; an unknown source fails | `eval.sourceWithoutLines` |
-| VM platform loads public schemas, excludes the test export and follows the configured account | `eval.vmPlatform` |
+| The evaluator's platform loads public schemas, excludes the test export and follows the configured account | `eval.platform` |
 | Package ordering preserves values, context, duplicates and replacement semantics | `eval.canonicalPackages`, `eval.packageValues` |
 | Canonical profile retains the explicit package-priority winner | `run.packagePriority` |
 | Lines sort numerically and callbacks receive their public entry records | `eval.numericLines`, `eval.lineCallbacks` |

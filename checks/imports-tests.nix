@@ -1,3 +1,9 @@
+# Test the rules for imports between catalog modules.
+#
+# Example modules in fixtures/component-imports provide real import graphs.
+# Small graph records cover disabled imports, cycles, and inline modules.
+# A module may use its own files and another module's public entry points.
+# Imports of another module's private files must fail.
 { lib }:
 let
   root = ./fixtures/component-imports;

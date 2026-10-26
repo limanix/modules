@@ -73,7 +73,7 @@ describes the options.
 | Guarantee | Checked by |
 | -- | -- |
 | Neovim and its vi/vim aliases are installed and runnable | `eval.defaults`, `run.commands` |
-| An ordinary setting can make Neovim the default editor | `eval.defaultEditor` |
+| Plain Neovim does not select itself as the default editor | `eval.defaults` |
 | The module declares no language providers | `eval.optionalProviders` |
 
 Removing this module removes its declarations when no other selected module

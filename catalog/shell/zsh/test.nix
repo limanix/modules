@@ -46,14 +46,8 @@ in
     ) defaultConfiguration;
   }
   // cases.evaluation;
-  fails = { };
   run = {
     startup = smoke "pure" defaultConfiguration;
     starship = smoke "starship" starshipConfiguration;
-  };
-  builds = { };
-  vm.activation = import ./test/vm.nix {
-    inherit (defaultConfiguration) config;
-    inherit pkgs lib;
   };
 }

@@ -1,3 +1,9 @@
+# Test who may declare options in catalog namespaces.
+#
+# Small modules use source file names to represent different owners.
+# Correct declarations must pass; foreign and nested foreign declarations must fail.
+# Setting a value for another module's public option is allowed.
+# These cases protect the distinction between declaring and using an option.
 { lib }:
 let
   check =

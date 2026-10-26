@@ -3,100 +3,44 @@
   pkgs,
   lib,
 }:
-let
-  helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
-  inherit (helpers)
-    evaluate
-    profileFor
-    verify
-    installed
-    installedAsDeclared
-    selectedPackage
-    packagePriority
-    ;
-  lineTests = import ../../_shared/test/lines.nix {
-    inherit evalSystem pkgs lib;
-    moduleDirectory = ./.;
-    checkLine = { line, configuration }: checkResult configuration line;
-    runLine = { line, configuration }: (runtimeFor line configuration false).commands;
+import ../../_shared/test/toolchain.nix {
+  inherit evalSystem pkgs lib;
+  spec = import ./toolchain.nix;
+  coexisting = [ "nodejs" ];
+  profileCommands = tools: {
+    node = "${tools.nodejs}/bin/node";
+    npm = "${tools.nodejs}/bin/npm";
+    npx = "${tools.nodejs}/bin/npx";
   };
-  inherit (lineTests) metadata lines allConfiguration;
-  versionConfigurations = lineTests.configurations;
-  variants = map (version: {
-    inherit version;
-    path = ./versions + "/${version}.nix";
-  }) lines;
-  toolsFor = line: versionConfigurations.${line}.config.lmx.internal.nodejs.packages.${line};
-  capability = configuration: configuration.config.lmx.capabilities.languageSupport;
-  checkResult =
-    configuration: line:
-    import ./test/check.nix {
-      inherit (configuration) config;
-      inherit pkgs;
-      tools = toolsFor line;
-      hasPackage = installed configuration;
-    };
-  coexistence =
-    packageNames:
-    let
-      newest = toolsFor (lib.last lines);
-    in
-    verify "nodejs: explicit lines coexist and select the newest ordinary commands" (
-      builtins.all (variant: checkResult allConfiguration variant.version) variants
-      && builtins.all (name: selectedPackage allConfiguration newest.${name}) packageNames
-    ) allConfiguration;
-  localTests = import ./test/tests.nix {
-    inherit
-      pkgs
-      lib
-      variants
-      versionConfigurations
-      allConfiguration
-      toolsFor
-      capability
-      evaluate
-      verify
-      installedAsDeclared
-      selectedPackage
-      packagePriority
-      coexistence
-      ;
-  };
-  runtimeFor =
-    line: configuration: includeShared:
-    import ./test/smoke.nix {
-      inherit
-        pkgs
-        includeShared
-        allConfiguration
-        profileFor
-        ;
-      inherit (configuration) config;
-      version = line;
-      profile = profileFor configuration;
-      tools = toolsFor line;
-      olderTools = toolsFor (builtins.head lines);
-      expectedTools = toolsFor (lib.last lines);
-      inherit (localTests) configurations;
-    };
-  sharedRuntime = builtins.removeAttrs (runtimeFor metadata.default
-    versionConfigurations.${metadata.default}
-    true
-  ) [ "commands" ];
-in
-{
-  eval = lineTests.eval // localTests.evaluation;
-  run = lineTests.run // sharedRuntime;
-  builds = builtins.listToAttrs (
-    lib.concatMap (
-      line:
-      let
-        tools = toolsFor line;
-      in
-      lib.optional (tools ? npm) {
-        name = "npm-${line}";
-        value = tools.npm;
-      }
-    ) lines
-  );
+  commands =
+    {
+      line,
+      profile,
+      tools,
+      ...
+    }:
+    pkgs.runCommand "nodejs-${line}-commands-smoke" { nativeBuildInputs = [ profile ]; } ''
+      export HOME="$TMPDIR/home"
+      mkdir -p "$HOME"
+      test "$(readlink -f ${profile}/bin/node-${line})" = "$(readlink -f ${tools.nodejs}/bin/node)"
+      node-${line} -e 'if (process.version !== "v${tools.nodejs.version}") process.exit(1)'
+      npm-${line} --version
+      npx-${line} --version
+      printf '{"name":"smoke","version":"1.0.0","scripts":{"check":"node check.js"}}' > package.json
+      printf 'if(process.version!=="v${tools.nodejs.version}")process.exit(1);\n' > check.js
+      npm-${line} run check --offline
+      npx-${line} --offline -c 'node check.js'
+      touch "$out"
+    '';
+  builds =
+    { lines, toolsFor, ... }:
+    builtins.listToAttrs (
+      lib.concatMap (
+        line:
+        lib.optional ((toolsFor line) ? npm) {
+          name = "npm-${line}";
+          value = (toolsFor line).npm;
+        }
+      ) lines
+    );
 }

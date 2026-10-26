@@ -1,4 +1,11 @@
-# Validate declaration ownership, including nested public option schemas.
+# Check which source files may declare each catalog option.
+#
+# interface.nix owns limanix.* options.
+# A module owns lmx.<name>.* and lmx.internal.<name>.* options.
+# Root shared schemas own their capability area; pins.nix owns lmx.pins.
+# The check also visits nested option schemas.
+# It checks declarations, not values assigned to existing public options.
+# The same ownership rules apply to all catalog kinds.
 { lib, options }:
 let
   catalogPrefix = toString ../catalog + "/";

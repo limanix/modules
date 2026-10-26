@@ -1,5 +1,5 @@
 version: {
-  imports = [ ./selection.nix ];
+  imports = [ ./default.nix ];
 
   lmx.internal.nodejs.versions = [ version ];
 }

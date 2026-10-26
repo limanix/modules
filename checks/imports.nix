@@ -1,5 +1,10 @@
-# Graph enforcement covers module imports; ordinary import/readFile need review.
-# A file belongs to the module whose directory contains it, whatever the depth of its kind.
+# Check module boundaries in the evaluated NixOS import graph.
+#
+# A module may import its own files, shared schemas, and public module entries.
+# It may not import another module's private files or shared test helpers.
+# Files belong to the catalog module directory that contains them.
+# Disabled imports are skipped, and cycles are handled without repeating nodes.
+# Ordinary Nix import and readFile expressions are outside this graph check.
 {
   catalog,
   graph,

@@ -26,8 +26,11 @@ in
       inherit (latte) config;
       hasPackage = helpers.installed latte;
     }) latte;
-  }
-  // (import ./test/tests.nix { inherit defaultConfiguration evaluate verify; });
+    clipboard = verify "copies go to the Mac clipboard through the platform's pbcopy" (
+      defaultConfiguration.config.programs.lazygit.settings.os.copyToClipboardCmd
+      == "printf %s {{text}} | pbcopy"
+    ) defaultConfiguration;
+  };
   run.commands = import ./test/smoke.nix {
     inherit pkgs;
     profile = profileFor defaultConfiguration;

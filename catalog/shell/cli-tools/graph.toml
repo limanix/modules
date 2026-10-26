@@ -1,0 +1,34 @@
+[fzf]
+name = "fzf"
+text = "In Zsh, Ctrl-T inserts paths and Alt-C changes directory through fzf."
+with = ["zsh"]
+
+[bat]
+name = "bat"
+text = "bat and delta highlight in the colors of the theme."
+with = ["delta", "theme"]
+
+[delta]
+name = "delta"
+text = "`git diff` and `git log -p` page through delta."
+with = ["bat", "theme"]
+
+[gh]
+name = "GitHub CLI"
+text = "`gh` for pull requests and issues, next to Git."
+
+[ripgrep]
+name = "ripgrep"
+text = "Search file contents."
+
+[fd]
+name = "fd"
+text = "Find files by name."
+
+[jq]
+name = "jq"
+text = "Read and reshape JSON."
+
+[btop]
+name = "btop"
+text = "Watch CPU, memory and processes."

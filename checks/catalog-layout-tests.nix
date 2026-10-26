@@ -1,4 +1,8 @@
-# Discovery of modules below their kinds, on fixture catalogs.
+# Test catalog discovery with small example directory trees.
+#
+# The fixtures under fixtures/catalog-layout contain valid and invalid layouts.
+# Modules below their kinds must be found with the correct names and paths.
+# Duplicate names across kinds and modules outside kind directories must fail.
 { lib }:
 let
   discover = import ./catalog.nix;

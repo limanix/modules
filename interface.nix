@@ -1,3 +1,19 @@
+# Public NixOS options shared by the LimaNix client and catalog modules.
+#
+# This file defines the names, types, and default values of limanix.* options.
+# It gives the client and modules one set of rules for sharing settings.
+#
+# The options cover:
+# - user: the development account name, home directory, and login shell.
+# - session: a command that accepts a session name, plus setup hints.
+# - help: cards with a title, summary, commands, tips, and a guide link.
+#
+# The client supplies the account name and home directory.
+# Modules read these values and can set the shell, session command, and help cards.
+# Bash is the default shell.
+# There is no session command by default.
+# The client uses the final values to set up the account and configure lmx.
+# Help cards appear in `lmx help TOPIC` inside the VM.
 { lib, pkgs, ... }:
 {
   options.limanix = {

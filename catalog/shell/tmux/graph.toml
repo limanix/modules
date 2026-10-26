@@ -1,0 +1,4 @@
+[tmux]
+name = "tmux"
+text = "The same keys move between tmux panes and AstroNvim splits."
+with = ["astronvim", "theme"]

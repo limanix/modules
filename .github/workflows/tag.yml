@@ -21,9 +21,14 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
+        with:
+          version: '3.53.1'
       - name: Pick the next tag
         id: next
-        run: bash scripts/next_tag.sh >> "$GITHUB_OUTPUT"
+        env:
+          BASE_REVISION: ${{ github.event.before }}
+        run: task --yes harness -- release tag --base "$BASE_REVISION" >> "$GITHUB_OUTPUT"
       - name: Create token
         if: steps.next.outputs.tag != ''
         id: app-token

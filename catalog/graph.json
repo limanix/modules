@@ -1,0 +1,172 @@
+{
+  "modules": [
+    {
+      "id": "theme",
+      "name": "`[theme]`",
+      "text": "One `[theme]` in `limanix.toml` colors the editor, the prompt, tmux, Lazygit, Yazi, bat, delta, Harlequin and Posting.",
+      "with": []
+    },
+    {
+      "id": "astronvim",
+      "name": "AstroNvim",
+      "text": "AstroNvim brings Neovim and Lazygit and picks up language servers from the toolchains.",
+      "with": ["neovim", "lazygit", "tmux", "go", "rust", "python", "nodejs", "theme"]
+    },
+    {
+      "id": "bat",
+      "name": "bat",
+      "text": "bat and delta highlight in the colors of the theme.",
+      "with": ["delta", "theme"]
+    },
+    {
+      "id": "btop",
+      "name": "btop",
+      "text": "Watch CPU, memory and processes.",
+      "with": []
+    },
+    {
+      "id": "delta",
+      "name": "delta",
+      "text": "`git diff` and `git log -p` page through delta.",
+      "with": ["bat", "theme"]
+    },
+    {
+      "id": "fd",
+      "name": "fd",
+      "text": "Find files by name.",
+      "with": []
+    },
+    {
+      "id": "fzf",
+      "name": "fzf",
+      "text": "In Zsh, Ctrl-T inserts paths and Alt-C changes directory through fzf.",
+      "with": ["zsh"]
+    },
+    {
+      "id": "gh",
+      "name": "GitHub CLI",
+      "text": "`gh` for pull requests and issues, next to Git.",
+      "with": []
+    },
+    {
+      "id": "jq",
+      "name": "jq",
+      "text": "Read and reshape JSON.",
+      "with": []
+    },
+    {
+      "id": "ripgrep",
+      "name": "ripgrep",
+      "text": "Search file contents.",
+      "with": []
+    },
+    {
+      "id": "lazygit",
+      "name": "Lazygit",
+      "text": "`Space g g` in AstroNvim opens Lazygit.",
+      "with": ["astronvim", "theme"]
+    },
+    {
+      "id": "neovim",
+      "name": "Neovim",
+      "text": "AstroNvim runs on it; on its own, Neovim is a plain editor.",
+      "with": ["astronvim"]
+    },
+    {
+      "id": "tmux",
+      "name": "tmux",
+      "text": "The same keys move between tmux panes and AstroNvim splits.",
+      "with": ["astronvim", "theme"]
+    },
+    {
+      "id": "yazi",
+      "name": "Yazi",
+      "text": "Leave Yazi with `q`, and your shell moves to its folder.",
+      "with": ["zsh", "theme"]
+    },
+    {
+      "id": "zsh",
+      "name": "Zsh",
+      "text": "Zsh comes with Oh My Zsh, a Pure or Starship prompt, and fzf on Ctrl-T and Alt-C.",
+      "with": ["ohmyzsh", "pure", "starship", "fzf", "yazi"]
+    },
+    {
+      "id": "ohmyzsh",
+      "name": "Oh My Zsh",
+      "text": "Oh My Zsh comes with the Zsh module, along with completion and history.",
+      "with": ["zsh"]
+    },
+    {
+      "id": "pure",
+      "name": "Pure",
+      "text": "The default Zsh prompt, in the colors of the theme.",
+      "with": ["zsh", "theme"]
+    },
+    {
+      "id": "starship",
+      "name": "Starship",
+      "text": "`prompt = \"starship\"` swaps Pure for Starship with the theme palette.",
+      "with": ["zsh", "theme"]
+    },
+    {
+      "id": "go",
+      "name": "Go",
+      "text": "`gopls` reaches AstroNvim when both are on.",
+      "with": ["astronvim"]
+    },
+    {
+      "id": "nodejs",
+      "name": "Node.js",
+      "text": "The TypeScript server reaches AstroNvim when both are on.",
+      "with": ["astronvim"]
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "text": "Pyright reaches AstroNvim when both are on.",
+      "with": ["astronvim"]
+    },
+    {
+      "id": "rust",
+      "name": "Rust",
+      "text": "`rust-analyzer` reaches AstroNvim when both are on.",
+      "with": ["astronvim"]
+    },
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "text": "Anthropic's coding agent for the terminal.",
+      "with": []
+    },
+    {
+      "id": "docker",
+      "name": "Docker",
+      "text": "Docker Engine comes with Compose and Lazydocker.",
+      "with": []
+    },
+    {
+      "id": "gcloud",
+      "name": "Google Cloud CLI",
+      "text": "`gcloud` for projects and accounts.",
+      "with": []
+    },
+    {
+      "id": "harlequin",
+      "name": "Harlequin",
+      "text": "Harlequin comes with the PostgreSQL adapter.",
+      "with": ["postgres", "theme"]
+    },
+    {
+      "id": "postgres",
+      "name": "PostgreSQL",
+      "text": "Open the database in Harlequin, a terminal SQL IDE.",
+      "with": ["harlequin"]
+    },
+    {
+      "id": "posting",
+      "name": "Posting",
+      "text": "A terminal HTTP client in the colors of the theme.",
+      "with": ["theme"]
+    }
+  ]
+}
