@@ -4,168 +4,224 @@
       "id": "theme",
       "name": "`[theme]`",
       "text": "One `[theme]` in `limanix.toml` colors the editor, the prompt, tmux, Lazygit, Yazi, bat, delta, Harlequin and Posting.",
+      "kind": null,
+      "module": null,
       "with": []
     },
     {
       "id": "astronvim",
       "name": "AstroNvim",
       "text": "AstroNvim brings Neovim and Lazygit and picks up language servers from the toolchains.",
+      "kind": "shell",
+      "module": "astronvim",
       "with": ["neovim", "lazygit", "tmux", "go", "rust", "python", "nodejs", "theme"]
     },
     {
       "id": "bat",
       "name": "bat",
       "text": "bat and delta highlight in the colors of the theme.",
+      "kind": "shell",
+      "module": "cli-tools",
       "with": ["delta", "theme"]
     },
     {
       "id": "btop",
       "name": "btop",
       "text": "Watch CPU, memory and processes.",
+      "kind": "shell",
+      "module": "cli-tools",
       "with": []
     },
     {
       "id": "delta",
       "name": "delta",
       "text": "`git diff` and `git log -p` page through delta.",
+      "kind": "shell",
+      "module": "cli-tools",
       "with": ["bat", "theme"]
     },
     {
       "id": "fd",
       "name": "fd",
       "text": "Find files by name.",
+      "kind": "shell",
+      "module": "cli-tools",
       "with": []
     },
     {
       "id": "fzf",
       "name": "fzf",
       "text": "In Zsh, Ctrl-T inserts paths and Alt-C changes directory through fzf.",
+      "kind": "shell",
+      "module": "cli-tools",
       "with": ["zsh"]
     },
     {
       "id": "gh",
       "name": "GitHub CLI",
       "text": "`gh` for pull requests and issues, next to Git.",
+      "kind": "shell",
+      "module": "cli-tools",
       "with": []
     },
     {
       "id": "jq",
       "name": "jq",
       "text": "Read and reshape JSON.",
+      "kind": "shell",
+      "module": "cli-tools",
       "with": []
     },
     {
       "id": "ripgrep",
       "name": "ripgrep",
       "text": "Search file contents.",
+      "kind": "shell",
+      "module": "cli-tools",
       "with": []
     },
     {
       "id": "lazygit",
       "name": "Lazygit",
       "text": "`Space g g` in AstroNvim opens Lazygit.",
+      "kind": "shell",
+      "module": "lazygit",
       "with": ["astronvim", "theme"]
     },
     {
       "id": "neovim",
       "name": "Neovim",
       "text": "AstroNvim runs on it; on its own, Neovim is a plain editor.",
+      "kind": "shell",
+      "module": "neovim",
       "with": ["astronvim"]
     },
     {
       "id": "tmux",
       "name": "tmux",
       "text": "The same keys move between tmux panes and AstroNvim splits.",
+      "kind": "shell",
+      "module": "tmux",
       "with": ["astronvim", "theme"]
     },
     {
       "id": "yazi",
       "name": "Yazi",
       "text": "Leave Yazi with `q`, and your shell moves to its folder.",
+      "kind": "shell",
+      "module": "yazi",
       "with": ["zsh", "theme"]
     },
     {
       "id": "zsh",
       "name": "Zsh",
       "text": "Zsh comes with Oh My Zsh, a Pure or Starship prompt, and fzf on Ctrl-T and Alt-C.",
+      "kind": "shell",
+      "module": "zsh",
       "with": ["ohmyzsh", "pure", "starship", "fzf", "yazi"]
     },
     {
       "id": "ohmyzsh",
       "name": "Oh My Zsh",
       "text": "Oh My Zsh comes with the Zsh module, along with completion and history.",
+      "kind": "shell",
+      "module": "zsh",
       "with": ["zsh"]
     },
     {
       "id": "pure",
       "name": "Pure",
       "text": "The default Zsh prompt, in the colors of the theme.",
+      "kind": "shell",
+      "module": "zsh",
       "with": ["zsh", "theme"]
     },
     {
       "id": "starship",
       "name": "Starship",
       "text": "`prompt = \"starship\"` swaps Pure for Starship with the theme palette.",
+      "kind": "shell",
+      "module": "zsh",
       "with": ["zsh", "theme"]
     },
     {
       "id": "go",
       "name": "Go",
       "text": "`gopls` reaches AstroNvim when both are on.",
+      "kind": "toolchains",
+      "module": "go",
       "with": ["astronvim"]
     },
     {
       "id": "nodejs",
       "name": "Node.js",
       "text": "The TypeScript server reaches AstroNvim when both are on.",
+      "kind": "toolchains",
+      "module": "nodejs",
       "with": ["astronvim"]
     },
     {
       "id": "python",
       "name": "Python",
       "text": "Pyright reaches AstroNvim when both are on.",
+      "kind": "toolchains",
+      "module": "python",
       "with": ["astronvim"]
     },
     {
       "id": "rust",
       "name": "Rust",
       "text": "`rust-analyzer` reaches AstroNvim when both are on.",
+      "kind": "toolchains",
+      "module": "rust",
       "with": ["astronvim"]
     },
     {
       "id": "claude",
       "name": "Claude Code",
       "text": "Anthropic's coding agent for the terminal.",
+      "kind": "modules",
+      "module": "claude",
       "with": []
     },
     {
       "id": "docker",
       "name": "Docker",
       "text": "Docker Engine comes with Compose and Lazydocker.",
+      "kind": "modules",
+      "module": "docker",
       "with": []
     },
     {
       "id": "gcloud",
       "name": "Google Cloud CLI",
       "text": "`gcloud` for projects and accounts.",
+      "kind": "modules",
+      "module": "gcloud",
       "with": []
     },
     {
       "id": "harlequin",
       "name": "Harlequin",
       "text": "Harlequin comes with the PostgreSQL adapter.",
+      "kind": "modules",
+      "module": "harlequin",
       "with": ["postgres", "theme"]
     },
     {
       "id": "postgres",
       "name": "PostgreSQL",
       "text": "Open the database in Harlequin, a terminal SQL IDE.",
+      "kind": "modules",
+      "module": "postgres",
       "with": ["harlequin"]
     },
     {
       "id": "posting",
       "name": "Posting",
       "text": "A terminal HTTP client in the colors of the theme.",
+      "kind": "modules",
+      "module": "posting",
       "with": ["theme"]
     }
   ]

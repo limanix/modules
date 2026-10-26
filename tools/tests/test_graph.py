@@ -22,10 +22,22 @@ def test_collect_preserves_node_order_and_links(tmp_path: Path) -> None:
     rendered = graph.render(graph.collect(tmp_path, ["shell", "toolchains", "modules"]))
     nodes = json.loads(rendered)["modules"]
     assert [node["id"] for node in nodes] == ["theme", "zsh", "pure", "docker"]
-    assert nodes[0] == {"id": "theme", "name": "`[theme]`", "text": "One theme.", "with": []}
+    assert nodes[0] == {
+        "id": "theme",
+        "name": "`[theme]`",
+        "text": "One theme.",
+        "kind": None,
+        "module": None,
+        "with": [],
+    }
     assert nodes[1]["with"] == ["pure", "theme"]
     assert nodes[2]["with"] == ["zsh"]
     assert nodes[3]["with"] == []
+    assert [(node["kind"], node["module"]) for node in nodes[1:]] == [
+        ("shell", "zsh"),
+        ("shell", "zsh"),
+        ("modules", "docker"),
+    ]
 
 
 def test_catalog_graph_is_current() -> None:

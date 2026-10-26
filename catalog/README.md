@@ -205,7 +205,8 @@ contract.
 
 An optional `graph.toml` describes the module on the site's catalog graph. Each
 node has `name`, `text` and related node ids in `with`. Run
-`task generate/graph` after editing it.
+`task generate/graph` after editing it; the generated `graph.json` adds each
+node's kind and module.
 
 ## Compatibility and CI
 
