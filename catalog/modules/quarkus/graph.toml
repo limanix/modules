@@ -1,0 +1,4 @@
+[quarkus]
+name = "Quarkus"
+text = "Dev mode with live reload; Dev Services start databases in Docker."
+with = ["java", "docker"]

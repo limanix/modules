@@ -1,0 +1,4 @@
+description = "Apache Maven on the JDK of the Java toolchain."
+
+versions = ["3"]
+default = "3"

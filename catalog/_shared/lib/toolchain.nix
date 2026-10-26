@@ -45,11 +45,14 @@ import ./lines.nix (
       };
 
     extra =
-      { config, ... }:
-      {
-        environment.systemPackages = [
-          config.lmx.capabilities.languageSupport.tools.${spec.tool}.package
-        ];
-      };
+      { config, lib, ... }@context:
+      lib.mkMerge [
+        {
+          environment.systemPackages = [
+            config.lmx.capabilities.languageSupport.tools.${spec.tool}.package
+          ];
+        }
+        ((spec.extra or (_: { })) context)
+      ];
   }
 )

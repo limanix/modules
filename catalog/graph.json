@@ -153,6 +153,30 @@
       "with": ["astronvim"]
     },
     {
+      "id": "gradle",
+      "name": "Gradle",
+      "text": "Builds projects with `gradle` on the JDK you pick.",
+      "kind": "toolchains",
+      "module": "gradle",
+      "with": ["java"]
+    },
+    {
+      "id": "java",
+      "name": "Java",
+      "text": "Maven, Gradle and Quarkus run on the JDK you pick; AstroNvim understands Java.",
+      "kind": "toolchains",
+      "module": "java",
+      "with": ["astronvim"]
+    },
+    {
+      "id": "maven",
+      "name": "Maven",
+      "text": "Builds projects with `mvn` on the JDK you pick.",
+      "kind": "toolchains",
+      "module": "maven",
+      "with": ["java"]
+    },
+    {
       "id": "nodejs",
       "name": "Node.js",
       "text": "The TypeScript server reaches AstroNvim when both are on.",
@@ -223,6 +247,14 @@
       "kind": "modules",
       "module": "posting",
       "with": ["theme"]
+    },
+    {
+      "id": "quarkus",
+      "name": "Quarkus",
+      "text": "Dev mode with live reload; Dev Services start databases in Docker.",
+      "kind": "modules",
+      "module": "quarkus",
+      "with": ["java", "docker"]
     }
   ]
 }

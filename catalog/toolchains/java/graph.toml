@@ -1,0 +1,4 @@
+[java]
+name = "Java"
+text = "Maven, Gradle and Quarkus run on the JDK you pick."
+with = ["astronvim"]

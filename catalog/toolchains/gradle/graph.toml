@@ -1,0 +1,4 @@
+[gradle]
+name = "Gradle"
+text = "Builds projects with `gradle` on the JDK you pick."
+with = ["java"]
