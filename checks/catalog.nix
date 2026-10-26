@@ -3,7 +3,7 @@
 # Each module lives in catalog/<kind>/<name>, with a name unique across kinds.
 # It needs module.toml, default.nix, test.nix, and README.md.
 # Each declared version line also needs a versions/<line>.nix file.
-# This checks metadata, the README Guarantees heading, and any release map.
+# This checks metadata and any release map.
 # It returns module records for the harness without loading private code.
 # A missing test.nix is an error, even before the module's tests are evaluated.
 modulesDir:
@@ -44,7 +44,6 @@ let
       );
       normalized = import ./catalog-metadata.nix name metadata;
       versionFiles = if normalized.lines == [ ] then { } else builtins.readDir (directory + "/versions");
-      readme = builtins.readFile (directory + "/README.md");
     in
     assert require (builtins.all regular [
       "module.toml"
@@ -58,9 +57,6 @@ let
     assert require (builtins.all (
       line: versionFiles."${line}.nix" or null == "regular"
     ) normalized.lines) "${label}: every declared line needs a regular versions/<line>.nix";
-    assert require (builtins.any (
-      line: builtins.isString line && builtins.match "##[[:blank:]]+Guarantees[[:blank:]]*" line != null
-    ) (builtins.split "\n" readme)) "${label}: README.md needs a Guarantees section";
     assert
       !(regular "releases.nix")
       || import ./catalog-releases.nix name normalized.lines (import (directory + "/releases.nix"));

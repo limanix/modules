@@ -136,17 +136,3 @@ persistent terminal sessions.
 | Custom startup directory | Zsh reads personal startup files from `ZDOTDIR` when set |
 | You want the setup wizard | The normal `zsh-newuser-install` function remains available for explicit manual use |
 | Colors look wrong with Pure | With a Catppuccin flavor, set `COLORTERM=truecolor` when the terminal supports 24-bit color, or choose colors from its 256-color palette with `zstyle`; the `system` flavor needs neither |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Suggests Zsh as the account shell; an ordinary `limanix.user.shell` assignment can choose another shell | `eval.defaults`, `eval.shell` |
-| Managed startup loads Oh My Zsh, Carapace, fzf-tab, autosuggestions and highlighting | `eval.defaults`, `run.startup` |
-| Managed startup keeps Tab completion, Atuin Ctrl-R, fzf Ctrl-T, zoxide and direnv hooks available together | `run.startup` |
-| Pure is the default prompt; each choice installs only its prompt and names only its commands on the help card | `eval.defaults`, `eval.prompts`, `run.startup` |
-| Pure and Starship use the terminal's colors with the system flavor and the palette of a Catppuccin flavor; Starship shows the hostname and failed status | `eval.theme`, `eval.prompts`, `run.startup`, `run.starship` |
-| Outside tmux, the prompt shows the words of `lmx status --short` | `eval.segment`, `run.startup` |
-| Atuin synchronization and update checks default off | `eval.defaults`, `run.startup` |
-| Fresh and repeat logins skip the automatic wizard without creating personal startup files | `run.startup` |
-| Personal startup settings, custom `ZDOTDIR` and an existing new-user handler remain unchanged | `run.startup` |

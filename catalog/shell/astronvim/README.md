@@ -195,24 +195,3 @@ usage.
 | Catalog update with a newer nvim-treesitter | Catalog parsers update with it; run `:TSUpdate` for parsers you installed |
 | Unsaved edits or running terminal jobs | Save edits and finish jobs; restoring a session restores layout and file positions rather than unsaved contents or processes |
 | Resume a saved session | Save current edits first; the example above replaces the current editor layout |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| The configured editor, Git and Lazygit are installed | `eval.line-6` |
-| Language providers remain optional; catalog and third-party declarations are accepted | `eval.optionalProviders`, `eval.catalogProvider`, `eval.thirdPartyProvider` |
-| Rust and TypeScript server names are translated; other identities are preserved | `eval.serverNames` |
-| Bundled startup loads Catppuccin on the terminal's background with the default system flavor, key bindings and Lua highlighting from immutable plugin sources | `run.commands-6` |
-| The bundled setup receives the guest's flavor | `eval.theme` |
-| Personal init files replace bundled startup and remain unchanged | `run.personalLua`, `run.personalVim` |
-| Personal polish and plugin specifications extend the bundled setup | `run.polish`, `run.personalPlugins` |
-| Yanks reach the Mac clipboard, through `pbcopy` inside tmux and Neovim's own OSC 52 outside it; puts use the last yank without a clipboard read | `run.clipboard` |
-| A catalog Rust server and a guarded third-party Go server attach with the declared command, arguments and highlighting | `run.languageServer` |
-
-Removing this module removes its declarations and bundled store packages when no
-other selected module imports it. It does not delete personal Neovim files,
-Mason tools, session snapshots or other XDG state. Links to catalog parsers stay
-in `~/.local/share/nvim/site` and break once Nix removes the old packages;
-before using Neovim without this module, delete them with
-`find ~/.local/share/nvim/site -lname '*-astronvim-parsers/*' -delete`.

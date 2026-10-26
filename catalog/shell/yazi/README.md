@@ -95,16 +95,3 @@ default theme's wrapper. See Yazi's
 | Theme wrapper receives `SIGKILL` | It cannot clean its `limanix-yazi.*` directory under `TMPDIR`; personal files remain unchanged |
 | Yazi package is replaced | A bare package override uses that package's native theme; the vendored default theme matches Yazi 26.5.6 |
 | Shared file operations | Moving or deleting mounted files changes the original Mac directory |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Enables Yazi and installs its configured preview dependencies | `eval.installed` |
-| Bash and Zsh receive `y` without selecting Zsh as a dependency | `eval.independentShell`, `run.shellHandoff` |
-| The default theme respects explicit directories, personal themes, managed overrides and managed Yazi flavors | `run.shellHandoff` |
-| The system flavor runs Yazi with its own presets, on the terminal's background | `eval.systemTheme`, `run.shellHandoff` |
-| The default theme follows the guest's flavor | `run.shellHandoff` |
-| `q` passes the selected directory back to the shell, including spaces and newlines; `Q` retains the shell directory | `run.shellHandoff` |
-| Personal files stay unchanged; temporary handoff files and theme overlays are cleaned after exit, failure or handled interruption | `run.shellHandoff`, `run.shellErrors` |
-| The shell function returns Yazi and temporary-file creation failures | `run.shellErrors` |

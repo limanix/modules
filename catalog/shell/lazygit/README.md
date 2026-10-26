@@ -71,11 +71,3 @@ The package is configurable with `programs.lazygit.package`.
 | Directory is not a Git repository | Open the project repository before starting Lazygit |
 | Personal theme wins | Native personal and project configuration precedence remains active |
 | Authentication or identity | Configure Git credentials and commit identity for the guest account |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Lazygit and Git are enabled and their installed commands run | `eval.defaults`, `run.commands` |
-| The system flavor keeps Lazygit's terminal colors; a Catppuccin flavor sets all theme and author colors from its palette | `eval.defaults`, `eval.latte` |
-| Copy commands use the platform's `pbcopy` | `eval.clipboard` |

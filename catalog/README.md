@@ -13,7 +13,7 @@ Create `catalog/<kind>/<name>/` with four files:
 | `module.toml` | Describe the module and any version lines |
 | `default.nix` | Provide the module's default configuration and help card |
 | `test.nix` | Check the module's own behavior; at least one `eval` check is required |
-| `README.md` | Explain usage, public settings and guarantees |
+| `README.md` | Explain usage and public settings |
 
 Choose the kind that matches how the client selects the module:
 
@@ -185,7 +185,7 @@ Other uncached builds fail before execution. A cached result does not prove a
 new execution. See [build policy](../checks/build-plan.nix) for the
 implementation.
 
-## README guarantees
+## Module README
 
 The module README is the source for its page on `docs.limanix.dev`. The site
 reads all module READMEs from a published catalog release. Keep them in plain
@@ -194,18 +194,14 @@ for files in this repository and full URLs for the site. The site maps links
 between module READMEs to its catalog pages.
 
 Start with a short description and `## Select`, then explain versions and use.
-Put settings, state, corner cases and guarantees after the main examples. Say
-whether a command runs on the Mac or inside the VM. Use simple English and keep
-details about one module in its own README.
+Put settings, state and corner cases after the main examples. Say whether a
+command runs on the Mac or inside the VM. Use simple English and keep details
+about one module in its own README.
 
 Explain what the module installs, how to select it and which settings users may
 change. Describe multiple-line behavior, files, services, persistent data and
-corner cases where relevant. Include a `## Guarantees` table with exact test
-keys in `Checked by`, such as `eval.packages` or `run.commands`. Several
-guarantees may share a fixture if it checks each property. `builds.*`, private
-filenames and wildcard keys are not test evidence. The harness checks the
-heading; authors and reviewers check the table's claims and keys. Do not add a
-generic test section that repeats this contract.
+corner cases where relevant. Do not add a generic test section that repeats this
+contract.
 
 An optional `graph.toml` describes the module on the site's catalog graph. Each
 node has `name`, `text` and related node ids in `with`. Run

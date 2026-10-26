@@ -69,15 +69,3 @@ describes the options.
 | No completion or LSP attachment | This module supplies the editor; select AstroNvim for the catalog setup |
 | Default editor | Set `programs.neovim.defaultEditor = true` when you want to replace the base editor |
 | User configuration | Existing Neovim configuration remains user-owned |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Neovim and its vi/vim aliases are installed and runnable | `eval.defaults`, `run.commands` |
-| Plain Neovim does not select itself as the default editor | `eval.defaults` |
-| The module declares no language providers | `eval.optionalProviders` |
-
-Removing this module removes its declarations when no other selected module
-imports it. Personal configuration and XDG data, state and cache directories
-remain user-owned and are not deleted.
