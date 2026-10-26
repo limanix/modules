@@ -388,42 +388,4 @@ in
 
 Add code here only when several modules need it without module policy. A root
 `*.nix` file is an option schema that every system loads; pure functions belong
-in `lib/` and test helpers in `test/`. Each promise below needs an exact key in
-`_shared/test.nix`.
-
-## Guarantees
-
-`Checked by` names exports of `_shared/test.nix`. Fake-process checks cover the
-helpers; module checks cover real tools. Pin checks do not download a source.
-
-| Guarantee | Checked by |
-| -- | -- |
-| Empty language schemas contribute no tools or languages | `eval.emptyCapabilities` |
-| Optional tool defaults normalize before equality comparison | `eval.normalizedDeclarations`, `eval.equalDeclarations` |
-| Tool records select atomically, including omitted optional fields | `eval.atomicDeclaration` |
-| Parser contributions add and deduplicate independently of tools | `eval.parserContributions` |
-| Unequal command, argument or language declarations fail | `fails.conflictingCommands`, `fails.conflictingArgs`, `fails.conflictingLanguages` |
-| Required tool fields cannot be omitted | `fails.missingToolCommand`, `fails.missingToolPackage` |
-| Empty and unused pin values stay lazy in the actual loader | `eval.emptyPins`, `eval.lazyPins` |
-| Equal ordinary pin hashes agree; different ordinary hashes fail | `eval.pinDeclarations`, `fails.conflictingPins` |
-| Empty registry reaches the actual `pinned` module argument | `eval.pinWiring` |
-| The unstable revision has a full rev and an SRI hash | `eval.unstableRevision` |
-| Lines from the base and unstable resolve their package sets and pins and check only the line | `eval.releaseBase`, `eval.releaseUnstable` |
-| A snapshot resolves its pin and checks its exact version | `eval.releaseSnapshot` |
-| Other record fields resolve as sources with their own pins | `eval.releaseFieldSources` |
-| Resolving a pin never evaluates a package set | `eval.releaseLazyPins` |
-| Invalid records and unknown lines fail | `eval.releaseRejects` |
-| A module without lines resolves the base or unstable as a source; an unknown source fails | `eval.sourceWithoutLines` |
-| The evaluator's platform loads public schemas, excludes the test export and follows the configured account | `eval.platform` |
-| Package ordering preserves values, context, duplicates and replacement semantics | `eval.canonicalPackages`, `eval.packageValues` |
-| Canonical profile retains the explicit package-priority winner | `run.packagePriority` |
-| Lines sort numerically and callbacks receive their public entry records | `eval.numericLines`, `eval.lineCallbacks` |
-| Runtime callbacks produce named derivations without automatic realization | `eval.lineRuntimeRecipes` |
-| Metadata inspection stays lazy; default and all-line fixtures are separate | `eval.lazyLineFixtures`, `eval.separateLineFixtures` |
-| A non-Boolean line predicate fails | `eval.strictLinePredicate` |
-| PTY deadlines, fragmented I/O, bounded output and cleanup work | `run.terminal` |
-| JSON-RPC framing, unrelated messages, failure diagnostics and cleanup work | `run.protocol` |
-| The theme defaults to the system flavor with Mocha's 26 colors; each flavor gives its own table | `eval.themeDefaults`, `eval.themeFlavors` |
-| Each palette name has a terminal color, 0 to 15, or the terminal's default | `eval.themeTerminal` |
-| Unknown flavors, different flavors at one priority and palette or terminal color definitions fail | `fails.unknownFlavor`, `fails.conflictingFlavors`, `fails.readOnlyPalette`, `fails.readOnlyTerminal` |
-| The palette copy equals Catppuccin's palette in Nixpkgs | `run.themePalette` |
+in `lib/` and test helpers in `test/`. Check new behavior in `_shared/test.nix`.

@@ -108,15 +108,3 @@ and the
 | A channel should move | Run `rustup update`; the module installs a toolchain only when the value changes |
 | Native dependency fails | GCC and pkg-config are present; provide the required library and its search path |
 | Disk fills with toolchains | List them with `rustup toolchain list`, remove one with `rustup toolchain uninstall` |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| rustup, the native build tools, the Rust parser, rust-analyzer and the setup service match the default | `eval.defaults` |
-| The value reaches the setup service and the help card | `eval.toolchain` |
-| A value that is not a channel or a Rust version fails evaluation | `fails.invalidToolchain` |
-| The proxies run a toolchain: Cargo builds and tests offline with GCC, then runs rustfmt and Clippy | `run.commands` |
-| The setup installs and selects the declared toolchain once, keeps the user's default, and fails without a marker when the download fails | `run.toolchainSetup` |
-| A user-supplied rust-analyzer replaces the proxy in the system profile | `eval.userOverride`, `run.userOverride` |
-| Installing this module does not enable an editor | `eval.defaults` |

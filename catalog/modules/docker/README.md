@@ -110,11 +110,3 @@ as to any other service in the VM. For details, see Docker's guides to
 | Unexpected reachable port | Docker manages published-port firewall rules; check the bind address in `docker run` or Compose |
 | VM deletion | Guest-disk Docker volumes are deleted with that disk |
 | Permission changes | Reconnect after the applied account groups change |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Each Engine line selects its CLI, Compose and Lazydocker, account group, socket and EOL warning | `eval.line-28`, `eval.line-29` |
-| Two explicit Engine lines fail with `docker: select one line` | `fails.twoLines` |
-| Both Engine lines execute Docker and Compose from the selected profile | `run.commands-28`, `run.commands-29` |

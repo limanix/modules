@@ -367,17 +367,3 @@ old databases.
 | Switching major versions | Migrate the data directory with PostgreSQL's supported upgrade process; selecting another line does not migrate it |
 | Service package differs from CLI | The service package is configured separately; ordinary catalog commands retain their documented precedence |
 | Building client bindings | Inspect the intended line with `pg_config-LINE`; choose the project compiler or SDK separately |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Each line installs its server, matching `pg_config`, shared data and expected EOL warning | `eval.line-16`, `eval.line-17`, `eval.line-18` |
-| Selected lines retain their commands; the newest server and `pg_config` supply ordinary commands | `eval.allLines`, `run.allLines` |
-| Selection leaves the PostgreSQL service disabled and declares no PostgreSQL unit | `eval.noService` |
-| Catalog commands outrank an independently configured service package | `eval.servicePackagePrecedence` |
-| Versioned commands execute and report real header, library and PGXS paths for their line | `run.commands-16`, `run.commands-17`, `run.commands-18` |
-| The default line initializes, queries and stops a temporary database without root | `run.lifecycle` |
-
-`run.lifecycle` uses an isolated temporary data directory and Unix socket. It
-does not test the independent NixOS service described above.

@@ -78,11 +78,3 @@ Personal settings are in `~/.config/posting/config.yaml`, following
 | Collection is missing | Create or select an existing directory before using `--collection` |
 | API is unreachable | Check the URL from inside the guest; guest localhost is separate from Mac localhost |
 | Personal theme wins | The YAML setting overrides the managed environment default |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| The module installs the base Posting package and its config-location command runs | `eval.defaults`, `run.commands` |
-| POSTING_THEME defaults to ansi-dark, a theme that Posting offers | `eval.defaults`, `run.commands` |
-| POSTING_THEME follows the guest's flavor | `eval.latte` |

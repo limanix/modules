@@ -1,4 +1,4 @@
-# Tmux
+# tmux
 
 Adds terminal windows and split panes, mouse support, vi copy mode, OSC 52
 clipboard support, and saved sessions through tmux-resurrect and tmux-continuum.
@@ -18,7 +18,7 @@ editing `limanix.toml`.
 
 ## Versions
 
-Tmux and its plugins come from the catalog's
+tmux and its plugins come from the catalog's
 [base Nixpkgs revision](../../README.md#package-pins-and-unfree-permissions).
 This module has no version lines. Inside the VM, `tmux -V` shows the installed
 version.
@@ -45,7 +45,7 @@ The tmux provider rejects names containing `.` or `:` with status 64 because
 tmux normalizes those characters. Use names such as `work` or `project-api` to
 keep session identity unambiguous. Other accepted names are passed literally.
 
-Tmux starts only when you run it. The prefix is Ctrl-B: press it, release it,
+tmux starts only when you run it. The prefix is Ctrl-B: press it, release it,
 then press the second key.
 
 | Keys | Action |
@@ -161,7 +161,7 @@ enabled and preserve continuum's `status-right` hook if you customize it.
 | Standard settings | `programs.tmux.*`, including key mode, terminal, escape delay and extra configuration |
 | Personal state | `~/.tmux.conf` and snapshots under `~/.tmux/resurrect/` |
 | Integration | Supplies `limanix.session.command`; AstroNvim uses smart-splits pane markers |
-| Services | Tmux starts on demand; selecting the module does not attach ordinary shells |
+| Services | tmux starts on demand; selecting the module does not attach ordinary shells |
 
 ## Corner cases
 
@@ -172,19 +172,3 @@ enabled and preserve continuum's `status-right` hook if you customize it.
 | Navigation replaces shell keys | Use prefix forwarding or disable `lmx.tmux.navigation.enable` |
 | VM restart | Restore the saved layout; interrupted processes and unsaved buffers are not restored |
 | Custom status line | Keep continuum's status hook when changing it |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| `tmux` and the resurrect/continuum plugins are installed; vi mode, `tmux-256color`, and a 10 ms escape delay are defaults | `eval.defaults`, `run.terminalFeatures` |
-| Ordinary assignments can replace `programs.tmux.keyMode`, `programs.tmux.terminal`, and `programs.tmux.escapeTime` | `run.terminalFeatures` |
-| The guest's theme styles the status line, active pane border, and copy mode: the terminal's colors and background with the default system flavor, the palette of a Catppuccin flavor; ordinary `programs.tmux.extraConfig` settings can replace these styles | `eval.theme`, `run.terminalFeatures` |
-| The status line shows the words of `lmx status --short` | `eval.segment` |
-| Ctrl/Alt-H/J/K/L move and resize panes; prefix followed by Ctrl-H/J/K/L forwards the control key; panes marked by smart-splits receive their navigation keys | `run.terminalFeatures` |
-| `lmx.tmux.navigation.enable = false` removes the custom navigation and forwarding bindings while retaining mouse, clipboard, copy mode, and restoration plugins | `eval.navigation`, `run.terminalFeatures` |
-| In vi copy mode, `v` begins a selection and `y` copies it; tmux emits OSC 52 clipboard output for supported terminals | `run.terminalFeatures` |
-| Patched restoration plugins load their save/restore bindings and keep continuum's status-line hook | `run.terminalFeatures` |
-| Continuum is configured to save every 15 minutes through its status-line hook | `run.terminalFeatures` |
-| tmux provides named sessions for `limanix shell --session` without attaching ordinary shells | `eval.defaults`, `run.sessionProvider` |
-| The session provider creates a session, reattaches to it, and preserves accepted literal names without executing their contents | `run.sessionProvider` |

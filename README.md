@@ -41,8 +41,7 @@ one catalog release.
 | `modules` | `[nixos] modules`, as `lmx:<name>` | docker, gcloud, postgres, posting, harlequin, claude |
 
 Every module follows the [catalog contract](catalog/README.md), which the client
-relies on; its own README lists what it guarantees and the test that checks each
-promise.
+relies on; its own README explains how to select and use it.
 
 ## Repository layout
 

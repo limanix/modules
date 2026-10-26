@@ -1,7 +1,8 @@
 """Build the catalog graph shown on the site.
 
 The graph command reads graph.toml files from modules and catalog/_shared.
-It collects node names, descriptions, and links into catalog/graph.json.
+It collects node names, descriptions, links, kinds, and modules into
+catalog/graph.json. Nodes from catalog/_shared have no kind or module.
 The output uses a stable order and layout to make changes easy to review.
 
 Module kinds come from checks/catalog-kinds.nix.
@@ -28,10 +29,15 @@ def kinds(source: str) -> list[str]:
     return QUOTED.findall(source)
 
 
-def nodes_of(primary: str, tables: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+def nodes_of(
+    primary: str,
+    tables: dict[str, dict[str, Any]],
+    kind: str | None = None,
+    module: str | None = None,
+) -> list[dict[str, Any]]:
     ordered = [primary] if primary in tables else []
     ordered += sorted(name for name in tables if name != primary)
-    return [{"id": name, **tables[name]} for name in ordered]
+    return [{"id": name, **tables[name], "kind": kind, "module": module} for name in ordered]
 
 
 def read_tables(directory: Path) -> dict[str, dict[str, Any]]:
@@ -54,7 +60,9 @@ def collect(catalog: Path = CATALOG, kind_names: list[str] | None = None) -> lis
     names = kind_names if kind_names is not None else kinds(KINDS_FILE.read_text())
     nodes = nodes_of(SHARED_PRIMARY, read_tables(catalog / SHARED))
     for directory in module_directories(catalog, names):
-        nodes += nodes_of(directory.name, read_tables(directory))
+        nodes += nodes_of(
+            directory.name, read_tables(directory), directory.parent.name, directory.name
+        )
     return nodes
 
 
@@ -75,6 +83,8 @@ def render_node(node: dict[str, Any]) -> str:
         f'      "id": {quote(node["id"])}',
         f'      "name": {quote(node["name"])}',
         f'      "text": {quote(node["text"])}',
+        f'      "kind": {quote(node["kind"])}',
+        f'      "module": {quote(node["module"])}',
         render_links(node.get("with", [])),
     ]
     return "    {\n" + ",\n".join(fields) + "\n    }"

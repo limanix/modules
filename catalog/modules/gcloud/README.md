@@ -68,12 +68,3 @@ Keep credentials out of Nix modules and guest-wide TOML environment settings.
 | CLI login works but an application fails | Check that application's credential mechanism, including ADC when applicable |
 | Missing component | Packages are managed by Nix; add tools through a module rather than modifying the Nix store |
 | VM deletion | The managed home normally survives; deliberate home removal also removes credentials stored there |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Adds the Google Cloud SDK of the catalog's nixos-unstable revision without unrelated profile packages | `eval.package` |
-| Adds no startup units or activation commands | `eval.noStartup` |
-| The system-profile version command runs offline with an isolated home | `run.commands` |
-| `gke-gcloud-auth-plugin` is on the system profile and runs | `run.commands` |

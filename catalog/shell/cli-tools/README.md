@@ -98,12 +98,3 @@ colors.
 | Missing commit identity | Set `user.name` and `user.email` in the guest; the Mac identity is not copied |
 | Pager behaves differently | Check repository and user Git settings, which can override system defaults |
 | System monitor | `btop` displays the guest workload; it does not monitor all Mac processes |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Installs the listed tools, enables Git and runs their commands | `eval.packages`, `run.commands` |
-| Generated Git settings select delta for paging and interactive diffs | `eval.gitDefaults`, `run.gitConfig` |
-| Ordinary NixOS and personal Git settings can replace the pager defaults | `eval.gitOverrides`, `run.gitConfig` |
-| bat and delta use the terminal's colors with the system flavor only | `eval.terminalColors` |

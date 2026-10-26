@@ -84,13 +84,3 @@ for both cases.
 | -- | -- |
 | node-gyp build fails | Add Python, make, a compiler and required native libraries for that project |
 | Unexpected compiler version | The server uses the project TypeScript version when configured; its fallback follows base Nixpkgs |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| The Node.js version, language server, parsers and end-of-life warnings match the selected line | `eval.line-22`, `eval.line-24`, `eval.line-26` |
-| Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
-| The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
-| Versioned npm and npx scripts use their matching Node.js interpreter | `run.commands-22`, `run.commands-24`, `run.commands-26` |
-| The declared and user-supplied servers answer an LSP initialization request | `run.languageServer`, `run.userOverride` |

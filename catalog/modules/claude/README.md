@@ -91,12 +91,3 @@ Use your `user.home` in place of `/home/dev`, add the variable to an existing
 | `claude update` or `claude install` | Refused; a separate copy under `~/.local` would bypass the catalog version and update itself |
 | Local build | Unfree packages are not in the NixOS binary cache; the module permits building the package, which wraps and patches Anthropic's downloaded binary |
 | Project command is missing | Select the required language or tool module; Claude Code does not install the project's toolchain |
-
-## Guarantees
-
-| Guarantee | Checked by |
-| -- | -- |
-| Installs the Claude Code package of the catalog's nixos-unstable revision | `eval.package` |
-| Declares unfree permission for Claude Code | `eval.unfreeDeclaration` |
-| Turns off background and manual updates in every session | `eval.updatesDisabled` |
-| The system-profile command prints its version and offline help | `run.commands` |
