@@ -41,7 +41,8 @@ def parser() -> argparse.ArgumentParser:
     releases = commands.add_parser("release", help="Release helpers").add_subparsers(
         dest="action", required=True
     )
-    releases.add_parser("tag", help="Print the next release tag as a GitHub output")
+    tag = releases.add_parser("tag", help="Print the next tag when pinned inputs change")
+    tag.add_argument("--base", default="HEAD^1", help="Git revision before the input change")
     manifest = releases.add_parser("manifest", help="Write dist/image.json for a release")
     manifest.add_argument("tag")
     build = releases.add_parser("build", help="Build the base disk into dist/")
@@ -83,7 +84,7 @@ def run(arguments: argparse.Namespace) -> int:
         case "update":
             getattr(update, arguments.input)()
         case "release" if arguments.action == "tag":
-            release.tag()
+            release.tag(arguments.base)
         case "release" if arguments.action == "manifest":
             release.manifest(arguments.tag, dist)
         case "release":
