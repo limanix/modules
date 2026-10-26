@@ -3,6 +3,8 @@
 Provides AstroNvim with a file explorer, fuzzy search, completion, Git UI,
 diagnostics, and navigation between Neovim splits and tmux panes.
 
+## Select
+
 The `terminal` shell preset uses AstroNvim as its editor by default:
 
 ```toml
@@ -31,6 +33,18 @@ two different lines fail with `astronvim: select one line`. Neovim and plugin
 packages follow the catalog's base Nixpkgs revision. The line does not freeze
 their APIs or guarantee compatibility of every personal plugin configuration
 across catalog updates.
+
+## Use
+
+Inside the VM, open your project directory:
+
+```console
+nvim .
+```
+
+Space is the leader key: press it and pause for hints. See
+[Terminal integration](#terminal-integration) for common keys and
+[Language servers](#language-servers) for editor support.
 
 ## Packages and state
 
@@ -108,11 +122,11 @@ stay in the Nix store. Additional user plugins can be installed explicitly with
 data, state, and cache directory overrides are respected.
 
 The bundled colorscheme is Catppuccin. With the default `system` flavor its
-background is transparent, so the terminal's background shows through, and the
-light or dark background that Neovim detects in the terminal chooses Latte or
-Mocha for the text. A Catppuccin flavor in `[theme]` of `limanix.toml` uses that
-flavor with its own background. For another theme, assign AstroUI's
-`colorscheme` in a personal Lazy specification:
+background is transparent. The terminal's background shows through. The light or
+dark background that Neovim detects in the terminal chooses Latte or Mocha for
+the text. A Catppuccin flavor in `[theme]` of `limanix.toml` uses that flavor
+with its own background. For another theme, assign AstroUI's `colorscheme` in a
+personal Lazy specification:
 
 ```lua
 return {
@@ -154,7 +168,7 @@ Yanks go to the Mac clipboard through the platform's `pbcopy`, inside or outside
 tmux. `p` puts the last yank without asking the terminal and never waits for a
 clipboard read. Paste from the Mac with Cmd+V in insert mode, or insert it with
 `:r !pbpaste`. The terminal on the Mac must allow OSC 52; see
-[Terminal and clipboard](https://limanix.dev/terminal.html).
+[Terminal and clipboard](https://docs.limanix.dev/inside/clipboard).
 
 See the [AstroNvim guide](https://docs.astronvim.com/) and
 [LSP configuration](https://docs.astronvim.com/recipes/advanced_lsp/) for editor

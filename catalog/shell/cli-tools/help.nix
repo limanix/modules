@@ -34,6 +34,6 @@ in
         text = "git config --global user.name \"Your Name\"";
       }
     ];
-    guide = "https://docs.limanix.dev/inside/terminal#cli-tools";
+    guide = "https://docs.limanix.dev/modules/cli-tools";
   };
 }

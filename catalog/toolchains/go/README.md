@@ -3,6 +3,8 @@
 Installs the Go toolchain, the gopls language server, the Delve debugger, and
 GCC for cgo.
 
+## Select
+
 ```toml
 [toolchains]
 go = "1.27"

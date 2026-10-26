@@ -2,6 +2,8 @@
 
 Installs Node.js with npm, npx, and the TypeScript/JavaScript language server.
 
+## Select
+
 ```toml
 [toolchains]
 nodejs = "26"

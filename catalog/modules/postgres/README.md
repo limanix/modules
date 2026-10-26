@@ -5,6 +5,8 @@ VM. You choose where to store the data and when to start or stop the server. The
 module does not initialize a database or enable a service. For automatic
 startup, see [Run as a system service](#run-as-a-system-service).
 
+## Select
+
 ```toml
 [nixos]
 modules = ["lmx:postgres"]

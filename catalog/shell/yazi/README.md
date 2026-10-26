@@ -3,6 +3,8 @@
 Configures Yazi, a terminal file manager, with the colors of the guest's theme
 and the preview and search dependencies included by its Nixpkgs package.
 
+## Select
+
 The `terminal` shell preset includes Yazi; there is no selector for it:
 
 ```toml
@@ -32,8 +34,8 @@ It shows directories, file lists, and previews in the terminal. Files you edit
 or delete are the files in that directory, including files shared from your Mac.
 The `y` function is available in Bash and Zsh. Press `q` to leave Yazi and move
 your shell to its current directory; press `Q` to leave without moving the
-shell. Run `yazi` directly when you want the file manager without the shell
-directory handoff. Selecting Yazi does not enable Zsh.
+shell. F1 or `~` shows the keys. Run `yazi` directly when you want the file
+manager without the shell directory handoff. Selecting Yazi does not enable Zsh.
 
 ## Colors and configuration
 
