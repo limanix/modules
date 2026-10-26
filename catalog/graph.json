@@ -163,7 +163,7 @@
     {
       "id": "java",
       "name": "Java",
-      "text": "Maven, Gradle and Quarkus run on the JDK you pick; AstroNvim understands Java.",
+      "text": "Maven, Gradle and Quarkus run on the JDK you pick.",
       "kind": "toolchains",
       "module": "java",
       "with": ["astronvim"]

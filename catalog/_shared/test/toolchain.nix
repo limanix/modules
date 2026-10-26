@@ -10,6 +10,7 @@
   profileCommands,
   commands,
   check ? (_: true),
+  serverSetup ? "",
   eval ? (_: { }),
   builds ? (_: { }),
 }:
@@ -108,6 +109,7 @@ let
     pkgs.runCommand label { } ''
       export HOME="$TMPDIR/home"
       mkdir -p "$HOME"
+      ${serverSetup}
       test "$(readlink -f ${profile}/bin/${server})" = "$(readlink -f ${record.command})"
       timeout 30 ${pkgs.python3}/bin/python ${./lsp-smoke.py} \
         ${profile}/bin/${server} ${lib.escapeShellArgs (record.args or [ ])}

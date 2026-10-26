@@ -7,6 +7,7 @@ import ../../_shared/test/toolchain.nix {
   inherit evalSystem pkgs lib;
   spec = import ./toolchain.nix;
   coexisting = [ "jdk" ];
+  serverSetup = ''export JAVA_TOOL_OPTIONS="-Duser.home=$HOME"'';
   check =
     { configuration, ... }:
     let

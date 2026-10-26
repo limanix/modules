@@ -17,7 +17,7 @@ let
       inherit (configuration.config.lmx.capabilities.jdk.package) version;
     in
     pkgs.runCommand label { } ''
-      export HOME="$TMPDIR/home"
+      export HOME="$TMPDIR/home" JAVA_TOOL_OPTIONS="-Duser.home=$TMPDIR/home"
       mkdir -p "$HOME"
       ${profileFor configuration}/bin/gradle --version > "$out"
       grep -E 'Launcher JVM: +${lib.head (lib.splitString "+" version)}' "$out"
