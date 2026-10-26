@@ -1,4 +1,4 @@
-# The native evaluator and VM nodes use one public platform foundation.
+# The native evaluator stands on the public platform foundation.
 {
   nixpkgs,
   system,

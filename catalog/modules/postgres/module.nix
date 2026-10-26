@@ -1,5 +1,5 @@
 version: {
-  imports = [ ./selection.nix ];
+  imports = [ ./default.nix ];
 
   lmx.internal.postgres.versions = [ version ];
 }

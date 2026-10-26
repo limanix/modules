@@ -116,4 +116,3 @@ as to any other service in the VM. For details, see Docker's guides to
 | Each Engine line selects its CLI, Compose and Lazydocker, account group, socket and EOL warning | `eval.line-28`, `eval.line-29` |
 | Two explicit Engine lines fail with `docker: select one line` | `fails.twoLines` |
 | Both Engine lines execute Docker and Compose from the selected profile | `run.commands-28`, `run.commands-29` |
-| The default Engine boots; the development account runs an offline container and Compose service | `vm.activation` |

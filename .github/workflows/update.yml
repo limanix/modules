@@ -25,7 +25,7 @@ jobs:
           github_access_token: ${{ github.token }}
       - name: Update Nixpkgs within NixOS
         id: nixpkgs
-        run: bash scripts/update_nixpkgs.sh >> "$GITHUB_OUTPUT"
+        run: python3 tools/harness update nixpkgs >> "$GITHUB_OUTPUT"
       - name: Create token
         if: steps.nixpkgs.outputs.before != steps.nixpkgs.outputs.after
         id: app-token
@@ -71,7 +71,7 @@ jobs:
           github_access_token: ${{ github.token }}
       - name: Move to the newest nixos-unstable
         id: unstable
-        run: bash scripts/update_unstable.sh >> "$GITHUB_OUTPUT"
+        run: python3 tools/harness update unstable >> "$GITHUB_OUTPUT"
       - name: Create token
         if: steps.unstable.outputs.before != steps.unstable.outputs.after
         id: app-token
@@ -122,7 +122,7 @@ jobs:
       - name: Keep the drift issue current
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/report_drift.sh
+        run: python3 tools/harness drift
 
   nixos:
     name: Move to the next NixOS
@@ -136,7 +136,7 @@ jobs:
           github_access_token: ${{ github.token }}
       - name: Look for the next NixOS release
         id: nixos
-        run: bash scripts/update_nixos.sh >> "$GITHUB_OUTPUT"
+        run: python3 tools/harness update nixos >> "$GITHUB_OUTPUT"
       - name: Create token
         if: steps.nixos.outputs.next != ''
         id: app-token

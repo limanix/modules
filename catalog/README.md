@@ -17,7 +17,6 @@ flowchart LR
     module --> tests[Public test.nix]
     tests --> eval[Configuration assertions]
     tests --> run[Native execution]
-    tests --> vm[Activation tests]
 ```
 
 ## Ownership
@@ -293,7 +292,6 @@ public-entry evaluations.
 | `fails` | Records with a module list and nonempty diagnostic string | The supplied modules fail with that diagnostic |
 | `run` | Native derivations | Actual command and application behavior in an isolated fixture |
 | `builds` | Exact derivations allowed to build locally | Permission only |
-| `vm` | Native `pkgs.testers.runNixOSTest` derivations | Real NixOS activation |
 
 Optional groups default to `{}`. Unknown top-level fields fail. Each `fails`
 record contains exactly `modules` (a list of NixOS modules) and `message` (a
@@ -307,30 +305,18 @@ fixtures stay offline and do not use a VM or `system.build.toplevel`.
 | `fails` | camelCase reason; `twoLines` for incompatible lines |
 | `run` | `commands`, `commands-<line>`, or a camelCase feature |
 | `builds` | `artifact` or `artifact-<line>` |
-| `vm` | `activation` |
 
 Choose the cheapest sufficient level. Configuration assertions do not prove
 startup, application settings or service health. Native execution can prepare an
 isolated application environment, but does not prove NixOS login or `/etc`
-activation. Those promises need a VM test. `vm` is optional: export it only for
-a promise that needs activation, such as the login shell or a system service.
-The PR flow never runs it; [Cost and reports](#cost-and-reports) says when it
-runs.
+activation; the harness has no activation checks.
 
-## Shared helpers and VM tests
+## Shared helpers
 
-[Shared helpers](_shared/README.md) describes the line helper, the configuration
-helpers and the VM platform. They remove repetition; the checks remain the
-module's own:
-
-- The line helper checks each line separately. The module decides whether lines
-  coexist and exports `allLines` or the incompatible-pair failure.
-- VM nodes import the shared platform and the module's public entry points.
-  Choose another account through its `userName` and `userHome` parameters; do
-  not redeclare the read-only account name or home in an extra module.
-- VM resources and assertions remain under the module's `test/`. Do not import
-  the VM platform into `evalSystem`, where it already exists, and do not pass a
-  fourth platform argument to `test.nix`.
+[Shared helpers](_shared/README.md) describes the line helper and the
+configuration helpers. They remove repetition; the checks remain the module's
+own: the line helper checks each line separately, and the module decides whether
+lines coexist and exports `allLines` or the incompatible-pair failure.
 
 ## Local builds and runtime
 
@@ -349,8 +335,7 @@ extend this permission set. Reading a dependency's public `builds` does not
 schedule its `eval` or `run`. Permission does not include transitive derivation
 inputs. Any other uncached build fails before execution and is reported. A cache
 hit does not prove a fresh run; report reuse separately. No native fixture uses
-personal host state or provisions external services. VM builds skip the native
-runtime dry-run.
+personal host state or provisions external services.
 
 ## Cost and reports
 
@@ -358,12 +343,8 @@ runtime dry-run.
 | -- | -- | -- |
 | Structure, entry points, recommendation, `eval`, `fails` | Changed modules on PRs | 2 minutes |
 | `run` | Changed modules, both native Linux architectures | 5 minutes with prepared cache |
-| `vm` | Manual execution on native Linux with KVM | 15 minutes |
 
-The PR flow runs `eval`, `fails` and `run`; the release flow runs no tests. VM
-exports remain part of the module test interface and run manually on native
-Linux with KVM. A green CI run does not establish activation; record VM checks
-as not run unless a separate execution supplies evidence.
+The PR flow runs `eval`, `fails` and `run`; the release flow runs no tests.
 
 Reuse one default fixture, one per needed line and one for each different
 scenario. Fixture counts guide cost; they are not hard limits on correctness.
@@ -371,10 +352,10 @@ Each README promise and relevant regression determines the required coverage.
 
 The PR flow targets ten minutes on its critical path with a prepared cache.
 Targets are measured, not enforced: checks run without time limits. Reports
-identify the suite, stage, architecture, actual duration, cache state, builds
-and VM status. They separate newly executed checks from reused results where
-known; unknown cache state stays unknown. A cancelled or interrupted run is
-incomplete evidence.
+identify the suite, stage, architecture, actual duration, cache state and
+builds. They separate newly executed checks from reused results where known;
+unknown cache state stays unknown. A cancelled or interrupted run is incomplete
+evidence.
 
 The PR flow checks changed modules and their consumers: a module whose entry
 points or test files import a changed module's public entry point is checked
@@ -388,10 +369,10 @@ their own module tests.
 A module page explains what is installed, selectors, public settings, several
 line behavior, generated files, services, persistent data and corner cases. The
 harness requires a `## Guarantees` heading. Its table uses exact existing keys
-in `Checked by`, such as `eval.packages`, `run.commands` or `vm.activation`. A
-row may list one or more exact keys. Several promises can share a fixture when
-it explicitly asserts each property. Corner cases and regressions must relate to
-a stated promise.
+in `Checked by`, such as `eval.packages` or `run.commands`. A row may list one
+or more exact keys. Several promises can share a fixture when it explicitly
+asserts each property. Corner cases and regressions must relate to a stated
+promise.
 
 `builds.*` is not evidence. Private filenames and wildcard keys are not test
 exports. Do not add a generic `Tests` section that repeats this ABI.

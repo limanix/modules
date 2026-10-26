@@ -3,88 +3,42 @@
   pkgs,
   lib,
 }:
-let
-  helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
-  inherit (helpers)
-    evaluate
-    profileFor
-    verify
-    installed
-    installedAsDeclared
-    selectedPackage
-    packagePriority
-    ;
-  lineTests = import ../../_shared/test/lines.nix {
-    inherit evalSystem pkgs lib;
-    moduleDirectory = ./.;
-    checkLine = { line, configuration }: checkResult configuration line;
-    runLine = { line, configuration }: (runtimeFor line configuration false).commands;
+import ../../_shared/test/toolchain.nix {
+  inherit evalSystem pkgs lib;
+  spec = import ./toolchain.nix;
+  coexisting = [
+    "go"
+    "gopls"
+    "delve"
+  ];
+  check = { installed, ... }: installed pkgs.gcc;
+  profileCommands = tools: {
+    go = "${tools.go}/bin/go";
+    gopls = "${tools.gopls}/bin/gopls";
+    dlv = "${tools.delve}/bin/dlv";
   };
-  inherit (lineTests) metadata lines allConfiguration;
-  versionConfigurations = lineTests.configurations;
-  variants = map (version: {
-    inherit version;
-    path = ./versions + "/${version}.nix";
-  }) lines;
-  toolsFor = line: versionConfigurations.${line}.config.lmx.internal.go.packages.${line};
-  capability = configuration: configuration.config.lmx.capabilities.languageSupport;
-  checkResult =
-    configuration: line:
-    import ./test/check.nix {
-      inherit (configuration) config;
-      inherit pkgs;
-      tools = toolsFor line;
-      hasPackage = installed configuration;
-    };
-  coexistence =
-    packageNames:
-    let
-      newest = toolsFor (lib.last lines);
-    in
-    verify "go: explicit lines coexist and select the newest ordinary commands" (
-      builtins.all (variant: checkResult allConfiguration variant.version) variants
-      && builtins.all (name: selectedPackage allConfiguration newest.${name}) packageNames
-    ) allConfiguration;
-  localTests = import ./test/tests.nix {
-    inherit
-      pkgs
-      lib
-      variants
-      versionConfigurations
-      allConfiguration
-      toolsFor
-      capability
-      evaluate
-      verify
-      installedAsDeclared
-      selectedPackage
-      packagePriority
-      coexistence
-      ;
-  };
-  runtimeFor =
-    line: configuration: includeShared:
-    import ./test/smoke.nix {
-      inherit
-        pkgs
-        includeShared
-        allConfiguration
-        profileFor
-        ;
-      inherit (configuration) config;
-      version = line;
-      profile = profileFor configuration;
-      tools = toolsFor line;
-      olderTools = toolsFor (builtins.head lines);
-      expectedTools = toolsFor (lib.last lines);
-      inherit (localTests) configurations;
-    };
-  sharedRuntime = builtins.removeAttrs (runtimeFor metadata.default
-    versionConfigurations.${metadata.default}
-    true
-  ) [ "commands" ];
-in
-{
-  eval = lineTests.eval // localTests.evaluation;
-  run = lineTests.run // sharedRuntime;
+  commands =
+    {
+      line,
+      profile,
+      tools,
+      provider,
+      ...
+    }:
+    pkgs.runCommand "go-${line}-commands-smoke" { nativeBuildInputs = [ profile ]; } ''
+      export HOME="$TMPDIR/home" GOTOOLCHAIN=local CGO_ENABLED=1
+      mkdir -p "$HOME"
+      test "$(readlink -f ${profile}/bin/go-${line})" = "$(readlink -f ${tools.go}/bin/go)"
+      go-${line} version | grep -F 'go${tools.go.version}'
+      test "$(readlink -f ${profile}/bin/gopls)" = "$(readlink -f ${provider.command})"
+      gopls version
+      dlv version
+      mkdir project
+      cd project
+      printf 'module example\n\ngo 1.24\n' > go.mod
+      printf 'package example\nimport "C"\nfunc Answer() int { return 42 }\n' > example.go
+      printf 'package example\nimport "testing"\nfunc TestAnswer(t *testing.T) { if Answer() != 42 { t.Fatal("answer") } }\n' > example_test.go
+      go-${line} test -race ./...
+      touch "$out"
+    '';
 }

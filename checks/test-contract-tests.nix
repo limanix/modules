@@ -49,7 +49,6 @@ let
       };
       run.commands = fixture;
       builds.application = fixture;
-      vm.activation = fixture;
     }
   );
   validFailure = {
@@ -65,13 +64,8 @@ assert
     "eval"
     "fails"
     "run"
-    "vm"
   ];
-assert
-  (validate base).fails == { }
-  && (validate base).run == { }
-  && (validate base).builds == { }
-  && (validate base).vm == { };
+assert (validate base).fails == { } && (validate base).run == { } && (validate base).builds == { };
 assert rejects forceEval [ ];
 assert rejects forceEval { };
 assert rejects forceEval { eval = { }; };
@@ -135,23 +129,13 @@ assert builtins.all
   [
     "run"
     "builds"
-    "vm"
   ];
-assert rejects (forceDerivations "vm") (base // { vm.other = fixture; });
 assert forceDerivations "builds" (base // { builds.${longArtifact} = fixture; });
 assert builtins.all
   (
     group:
     let
-      value =
-        complete.${group}.${
-          if group == "run" then
-            "commands"
-          else if group == "builds" then
-            "application"
-          else
-            "activation"
-        };
+      value = complete.${group}.${if group == "run" then "commands" else "application"};
     in
     value.drvPath == fixture.drvPath
     && value.system == fixture.system
@@ -161,7 +145,6 @@ assert builtins.all
   [
     "run"
     "builds"
-    "vm"
   ];
 
 assert forceEval (base // { run = throw "Unselected run group was forced"; });

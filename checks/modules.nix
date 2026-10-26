@@ -3,6 +3,8 @@
   modules ? "[]",
   suite ? "module",
   system ? builtins.currentSystem,
+  target ? "",
+  case ? "",
 }:
 let
   catalog = import ./catalog.nix ../catalog;
@@ -278,7 +280,6 @@ assert require (suite == "module" || requested == [ ]) "only the module suite ac
     runManifest
     ;
   selectionManifest.modules = lines selectedNames;
-  vmManifest = runtimeManifest "vm";
 
   checkManifest = {
     eval = evalManifest;
@@ -286,9 +287,7 @@ assert require (suite == "module" || requested == [ ]) "only the module suite ac
   };
   failure =
     let
-      target = builtins.getEnv "LMX_CHECK_TARGET";
-      key = builtins.getEnv "LMX_CHECK_CASE";
-      failure = selectedTests.${target}.fails.${key};
+      failure = selectedTests.${target}.fails.${case};
     in
     builtins.seq (evalSystem failure.modules).system.build.toplevel.drvPath true;
 }

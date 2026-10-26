@@ -22,88 +22,118 @@ vars:
     --cap-add=SETGID
     --cap-add=KILL
 
-  nix_files: >-
-    find . \( -path ./.git -o -path ./.cache -o -path ./.task -o -path ./build \) -prune
-    -o -type f -name "*.nix"
-
   nix_cache_env: XDG_CACHE_HOME=/workspace/.cache
   markdown_paths: README.md catalog
+  harness: python3 tools/harness
 
 tasks:
-  ci/lint:
-    desc: Run static checks
-    cmds:
-      - task: lint/nix
-      - task: lint/markdown
-
-  ci/test/modules:
-    desc: Test catalog modules
-    cmds:
-      - task: _nix/check
-        vars:
-          CMD: >-
-            bash scripts/run_checks.sh module
-            {{.MODE | default "check" | shellQuote}}
-            {{.MODULES | default "" | shellQuote}}
-
-  ci/test/layer:
-    desc: Test the shared layer
-    cmds:
-      - task: _nix/check
-        vars:
-          CMD: >-
-            bash scripts/run_checks.sh
-            {{.SUITE | default "common" | shellQuote}}
-            {{.MODE | default "check" | shellQuote}}
-
-  lint/nix:
+  ci/nix/fmt:
     desc: Check Nix formatting
     cmds:
-      - task: nix:exec
-        vars:
-          CMD: |
-            bash -c '
-              status=0
-              {{.nix_files}} -exec nixfmt --check {} + || status=1
-              statix check . || status=1
-              deadnix --fail . || status=1
-              exit "$status"
-            '
-          CONTAINER_MOUNT_MODE: ro
+      - task: nix:fmt
 
-  lint/nix/fix:
-    desc: Format Nix files in place
+  ci/nix/lint:
+    desc: Lint Nix files with statix and deadnix
     cmds:
-      - task: nix:exec
-        vars:
-          CMD: |
-            bash -c '{{.nix_files}} -exec nixfmt {} +'
+      - task: nix:lint
 
-  lint/markdown:
+  ci/markdown/fmt:
     desc: Check Markdown formatting
     cmds:
       - task: markdown:fmt
         vars:
           FMT_ARGS: '{{.markdown_paths}}'
 
-  lint/markdown/fix:
+  ci/python/fmt:
+    desc: Check the formatting of the harness
+    cmds:
+      - task: _python
+        vars:
+          CMD: ruff format --check --no-cache .
+
+  ci/python/lint:
+    desc: Lint the harness with ruff
+    cmds:
+      - task: _python
+        vars:
+          CMD: ruff check --no-cache .
+
+  ci/python/typecheck:
+    desc: Type-check the harness with mypy
+    cmds:
+      - task: _python
+        vars:
+          CMD: mypy --cache-dir /dev/null
+
+  ci/python/test:
+    desc: Run the tests of the harness
+    cmds:
+      - task: _python
+        vars:
+          CMD: pytest -p no:cacheprovider -q
+
+  ci/catalog/modules:
+    desc: Check the named catalog modules, or all of them; MODE is check, eval or run
+    cmds:
+      - task: _catalog/check
+        vars:
+          CMD: >-
+            {{.harness}} check module
+            {{.MODE | default "check" | shellQuote}}
+            {{.MODULES | default "" | shellQuote}}
+
+  ci/catalog/layer:
+    desc: Check the shared layer or the harness; SUITE is common, shared or platform, MODE is check, eval or run
+    cmds:
+      - task: _catalog/check
+        vars:
+          CMD: >-
+            {{.harness}} check
+            {{.SUITE | default "common" | shellQuote}}
+            {{.MODE | default "check" | shellQuote}}
+
+  nix/fmt/fix:
+    desc: Format Nix files in place
+    cmds:
+      - task: nix:fmt/fix
+
+  nix/lint/fix:
+    desc: Apply the statix and deadnix fixes in place
+    cmds:
+      - task: nix:lint/fix
+
+  markdown/fmt/fix:
     desc: Format Markdown in place
     cmds:
       - task: markdown:fmt/fix
         vars:
           FMT_ARGS: '{{.markdown_paths}}'
 
+  python/fmt/fix:
+    desc: Format the harness in place
+    cmds:
+      - task: _python
+        vars:
+          CMD: ruff format --no-cache .
+          CONTAINER_MOUNT_MODE: rw
+
+  python/lint/fix:
+    desc: Apply the ruff fixes to the harness in place
+    cmds:
+      - task: _python
+        vars:
+          CMD: ruff check --fix --no-cache .
+          CONTAINER_MOUNT_MODE: rw
+
   generate/graph:
     desc: Write catalog/graph.json from the graph.toml files of the catalog
     cmds:
       - task: nix:exec
         vars:
-          CMD: >-
-            sh -c 'graph=$(nix eval --extra-experimental-features nix-command --raw --file scripts/graph.nix)
-            && printf "%s\n" "$graph" > catalog/graph.json'
+          CMD: '{{.harness}} graph'
 
   release/build:
-    desc: Build image
+    desc: Build the base disk of ARCH into dist/
     requires:
       vars:
         - name: ARCH
@@ -113,11 +143,11 @@ tasks:
       host_arch: '{{ARCH | replace "arm64" "aarch64" | replace "amd64" "x86_64"}}'
     preconditions:
       - sh: test {{.ARCH | shellQuote}} = {{.host_arch | shellQuote}}
-        msg: Images build natively; build {{.ARCH}} on an {{.ARCH}} machine.
+        msg: Disks build natively; build {{.ARCH}} on an {{.ARCH}} machine.
     cmds:
       - task: nix:exec
         vars:
-          CMD: sh scripts/build_image.sh {{.ARCH}}
+          CMD: '{{.harness}} release build {{.ARCH}}'
           CONTAINER_RUN_ARGS: >-
             --security-opt seccomp=unconfined
             --security-opt apparmor=unconfined
@@ -127,7 +157,7 @@ tasks:
             limanix-modules-nix:/nix
             {{.CONTAINER_VOLUMES | default ""}}
 
-  _nix/check:
+  _catalog/check:
     internal: true
     requires:
       vars: [ CMD ]
@@ -141,3 +171,15 @@ tasks:
             {{.nix_cache_env}}
             {{.CONTAINER_ENVS | default ""}}
           CMD: '{{.CMD}}'
+
+  _python:
+    internal: true
+    requires:
+      vars: [ CMD ]
+    cmds:
+      - task: nix:exec
+        vars:
+          NIX_DIR: tools
+          CMD: '{{.CMD}}'
+          CONTAINER_MOUNT_MODE: '{{.CONTAINER_MOUNT_MODE | default "ro"}}'
+          CONTAINER_ENVS: PYTHONDONTWRITEBYTECODE=1

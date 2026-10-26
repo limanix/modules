@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
       - name: Pick the next tag
         id: next
-        run: bash scripts/next_tag.sh >> "$GITHUB_OUTPUT"
+        run: python3 tools/harness release tag >> "$GITHUB_OUTPUT"
       - name: Create token
         if: steps.next.outputs.tag != ''
         id: app-token

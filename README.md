@@ -50,7 +50,7 @@ promise.
 modules/
 ├── catalog/        the catalog: _shared/, shell/, toolchains/, modules/ and graph.json
 ├── checks/         the harness in Nix: discovery, contract validation and test aggregation
-├── scripts/        orchestration: the check runner, updates, the image build and release helpers
+├── tools/          the harness in Python: the check runner, updates, the disk build, releases and the graph
 ├── interface.nix   the options every VM gets: account identity, sessions and help cards
 ├── platform.nix    the guest platform: disk layout, boot loader and Lima integration
 ├── image.nix       the base disk, built from platform.nix
@@ -60,15 +60,16 @@ modules/
 A client bundles `LICENSE`, `flake.lock`, `interface.nix`, `platform.nix` and
 `catalog/`; everything else stays here. Nix evaluates and builds: every check is
 an evaluation or a derivation that `checks/` assembles from the `test.nix`
-exports of the modules. The scripts only orchestrate: they select what to check,
-call Nix and report.
+exports of the modules. `tools/harness`, a Python program with no dependencies
+beyond the standard library, only orchestrates: it selects what to check, calls
+Nix and reports.
 
 ## Base disk
 
 Each release carries the disk a new VM boots from: NixOS for `aarch64` and
 `x86_64`, built from this catalog's Nixpkgs with [`platform.nix`](platform.nix)
 and [`image.nix`](image.nix). The labels, file systems and boot loader of a
-released disk never change. `task --yes release/build` builds the disk of the
+released disk never change. `task release/build` builds the disk of the
 machine's architecture into `dist/`.
 
 ## Releases
@@ -90,13 +91,17 @@ runs in a container.
 
 | Task | Does |
 | -- | -- |
-| `task ci/lint` | Checks Nix and Markdown formatting |
-| `task ci/test/modules MODE=eval MODULES="go docker"` | Tests the named modules, or all of them; `MODE` is `check`, `eval`, `run` or `vm` |
-| `task ci/test/layer SUITE=shared MODE=eval` | Tests the shared layer, or the platform with `SUITE=platform` |
+| `task ci/nix/fmt`, `task ci/nix/lint` | Checks Nix formatting; lints Nix with statix and deadnix |
+| `task ci/markdown/fmt` | Checks Markdown formatting |
+| `task ci/python/fmt`, `task ci/python/lint`, `task ci/python/typecheck`, `task ci/python/test` | Checks the harness with ruff, mypy and pytest |
+| `task ci/catalog/modules MODE=eval MODULES="go docker"` | Checks the named modules, or all of them; `MODE` is `check`, `eval` or `run` |
+| `task ci/catalog/layer SUITE=shared MODE=eval` | Checks the shared layer, or the harness with `SUITE=platform` |
 | `task generate/graph` | Writes `catalog/graph.json`, the site's catalog graph, from the `graph.toml` of each module |
+| `task release/build` | Builds the base disk of this machine's architecture into `dist/` |
 
-`MODE=vm` boots VMs and needs `/dev/kvm`, which the container does not get: run
-`bash scripts/run_checks.sh module vm <name>` on Linux with Nix installed.
+`task nix/fmt/fix`, `task nix/lint/fix`, `task markdown/fmt/fix`,
+`task python/fmt/fix` and `task python/lint/fix` rewrite the files in place.
+`python3 tools/harness --help` lists the commands of the harness.
 
 ## Contributing
 

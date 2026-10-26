@@ -74,7 +74,7 @@ let
 in
 {
   eval = {
-    vmPlatform =
+    platform =
       fixture.config.users.users.${configuredUser.name}.home == configuredUser.home
       && fixture.config.users.users.${configuredUser.name}.shell == configuredUser.shell
       && fixture.config.users.users.${configuredUser.name}.uid == 1000

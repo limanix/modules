@@ -15,26 +15,40 @@ let
   toolsFor = configuration: line: configuration.config.lmx.internal.postgres.packages.${line};
   valid =
     configuration: line:
-    import ./test/check.nix {
-      inherit (configuration) config;
+    let
       tools = toolsFor configuration line;
-      hasPackage = installed configuration;
-    };
+      warning = "PostgreSQL ${tools.postgres.version} no longer receives upstream security updates.";
+    in
+    installed configuration tools.postgres
+    && installed configuration tools.pgConfig
+    && builtins.elem "/share/postgresql" configuration.config.environment.pathsToLink
+    && (builtins.elem warning configuration.config.warnings == (tools.endOfLife == true));
+  commands =
+    line: configuration:
+    let
+      tools = toolsFor configuration line;
+      profile = profileFor configuration;
+    in
+    pkgs.runCommand "postgres-${line}-commands-smoke" { } ''
+      for executable in ${tools.postgres}/bin/* ${tools.pgConfig}/bin/*; do
+        test -x "${profile}/bin/$(basename "$executable")-${line}"
+      done
+      ${profile}/bin/psql-${line} --version | grep -F '${tools.postgres.version}'
+      ${profile}/bin/pg_config-${line} --version | grep -F '${tools.postgres.version}'
+      test "$(${profile}/bin/pg_config-${line} --bindir)" = "${tools.postgres}/bin"
+      test -d "$(${profile}/bin/pg_config-${line} --includedir)"
+      test -d "$(${profile}/bin/pg_config-${line} --includedir-server)"
+      test -d "$(${profile}/bin/pg_config-${line} --libdir)"
+      test -f "$(${profile}/bin/pg_config-${line} --pgxs)"
+      ${profile}/bin/postgres-${line} --version | grep -F '${tools.postgres.version}'
+      test -d ${profile}/share/postgresql
+      touch "$out"
+    '';
   lineTests = import ../../_shared/test/lines.nix {
     inherit evalSystem pkgs lib;
     moduleDirectory = ./.;
     checkLine = { line, configuration }: valid configuration line;
-    runLine =
-      { line, configuration }:
-      (import ./test/smoke.nix {
-        inherit pkgs profileFor;
-        profile = profileFor configuration;
-        version = line;
-        tools = toolsFor configuration line;
-        newestTools = toolsFor configuration line;
-        allVersionsConfiguration = configuration;
-        includeShared = false;
-      }).commands;
+    runLine = { line, configuration }: commands line configuration;
   };
   inherit (lineTests)
     metadata
@@ -44,14 +58,6 @@ let
     allConfiguration
     ;
   newestTools = toolsFor allConfiguration (lib.last lines);
-  sharedChecks = import ./test/smoke.nix {
-    inherit pkgs profileFor newestTools;
-    profile = profileFor allConfiguration;
-    version = lib.last lines;
-    tools = newestTools;
-    allVersionsConfiguration = allConfiguration;
-    includeShared = true;
-  };
   serviceLine = builtins.head lines;
   serviceTools = toolsFor configurations.${serviceLine} serviceLine;
   withService = evaluate [
@@ -82,7 +88,17 @@ in
     ) withService;
   };
   run = lineTests.run // {
-    allLines = sharedChecks.coexistence;
+    allLines = import ../../_shared/test/profile-commands.nix {
+      inherit pkgs;
+      profile = profileFor allConfiguration;
+      expectedCommands = {
+        psql = "${newestTools.postgres}/bin/psql";
+        postgres = "${newestTools.postgres}/bin/postgres";
+        pg_dump = "${newestTools.postgres}/bin/pg_dump";
+        pg_restore = "${newestTools.postgres}/bin/pg_restore";
+        pg_config = "${newestTools.pgConfig}/bin/pg_config";
+      };
+    };
     lifecycle = import ./test/lifecycle.nix {
       inherit pkgs;
       profile = profileFor defaultConfiguration;

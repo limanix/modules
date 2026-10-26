@@ -11,7 +11,6 @@ let
     "fails"
     "run"
     "builds"
-    "vm"
   ];
   require = condition: message: if condition then true else throw "Module tests: ${name}: ${message}";
   validKey = key: builtins.match "[a-z][A-Za-z0-9._-]*" key != null;
@@ -62,9 +61,6 @@ let
     let
       values = validateKeys group (groupFor group);
     in
-    assert require (
-      group != "vm" || builtins.all (key: key == "activation") (builtins.attrNames values)
-    ) "vm may export only activation";
     assert builtins.all (
       key:
       let
@@ -88,5 +84,4 @@ assert require (
   fails = validateFails;
   run = validateDerivations "run";
   builds = validateDerivations "builds";
-  vm = validateDerivations "vm";
 }
