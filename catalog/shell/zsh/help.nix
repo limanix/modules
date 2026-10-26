@@ -33,6 +33,6 @@ in
         text = "direnv allow";
       }
     ];
-    guide = "https://docs.limanix.dev/inside/terminal#zsh-and-the-prompt";
+    guide = "https://docs.limanix.dev/modules/zsh";
   };
 }

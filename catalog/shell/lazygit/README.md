@@ -2,6 +2,8 @@
 
 Installs Lazygit, a terminal interface for Git, and enables Git.
 
+## Select
+
 The `terminal` shell preset includes Lazygit; there is no selector for it:
 
 ```toml
@@ -28,7 +30,8 @@ lazygit
 ```
 
 The interface lets you inspect changes, stage files, and work with commits and
-branches. Configure your commit identity as described in
+branches. Press Space to stage a file, `c` to commit, `P` to push, `p` to pull
+and `?` to see the keys. Configure your commit identity as described in
 [CLI tools](../cli-tools/README.md#git).
 
 ## Customize
@@ -58,7 +61,7 @@ The package is configurable with `programs.lazygit.package`.
 | Managed configuration | `/etc/xdg/lazygit/config.yml` |
 | Personal configuration | `~/.config/lazygit/config.yml`; project `.lazygit.yml` and `.git/lazygit.yml` |
 | Integration | Enables Git; AstroNvim opens the same Lazygit application |
-| Clipboard | Copy commands send text to the Mac clipboard through the platform's `pbcopy`; see [Terminal and clipboard](https://limanix.dev/terminal.html) |
+| Clipboard | Copy commands send text to the Mac clipboard through the platform's `pbcopy`; see [Terminal and clipboard](https://docs.limanix.dev/inside/clipboard) |
 | Services and capabilities | No daemon or language-support declarations |
 
 ## Corner cases

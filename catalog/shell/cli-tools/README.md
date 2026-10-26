@@ -3,6 +3,8 @@
 Installs tools for finding files, reading code and data, making HTTP requests,
 and inspecting the VM. Also enables Git and configures delta as its diff pager.
 
+## Select
+
 Both shell presets include these tools; there is no selector for them:
 
 ```toml

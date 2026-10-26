@@ -5,6 +5,8 @@ project environments inside the VM. The interpreter's separate HTML
 documentation is not installed automatically. Runtime `help()` and
 standard-library help remain available.
 
+## Select
+
 ```toml
 [toolchains]
 python = "3.15"

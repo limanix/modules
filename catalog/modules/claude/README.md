@@ -2,6 +2,8 @@
 
 Installs `claude`, Anthropic's terminal coding agent.
 
+## Select
+
 ```toml
 [nixos]
 modules = ["lmx:claude"]

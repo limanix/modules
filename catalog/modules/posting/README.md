@@ -1,11 +1,9 @@
 # Posting
 
-Installs Posting, a terminal client for HTTP APIs, and sets `POSTING_THEME` to
-the guest's theme by default: `ansi-dark`, Textual's theme in the terminal's own
-colors and background, with the default `system` flavor, or the Catppuccin theme
-of a flavor that `[theme]` in `limanix.toml` selects, such as
-`catppuccin-latte`. On a light terminal, set `POSTING_THEME=ansi-light` in
-`[env]`.
+Installs Posting, a terminal client for HTTP APIs, and sets its default theme to
+match the guest.
+
+## Select
 
 ```toml
 [nixos]
@@ -30,19 +28,39 @@ posting
 ```
 
 The interface lets you compose HTTP requests and inspect their responses. Save
-requests in a collection to reuse them. Open a project collection with:
+requests in a collection to reuse them.
+
+| Key | Action |
+| -- | -- |
+| Ctrl-J | Send the request |
+| Ctrl-S | Save the request to the collection |
+| F1 | Show the key bindings of the focused widget |
+
+To open a collection from your project, first create its directory, then run:
 
 ```console
 posting --collection ./requests
 ```
 
-The collection directory must already exist. Use `posting locate collection` to
-find the default collection directory and `posting locate config` to find your
-configuration file. Posting stores personal settings in
-`~/.config/posting/config.yaml`, respecting `XDG_CONFIG_HOME`. Set `theme` in
-that file to override the module's `POSTING_THEME` default. See the
-[Posting guide](https://posting.sh/guide/) for collections and request
-configuration.
+`posting locate collection` shows the default collection directory. The
+[Posting guide](https://posting.sh/guide/) covers collections and request
+settings.
+
+## Theme
+
+The module sets `POSTING_THEME` to follow `[theme]` in `limanix.toml`. The
+`system` flavor uses `ansi-dark`, with the terminal's colors and background. A
+Catppuccin flavor uses `catppuccin-<flavor>`, such as `catppuccin-latte`. For a
+light terminal, add this to your existing `[env]` table:
+
+```toml
+[env]
+POSTING_THEME = "ansi-light"
+```
+
+Personal settings are in `~/.config/posting/config.yaml`, following
+`XDG_CONFIG_HOME`. A `theme` in that file overrides the environment value.
+`posting locate config` shows the configuration file.
 
 ## Configuration and integration
 

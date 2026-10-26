@@ -27,6 +27,6 @@ in
         text = "Changes to files in shared folders also change them on the Mac.";
       }
     ];
-    guide = "https://docs.limanix.dev/inside/terminal#yazi";
+    guide = "https://docs.limanix.dev/modules/yazi";
   };
 }

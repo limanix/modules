@@ -187,6 +187,17 @@ implementation.
 
 ## README guarantees
 
+The module README is the source for its page on `docs.limanix.dev`. The site
+reads all module READMEs from a published catalog release. Keep them in plain
+Markdown: headings, tables, fenced code and GitHub alerts. Use relative links
+for files in this repository and full URLs for the site. The site maps links
+between module READMEs to its catalog pages.
+
+Start with a short description and `## Select`, then explain versions and use.
+Put settings, state, corner cases and guarantees after the main examples. Say
+whether a command runs on the Mac or inside the VM. Use simple English and keep
+details about one module in its own README.
+
 Explain what the module installs, how to select it and which settings users may
 change. Describe multiple-line behavior, files, services, persistent data and
 corner cases where relevant. Include a `## Guarantees` table with exact test

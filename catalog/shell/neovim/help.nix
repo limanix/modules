@@ -28,6 +28,6 @@ in
         text = ''Set editor = "astronvim" in [shell] for language servers and completion.'';
       }
     ];
-    guide = "https://docs.limanix.dev/config/shell#choose-an-editor";
+    guide = "https://docs.limanix.dev/modules/neovim";
   };
 }

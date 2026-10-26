@@ -68,5 +68,5 @@
       text = "Add Python, make, and a C/C++ compiler for native addons.";
     }
   ];
-  page = "inside/languages#node-js";
+  page = "modules/nodejs";
 }

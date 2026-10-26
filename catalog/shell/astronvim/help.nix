@@ -33,6 +33,6 @@ in
         text = ":TSInstall LANGUAGE";
       }
     ];
-    guide = "https://docs.limanix.dev/inside/terminal#astronvim";
+    guide = "https://docs.limanix.dev/modules/astronvim";
   };
 }

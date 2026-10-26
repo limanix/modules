@@ -4,6 +4,8 @@ Installs [rustup](https://rust-lang.github.io/rustup/) with the Cargo, rustc,
 rustfmt, Clippy, and rust-analyzer commands, plus GCC, pkg-config, and GDB.
 rustup downloads the Rust toolchains themselves.
 
+## Select
+
 ```toml
 [toolchains]
 rust = "stable"
@@ -35,7 +37,7 @@ systemctl --user status rust-toolchain
 ```
 
 A failed download is tried again, after ten seconds at first and then at most
-every ten minutes. The toolchain uses the minimal profile, so the local
+every ten minutes. The toolchain uses the minimal profile. The local
 documentation from `rust-docs` is not installed.
 
 rustup keeps toolchains in `~/.rustup` and Cargo keeps downloaded crates in
@@ -81,8 +83,8 @@ pkg-config search path; see
 ## Editor support
 
 The module offers `rust-analyzer` to editors that support the Language Server
-Protocol. rustup runs the rust-analyzer of the project's toolchain, so the
-server always matches the compiler. See
+Protocol. rustup runs the rust-analyzer of the project's toolchain. The server
+matches the compiler. See
 [Editor integration](https://docs.limanix.dev/config/toolchains#language-servers-in-the-editor)
 and the
 [rust-analyzer editor setup](https://rust-analyzer.github.io/book/installation.html).

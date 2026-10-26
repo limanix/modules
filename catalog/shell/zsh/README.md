@@ -4,6 +4,8 @@ Makes Zsh the VM user's login shell and configures Oh My Zsh, command
 completion, a prompt, searchable local history, directory navigation, and
 project environments.
 
+## Select
+
 The `terminal` shell preset includes Zsh, and `prompt` chooses its prompt:
 
 ```toml
@@ -63,9 +65,9 @@ does not create an environment definition for the project.
 ## Prompt
 
 Both managed prompts use the colors of the guest's theme. With the default
-`system` flavor they are the terminal's own colors, so the prompt follows the
-theme of the terminal on your Mac; a Catppuccin flavor in `[theme]` of
-`limanix.toml` uses its palette instead. Outside tmux, both show the words of
+`system` flavor they are the terminal's own colors. The prompt follows the theme
+of the terminal on your Mac. A Catppuccin flavor in `[theme]` of `limanix.toml`
+uses its palette instead. Outside tmux, both show the words of
 `lmx status --short` that need attention, such as `restart`; inside tmux, tmux's
 status line shows them.
 
