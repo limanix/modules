@@ -31,6 +31,7 @@ import ../../_shared/test/toolchain.nix {
       environment/bin/python -c 'import sys; assert sys.prefix != sys.base_prefix'
       ${tools.virtualenv}/bin/virtualenv --no-download virtual-environment
       virtual-environment/bin/python -m pip --version
+      virtual-environment/bin/python -c 'import platform; assert platform.python_version() == "${tools.python.version}"'
       touch "$out"
     '';
   eval =

@@ -15,6 +15,9 @@ in
 assert release.matches python.version;
 {
   inherit python;
-  inherit (python.pkgs) virtualenv;
+  virtualenv = pkgs.writeShellScriptBin "virtualenv" ''
+    export VIRTUALENV_PYTHON="''${VIRTUALENV_PYTHON:-${python.interpreter}}"
+    exec ${packages.virtualenv}/bin/virtualenv "$@"
+  '';
   inherit (release) endOfLife;
 }

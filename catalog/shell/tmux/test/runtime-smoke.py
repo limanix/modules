@@ -49,6 +49,11 @@ class Client:
     def text(self, *arguments):
         return self.run(*arguments).stdout.decode().strip()
 
+    def bindings(self, table):
+        # Tmux 3.7 can send a single binding to the status line instead of stdout.
+        output = self.text("list-keys", "-T", table, "-F", "#{key_string}\t#{key_command}")
+        return dict(line.split("\t", 1) for line in output.splitlines())
+
     def wait(self, condition, seconds=15):
         self.terminal.until(condition, timeout=seconds, label="tmux condition")
 
@@ -84,8 +89,9 @@ def shared_settings(
     assert client.text("show-options", "-gv", "default-terminal") == terminal
     assert client.text("show-options", "-sv", "escape-time") == escape_time
     assert "xterm*:RGB:clipboard" in client.text("show-options", "-sv", "terminal-features")
-    assert "begin-selection" in client.text("list-keys", "-T", "copy-mode-vi", "v")
-    assert "copy-selection-and-cancel" in client.text("list-keys", "-T", "copy-mode-vi", "y")
+    bindings = client.bindings("copy-mode-vi")
+    assert "begin-selection" in bindings["v"]
+    assert "copy-selection-and-cancel" in bindings["y"]
     assert client.text("show-options", "-gv", "@continuum-save-interval") == "15"
     assert client.text("show-options", "-gv", "@continuum-restore") == "on"
     for option, expected in [
@@ -96,11 +102,9 @@ def shared_settings(
         actual = client.text("show-options", "-gv", option)
         assert set(actual.split(",")) == set(expected.split(",")), (option, actual, expected)
     client.wait(
-        lambda: b"save.sh" in client.run(
-            "list-keys", "-T", "prefix", "C-s", check=False,
-        ).stdout
+        lambda: "save.sh" in client.bindings("prefix").get("C-s", "")
     )
-    assert "restore.sh" in client.text("list-keys", "-T", "prefix", "C-r")
+    assert "restore.sh" in client.bindings("prefix")["C-r"]
     assert "continuum_save.sh" in client.text("show-options", "-gv", "status-right")
 
 
@@ -188,10 +192,12 @@ client = Client(
 try:
     shared_settings(client)
     client.wait(capture.exists)
+    root_bindings = client.bindings("root")
+    prefix_bindings = client.bindings("prefix")
     for key in "hjkl":
-        assert client.run("list-keys", "-T", "root", f"C-{key}", check=False).returncode != 0
-        assert client.run("list-keys", "-T", "root", f"M-{key}", check=False).returncode != 0
-        assert client.run("list-keys", "-T", "prefix", f"C-{key}", check=False).returncode != 0
+        assert f"C-{key}" not in root_bindings
+        assert f"M-{key}" not in root_bindings
+        assert f"C-{key}" not in prefix_bindings
     client.keys(b"\x08\x0a\x0b\x0c\x1bh\x1bj\x1bk\x1bl")
     wait_input(client, capture, b"\x08\x0a\x0b\x0c\x1bh\x1bj\x1bk\x1bl")
 finally:
