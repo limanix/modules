@@ -115,7 +115,7 @@ def unstable() -> None:
         prefetched = json.loads(completed.stdout)
         UNSTABLE.write_text(moved_unstable(toml, after, prefetched["hash"]))
         print(f"nixos-unstable: {before} -> {after}", file=sys.stderr)
-        print(f"date={day(prefetched['lastModified'])}")
+        print(f"date={day(prefetched['locked']['lastModified'])}")
     print(f"before={before[:7]}")
     print(f"after={after[:7]}")
 
