@@ -1,6 +1,11 @@
-# Discover only public module records and release maps; private implementation is not inspected.
-# A module lives below its kind, catalog/<kind>/<name>. Its name stays unique across the kinds: the
-# name owns the option namespace lmx.<name>, the help topic and the documentation address.
+# Discover catalog modules and check their public files.
+#
+# Each module lives in catalog/<kind>/<name>, with a name unique across kinds.
+# It needs module.toml, default.nix, test.nix, and README.md.
+# Each declared version line also needs a versions/<line>.nix file.
+# This checks metadata, the README Guarantees heading, and any release map.
+# It returns module records for the harness without loading private code.
+# A missing test.nix is an error, even before the module's tests are evaluated.
 modulesDir:
 let
   require = condition: message: if condition then true else throw "Module catalog: ${message}";

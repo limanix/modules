@@ -91,5 +91,4 @@ for both cases.
 | Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
 | The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
 | Versioned npm and npx scripts use their matching Node.js interpreter | `run.commands-22`, `run.commands-24`, `run.commands-26` |
-| Installing this module does not enable an editor | `eval.allLines` |
 | The declared and user-supplied servers answer an LSP initialization request | `run.languageServer`, `run.userOverride` |

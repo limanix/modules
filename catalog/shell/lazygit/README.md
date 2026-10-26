@@ -75,5 +75,4 @@ The package is configurable with `programs.lazygit.package`.
 | -- | -- |
 | Lazygit and Git are enabled and their installed commands run | `eval.defaults`, `run.commands` |
 | The system flavor keeps Lazygit's terminal colors; a Catppuccin flavor sets all theme and author colors from its palette | `eval.defaults`, `eval.latte` |
-| An ordinary user setting replaces a managed theme color | `eval.themeOverride` |
 | Copy commands use the platform's `pbcopy` | `eval.clipboard` |

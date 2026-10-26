@@ -174,7 +174,7 @@ enabled and preserve continuum's `status-right` hook if you customize it.
 | Guarantee | Checked by |
 | -- | -- |
 | `tmux` and the resurrect/continuum plugins are installed; vi mode, `tmux-256color`, and a 10 ms escape delay are defaults | `eval.defaults`, `run.terminalFeatures` |
-| Ordinary assignments can replace `programs.tmux.keyMode`, `programs.tmux.terminal`, and `programs.tmux.escapeTime` | `eval.preferences`, `run.terminalFeatures` |
+| Ordinary assignments can replace `programs.tmux.keyMode`, `programs.tmux.terminal`, and `programs.tmux.escapeTime` | `run.terminalFeatures` |
 | The guest's theme styles the status line, active pane border, and copy mode: the terminal's colors and background with the default system flavor, the palette of a Catppuccin flavor; ordinary `programs.tmux.extraConfig` settings can replace these styles | `eval.theme`, `run.terminalFeatures` |
 | The status line shows the words of `lmx status --short` | `eval.segment` |
 | Ctrl/Alt-H/J/K/L move and resize panes; prefix followed by Ctrl-H/J/K/L forwards the control key; panes marked by smart-splits receive their navigation keys | `run.terminalFeatures` |

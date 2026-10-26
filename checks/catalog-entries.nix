@@ -1,4 +1,8 @@
-# Files are not modules. Non-file entries still need directory validation.
+# Find module directories in the result of builtins.readDir.
+#
+# Regular files and the reserved _shared entry are skipped.
+# Every remaining entry must be a directory; links are rejected.
+# catalog.nix uses these names to read each module's public files.
 entries:
 map
   (

@@ -1,0 +1,3 @@
+[claude]
+name = "Claude Code"
+text = "Anthropic's coding agent for the terminal."

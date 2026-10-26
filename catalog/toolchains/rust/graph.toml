@@ -1,0 +1,4 @@
+[rust]
+name = "Rust"
+text = "`rust-analyzer` reaches AstroNvim when both are on."
+with = ["astronvim"]

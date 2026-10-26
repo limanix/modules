@@ -49,14 +49,6 @@ in
 {
   configurations = { inherit navigationDisabled preferencesOverride; };
   evaluation = {
-    preferences = verify "defaults and ordinary preference overrides" (
-      defaultConfiguration.config.programs.tmux.keyMode == "vi"
-      && defaultConfiguration.config.programs.tmux.terminal == "tmux-256color"
-      && defaultConfiguration.config.programs.tmux.escapeTime == 10
-      && preferencesOverride.config.programs.tmux.keyMode == "emacs"
-      && preferencesOverride.config.programs.tmux.terminal == "screen-256color"
-      && preferencesOverride.config.programs.tmux.escapeTime == 25
-    ) preferencesOverride;
     navigation = verify "navigation switch preserves the other tmux features" (
       defaultConfiguration.config.lmx.tmux.navigation.enable
       && !navigationDisabled.config.lmx.tmux.navigation.enable

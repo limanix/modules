@@ -14,9 +14,9 @@ Add the selector to your VM's `nixos.modules` list and
 
 Claude Code comes from the catalog's
 [nixos-unstable revision](../../README.md#package-pins-and-unfree-permissions),
-which the Update flow moves every week. This module has no version lines. Inside
-the VM, `claude --version` shows the installed version. A newer version arrives
-with a catalog release; the module turns off Claude Code's own updates.
+which the Check update flow moves every week. This module has no version lines.
+Inside the VM, `claude --version` shows the installed version. A newer version
+arrives with a catalog release; the module turns off Claude Code's own updates.
 
 ## Use
 

@@ -1,3 +1,9 @@
+# Test the boundary around public shared schemas.
+#
+# Small example modules declare capabilities and pins at known source paths.
+# Valid declarations must pass without a complete NixOS system.
+# System settings and imports of private or external modules must fail.
+# These cases check the validator used by shared.nix.
 { pkgs, lib }:
 let
   check = modules: import ./shared-declarations.nix { inherit lib pkgs modules; };

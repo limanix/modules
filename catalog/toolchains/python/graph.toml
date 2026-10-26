@@ -1,0 +1,4 @@
+[python]
+name = "Python"
+text = "Pyright reaches AstroNvim when both are on."
+with = ["astronvim"]

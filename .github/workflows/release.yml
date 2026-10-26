@@ -29,34 +29,8 @@ jobs:
           branch: main
 
   image:
-    name: Build image (${{ matrix.arch }})
     needs: verify
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { arch: aarch64, runner: ubuntu-24.04-arm }
-          - { arch: x86_64, runner: ubuntu-24.04 }
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Allow user namespaces for systemd-repart
-        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      - name: Build the image
-        uses: mr-chelyshkin/actions/task-run@v2
-        with:
-          task: release/build
-          args: ARCH=${{ matrix.arch }}
-      - name: Upload the image
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: image-${{ matrix.arch }}
-          path: dist/
-          if-no-files-found: error
-          compression-level: 0
-          overwrite: true
+    uses: ./.github/workflows/image.yml
 
   release:
     name: Create GitHub release
@@ -74,10 +48,13 @@ jobs:
           pattern: image-*
           path: dist
           merge-multiple: true
+      - uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
+        with:
+          version: '3.53.1'
       - name: Write the image manifest
         env:
           TAG: ${{ github.ref_name }}
-        run: bash scripts/image_manifest.sh "$TAG"
+        run: task --yes harness CONTAINER_USER=host -- release manifest "$TAG"
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ github.ref_name }}

@@ -1,0 +1,4 @@
+[lazygit]
+name = "Lazygit"
+text = "`Space g g` in AstroNvim opens Lazygit."
+with = ["astronvim", "theme"]

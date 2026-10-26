@@ -1,4 +1,4 @@
-name: Update flow
+name: Check update flow
 
 on:
   schedule:
@@ -13,67 +13,27 @@ permissions:
   contents: read
 
 jobs:
-  nixpkgs:
-    name: Update Nixpkgs
+  update:
+    name: Update ${{ matrix.input }}
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        input: [nixpkgs, unstable, nixos]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
         with:
-          github_access_token: ${{ github.token }}
-      - name: Update Nixpkgs within NixOS
-        id: nixpkgs
-        run: bash scripts/update_nixpkgs.sh >> "$GITHUB_OUTPUT"
-      - name: Create token
-        if: steps.nixpkgs.outputs.before != steps.nixpkgs.outputs.after
-        id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-          repositories: modules
-          owner: limanix
-      - name: Open the pull request
-        if: steps.nixpkgs.outputs.before != steps.nixpkgs.outputs.after
-        id: pr
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          branch: update/nixpkgs
-          labels: deps
-          add-paths: flake.lock
-          commit-message: Update Nixpkgs to ${{ steps.nixpkgs.outputs.date }}
-          title: Update Nixpkgs to ${{ steps.nixpkgs.outputs.date }}
-          body: >-
-            Moves NixOS ${{ steps.nixpkgs.outputs.release }} from ${{ steps.nixpkgs.outputs.before }}
-            to ${{ steps.nixpkgs.outputs.after }}. It merges itself once the checks pass, and the merge
-            releases the catalog.
-      - name: Merge once the checks pass
-        if: steps.pr.outputs.pull-request-number
+          version: '3.53.1'
+      - name: Update the pinned input
+        id: update
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          NUMBER: ${{ steps.pr.outputs.pull-request-number }}
-        run: gh pr merge "$NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash
-
-  unstable:
-    name: Update nixos-unstable
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
-        with:
-          github_access_token: ${{ github.token }}
-      - name: Move to the newest nixos-unstable
-        id: unstable
-        run: bash scripts/update_unstable.sh >> "$GITHUB_OUTPUT"
+          INPUT: ${{ matrix.input }}
+        run: task --yes harness -- update "$INPUT" >> "$GITHUB_OUTPUT"
       - name: Create token
-        if: steps.unstable.outputs.before != steps.unstable.outputs.after
+        if: steps.update.outputs.next != '' || steps.update.outputs.before != steps.update.outputs.after
         id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -84,23 +44,25 @@ jobs:
           repositories: modules
           owner: limanix
       - name: Open the pull request
-        if: steps.unstable.outputs.before != steps.unstable.outputs.after
+        if: steps.update.outputs.next != '' || steps.update.outputs.before != steps.update.outputs.after
         id: pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.app-token.outputs.token }}
-          branch: update/unstable
+          branch: update/${{ matrix.input }}${{ matrix.input == 'nixos' && format('-{0}', steps.update.outputs.next) || '' }}
           labels: deps
-          add-paths: catalog/_shared/unstable.toml
-          commit-message: Update nixos-unstable to ${{ steps.unstable.outputs.date }}
-          title: Update nixos-unstable to ${{ steps.unstable.outputs.date }}
-          body: >-
-            Moves the catalog's nixos-unstable revision from ${{ steps.unstable.outputs.before }}
-            to ${{ steps.unstable.outputs.after }}. It merges itself once the checks pass, and the
-            merge releases the catalog. A line that moved to another one fails its module's eval
-            check and waits for a reviewer.
+          add-paths: |
+            flake.nix
+            flake.lock
+            catalog/_shared/unstable.toml
+          commit-message: Update ${{ matrix.input }} to ${{ steps.update.outputs.next || steps.update.outputs.date }}
+          title: Update ${{ matrix.input }} to ${{ steps.update.outputs.next || steps.update.outputs.date }}
+          body: |
+            Updates ${{ matrix.input }} from ${{ steps.update.outputs.current || steps.update.outputs.before }} to ${{ steps.update.outputs.next || steps.update.outputs.after }}.
+
+            ${{ matrix.input == 'nixos' && 'This is a new NixOS release and needs review: fix any image build failures and boot its image artifact in Lima before merging.' || 'Merges once the checks pass; the merge releases the catalog. A version line that moved waits for a reviewer.' }}
       - name: Merge once the checks pass
-        if: steps.pr.outputs.pull-request-number
+        if: matrix.input != 'nixos' && steps.pr.outputs.pull-request-number
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           NUMBER: ${{ steps.pr.outputs.pull-request-number }}
@@ -116,51 +78,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
         with:
-          github_access_token: ${{ github.token }}
+          version: '3.53.1'
       - name: Keep the drift issue current
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/report_drift.sh
-
-  nixos:
-    name: Move to the next NixOS
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
-        with:
-          github_access_token: ${{ github.token }}
-      - name: Look for the next NixOS release
-        id: nixos
-        run: bash scripts/update_nixos.sh >> "$GITHUB_OUTPUT"
-      - name: Create token
-        if: steps.nixos.outputs.next != ''
-        id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-          repositories: modules
-          owner: limanix
-      - name: Open the pull request
-        if: steps.nixos.outputs.next != ''
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          branch: update/nixos-${{ steps.nixos.outputs.next }}
-          labels: deps
-          add-paths: |
-            flake.nix
-            flake.lock
-          commit-message: Move to NixOS ${{ steps.nixos.outputs.next }}
-          title: Move to NixOS ${{ steps.nixos.outputs.next }}
-          body: >-
-            Moves Nixpkgs from nixos-${{ steps.nixos.outputs.current }} to nixos-${{ steps.nixos.outputs.next }}.
-            This is a new NixOS release and does not merge itself: fix image.nix or platform.nix if the
-            build fails, and boot the image artifact of the checks in Lima before merging.
+        run: task --yes harness -- drift

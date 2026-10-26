@@ -42,7 +42,6 @@ in
     ) defaultConfiguration;
   }
   // cases.evaluation;
-  fails = { };
   run = import ./test/smoke.nix {
     inherit (defaultConfiguration) config;
     profile = profileFor mochaConfiguration;
@@ -50,5 +49,4 @@ in
     inherit (cases) configurations;
     inherit pkgs profileFor;
   };
-  builds = { };
 }

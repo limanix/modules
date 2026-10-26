@@ -1,0 +1,3 @@
+[docker]
+name = "Docker"
+text = "Docker Engine comes with Compose and Lazydocker."

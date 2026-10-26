@@ -187,7 +187,6 @@ usage.
 | Guarantee | Checked by |
 | -- | -- |
 | The configured editor, Git and Lazygit are installed | `eval.line-6` |
-| Editor and compatibility-loader preferences accept ordinary settings | `eval.preferences` |
 | Language providers remain optional; catalog and third-party declarations are accepted | `eval.optionalProviders`, `eval.catalogProvider`, `eval.thirdPartyProvider` |
 | Rust and TypeScript server names are translated; other identities are preserved | `eval.serverNames` |
 | Bundled startup loads Catppuccin on the terminal's background with the default system flavor, key bindings and Lua highlighting from immutable plugin sources | `run.commands-6` |

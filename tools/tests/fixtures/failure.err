@@ -1,0 +1,21 @@
+error:
+       … while evaluating the attribute 'failure'
+         at /workspace/checks/modules.nix:287:3:
+          286|   };
+          287|   failure =
+             |   ^
+          288|     let
+
+       … while calling the 'seq' builtin
+         at /workspace/checks/modules.nix:293:5:
+          292|     in
+          293|     builtins.seq (evalSystem failure.modules).system.build.toplevel.drvPath true;
+             |     ^
+          294| }
+
+       … while evaluating the option `lmx.capabilities.theme.flavor':
+
+       (stack trace truncated; use '--show-trace' to show the full, detailed trace)
+
+       error: A definition for option `lmx.capabilities.theme.flavor' is not of type `one of "system", "frappe", "latte", "macchiato", "mocha"'. Definition values:
+       - In `/workspace/checks/nixos.nix': "espresso"
