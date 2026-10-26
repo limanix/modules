@@ -21,7 +21,6 @@ pkgs.runCommand "contract-builder-permissions" { } ''
   fi
   test "$(cat "$readonly_output")" = original
 
-  # Unsandboxed Nix builds require this global HOME to stay absent.
   test "$HOME" = /homeless-shelter
   test ! -e "$HOME"
   if mkdir "$HOME" 2>/dev/null; then
