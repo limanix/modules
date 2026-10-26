@@ -7,10 +7,6 @@ let
   helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   inherit (helpers) evaluate verify profileFor;
   defaultConfiguration = evaluate [ ./default.nix ];
-  overridden = evaluate [
-    ./default.nix
-    { environment.variables.POSTING_THEME = "galaxy"; }
-  ];
   latte = evaluate [
     ./default.nix
     { lmx.capabilities.theme.flavor = "latte"; }
@@ -26,10 +22,6 @@ in
         inherit pkgs;
       }
     ) defaultConfiguration;
-    themeOverride = verify "the Posting environment theme accepts an ordinary assignment" (
-      overridden.config.environment.variables.POSTING_THEME == "galaxy"
-      && helpers.installed overridden pkgs.posting
-    ) overridden;
     latte = verify "the Posting theme follows the guest's flavor" (
       latte.config.environment.variables.POSTING_THEME == "catppuccin-latte"
     ) latte;

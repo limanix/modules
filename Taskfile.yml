@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 version: '3.53.1'
+silent: true
 
 includes:
   nix:
@@ -12,8 +13,9 @@ includes:
     internal: true
 
 vars:
-  NIX_VERSION: '2.35.2'
+  NIX_IMAGE: ghcr.io/mr-chelyshkin/ci/nix:2.35.2@sha256:546ed6d23f4df0c3c81b5b6af427f7a8f4647e54e7e4100280c686838b96bb80
 
+  nix_cache_env: XDG_CACHE_HOME=/workspace/.cache
   nix_build_caps: >-
     --cap-add=DAC_OVERRIDE
     --cap-add=CHOWN
@@ -22,7 +24,6 @@ vars:
     --cap-add=SETGID
     --cap-add=KILL
 
-  nix_cache_env: XDG_CACHE_HOME=/workspace/.cache
   markdown_paths: README.md catalog
   harness: python3 tools/harness
 
@@ -33,7 +34,7 @@ tasks:
       - task: nix:fmt
 
   ci/nix/lint:
-    desc: Lint Nix files with statix and deadnix
+    desc: Lint Nix files
     cmds:
       - task: nix:lint
 
@@ -52,28 +53,28 @@ tasks:
           CMD: ruff format --check --no-cache .
 
   ci/python/lint:
-    desc: Lint the harness with ruff
+    desc: Lint the harness
     cmds:
       - task: _python
         vars:
           CMD: ruff check --no-cache .
 
   ci/python/typecheck:
-    desc: Type-check the harness with mypy
+    desc: Type-check the harness
     cmds:
       - task: _python
         vars:
           CMD: mypy --cache-dir /dev/null
 
   ci/python/test:
-    desc: Run the tests of the harness
+    desc: Run the tests
     cmds:
       - task: _python
         vars:
           CMD: pytest -p no:cacheprovider -q
 
   ci/catalog/modules:
-    desc: Check the named catalog modules, or all of them; MODE is check, eval or run
+    desc: Check the named catalog modules
     cmds:
       - task: _catalog/check
         vars:
@@ -83,7 +84,7 @@ tasks:
             {{.MODULES | default "" | shellQuote}}
 
   ci/catalog/layer:
-    desc: Check the shared layer or the harness; SUITE is common, shared or platform, MODE is check, eval or run
+    desc: Check the shared layer
     cmds:
       - task: _catalog/check
         vars:
@@ -91,6 +92,20 @@ tasks:
             {{.harness}} check
             {{.SUITE | default "common" | shellQuote}}
             {{.MODE | default "check" | shellQuote}}
+
+  harness:
+    desc: Run a harness commands
+    cmds:
+      - task: nix:exec
+        vars:
+          CMD: '{{.harness}} {{.CLI_ARGS}}'
+          CONTAINER_RUN_ARGS: >-
+            {{.nix_build_caps}}
+            {{.CONTAINER_RUN_ARGS | default ""}}
+          CONTAINER_ENVS: >-
+            GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0=/workspace
+            GH_TOKEN GITHUB_REPOSITORY PYTHONDONTWRITEBYTECODE=1
+            {{.CONTAINER_ENVS | default ""}}
 
   nix/fmt/fix:
     desc: Format Nix files in place
@@ -118,7 +133,7 @@ tasks:
           CONTAINER_MOUNT_MODE: rw
 
   python/lint/fix:
-    desc: Apply the ruff fixes to the harness in place
+    desc: Apply the fixes to the harness in place
     cmds:
       - task: _python
         vars:
@@ -126,11 +141,12 @@ tasks:
           CONTAINER_MOUNT_MODE: rw
 
   generate/graph:
-    desc: Write catalog/graph.json from the graph.toml files of the catalog
+    desc: Write catalog/graph.json
     cmds:
-      - task: nix:exec
+      - task: harness
         vars:
-          CMD: '{{.harness}} graph'
+          CLI_ARGS: graph
+          CONTAINER_USER: host
 
   release/build:
     desc: Build the base disk of ARCH into dist/
@@ -183,3 +199,4 @@ tasks:
           CMD: '{{.CMD}}'
           CONTAINER_MOUNT_MODE: '{{.CONTAINER_MOUNT_MODE | default "ro"}}'
           CONTAINER_ENVS: PYTHONDONTWRITEBYTECODE=1
+          CONTAINER_USER: host

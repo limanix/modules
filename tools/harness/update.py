@@ -96,7 +96,7 @@ def unstable() -> None:
     if after != before:
         completed = subprocess.run(
             ["nix", "flake", "prefetch", "--json", f"github:NixOS/nixpkgs/{after}"],
-            capture_output=True,
+            stdout=subprocess.PIPE,
             text=True,
             check=True,
         )

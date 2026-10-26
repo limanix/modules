@@ -11,10 +11,6 @@ let
     profileFor
     ;
   defaults = evaluate [ ./default.nix ];
-  preferred = evaluate [
-    ./default.nix
-    { programs.neovim.defaultEditor = true; }
-  ];
 in
 {
   eval = {
@@ -22,13 +18,9 @@ in
       defaults.config.programs.neovim.enable
       && defaults.config.programs.neovim.viAlias
       && defaults.config.programs.neovim.vimAlias
+      && !defaults.config.programs.neovim.defaultEditor
       && installedAsDeclared defaults defaults.config.programs.neovim.finalPackage
     ) defaults;
-    defaultEditor = verify "the default-editor preference remains overridable" (
-      !defaults.config.programs.neovim.defaultEditor
-      && preferred.config.programs.neovim.defaultEditor
-      && preferred.config.programs.neovim.enable
-    ) preferred;
     optionalProviders = verify "plain Neovim declares no optional language tools" (
       defaults.config.lmx.capabilities.languageSupport.tools == { }
       && defaults.config.lmx.capabilities.languageSupport.languages == { }

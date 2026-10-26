@@ -87,7 +87,9 @@ A tag `v<N>` on `main` releases the catalog with its disks.
 ## Development
 
 You need [Task](https://taskfile.dev) 3.53.1 or newer and Docker; every task
-runs in a container.
+runs in a container. Nix and Python commands use the same image, pinned by its
+multi-architecture digest in `Taskfile.yml`. The harness uses Python's standard
+library; ruff, mypy and pytest are development tools in that image.
 
 | Task | Does |
 | -- | -- |
@@ -97,11 +99,17 @@ runs in a container.
 | `task ci/catalog/modules MODE=eval MODULES="go docker"` | Checks the named modules, or all of them; `MODE` is `check`, `eval` or `run` |
 | `task ci/catalog/layer SUITE=shared MODE=eval` | Checks the shared layer, or the harness with `SUITE=platform` |
 | `task generate/graph` | Writes `catalog/graph.json`, the site's catalog graph, from the `graph.toml` of each module |
+| `task harness -- plan --base main` | Prints the checks selected by committed changes from `main` to `HEAD`, including dependent modules |
+| `task harness -- update nixpkgs` | Updates a pinned input; accepts `nixpkgs`, `unstable` or `nixos` |
 | `task release/build` | Builds the base disk of this machine's architecture into `dist/` |
 
 `task nix/fmt/fix`, `task nix/lint/fix`, `task markdown/fmt/fix`,
 `task python/fmt/fix` and `task python/lint/fix` rewrite the files in place.
-`python3 tools/harness --help` lists the commands of the harness.
+`task harness -- --help` lists the commands of the harness. The PR planner
+includes dependencies from module code and tests; both evaluation and native
+execution run on both Linux architectures. Lint runs alongside the selected
+checks, and PRs build disks only when disk inputs or their build workflow
+change.
 
 ## Contributing
 

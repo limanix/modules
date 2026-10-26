@@ -97,8 +97,7 @@ and the [gopls editor setup](https://go.dev/gopls/#editors).
 
 | Guarantee | Checked by |
 | -- | -- |
-| Go, gopls and Delve versions, parsers and end-of-life warnings match the selected line | `eval.line-1.25`, `eval.line-1.26`, `eval.line-1.27` |
+| Each selected line installs Go, its language server and gcc, offers parsers and reports end-of-life warnings | `eval.line-1.25`, `eval.line-1.26`, `eval.line-1.27` |
 | Explicit lines coexist; ordinary commands and the provider select the newest line | `eval.allLines`, `run.allLines` |
 | The selected user-supplied provider is installed and runs from the system profile | `eval.userOverride`, `run.userOverride` |
 | Each versioned Go command compiles a cgo package and passes its race-enabled test | `run.commands-1.25`, `run.commands-1.26`, `run.commands-1.27` |
-| Installing this module does not enable an editor | `eval.allLines` |

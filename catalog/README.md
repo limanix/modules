@@ -306,10 +306,15 @@ fixtures stay offline and do not use a VM or `system.build.toplevel`.
 | `run` | `commands`, `commands-<line>`, or a camelCase feature |
 | `builds` | `artifact` or `artifact-<line>` |
 
-Choose the cheapest sufficient level. Configuration assertions do not prove
-startup, application settings or service health. Native execution can prepare an
-isolated application environment, but does not prove NixOS login or `/etc`
-activation; the harness has no activation checks.
+Choose the cheapest sufficient level for key module behavior and concrete
+regressions. Do not add a module test for NixOS merging already covered by the
+harness or repeat a shared scenario in each module. Remove tests that no longer
+protect required behavior, and update the README guarantees; preserve distinct
+configuration and execution checks where both are needed. The `help-commands`
+check verifies executable files, while a command smoke test verifies that they
+run. Native execution can prepare an isolated application environment, but does
+not prove NixOS login, service activation or `/etc` activation; the harness has
+no activation checks.
 
 ## Shared helpers
 
@@ -341,8 +346,8 @@ personal host state or provisions external services.
 
 | Level | When | Target per module |
 | -- | -- | -- |
-| Structure, entry points, recommendation, `eval`, `fails` | Changed modules on PRs | 2 minutes |
-| `run` | Changed modules, both native Linux architectures | 5 minutes with prepared cache |
+| Structure, entry points, recommendation, `eval`, `fails` | Selected modules, both Linux architectures | 2 minutes |
+| `run` | Selected modules, both native Linux architectures | 5 minutes with prepared cache |
 
 The PR flow runs `eval`, `fails` and `run`; the release flow runs no tests.
 
@@ -350,19 +355,22 @@ Reuse one default fixture, one per needed line and one for each different
 scenario. Fixture counts guide cost; they are not hard limits on correctness.
 Each README promise and relevant regression determines the required coverage.
 
-The PR flow targets ten minutes on its critical path with a prepared cache.
-Targets are measured, not enforced: checks run without time limits. Reports
-identify the suite, stage, architecture, actual duration, cache state and
-builds. They separate newly executed checks from reused results where known;
-unknown cache state stays unknown. A cancelled or interrupted run is incomplete
-evidence.
+The PR flow targets ten minutes on its critical path with a prepared cache. This
+is a target, not a measured guarantee; each test job has a 20-minute timeout,
+independent of local-build permission. Reports identify the suite, stage,
+architecture, actual duration, cache state and builds. They separate newly
+executed checks from reused results where known; unknown cache state stays
+unknown. A cancelled or interrupted run is incomplete evidence.
 
-The PR flow checks changed modules and their consumers: a module whose entry
-points or test files import a changed module's public entry point is checked
-with it. Changes to `_shared`, `interface.nix`, the flake or the harness check
-every module. Platform `eval` and `run` check the generic harness and base
-interface, including its builder permissions. Required compositions belong in
-their own module tests.
+The PR planner follows literal relative paths in all module `*.nix` files,
+including `test.nix` and `test/`, and selects consumers transitively. It
+includes literal directory prefixes before computed version names; comments can
+select extra checks, while entirely computed paths are not interpreted. Keep
+cross-module references explicit so the planner can see them. Changes to
+`_shared`, `interface.nix`, the flake or the harness, and deletion of a module
+directory, check every module. Platform `eval` and `run` check the generic
+harness and base interface, including its builder permissions. Required
+compositions belong in their own module tests.
 
 ## README guarantees
 

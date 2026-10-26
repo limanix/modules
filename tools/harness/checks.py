@@ -117,9 +117,10 @@ class Runner:
 
     def run(self) -> int:
         started = time.monotonic()
-        status = 0
+        status = 1
         try:
             self.execute()
+            status = 0
         except UsageError as error:
             print(error, file=self.err)
             status = 2
@@ -239,7 +240,6 @@ class Runner:
                 *extra,
                 output,
             ],
-            capture_output=False,
             stdout=subprocess.PIPE,
             text=True,
             env=self.environment,
@@ -335,7 +335,6 @@ class Runner:
         if planned:
             shown = subprocess.run(
                 ["nix", "derivation", "show", *nix.FLAGS, *planned],
-                capture_output=False,
                 stdout=subprocess.PIPE,
                 text=True,
                 env=self.environment,
@@ -359,7 +358,6 @@ class Runner:
             )
             policy = subprocess.run(
                 ["nix", "eval", *nix.FLAGS, "--raw", "--impure", "--expr", expression],
-                capture_output=False,
                 stdout=subprocess.PIPE,
                 text=True,
                 env=self.environment,
@@ -384,7 +382,7 @@ class Runner:
         if os.getuid() == 0:
             group = subprocess.run(
                 ["nix", "config", "show", *nix.FLAGS, "build-users-group"],
-                capture_output=True,
+                stdout=subprocess.PIPE,
                 text=True,
                 env=self.environment,
             )
@@ -405,7 +403,7 @@ class Runner:
     def record_live_paths(self, roots: list[str], live_file: Path) -> None:
         requisites = subprocess.run(
             ["nix-store", "--query", "--requisites", *roots],
-            capture_output=True,
+            stdout=subprocess.PIPE,
             text=True,
             env=self.environment,
         )
@@ -418,7 +416,7 @@ class Runner:
         if closure:
             outputs = subprocess.run(
                 ["nix-store", "--query", "--outputs", *closure],
-                capture_output=True,
+                stdout=subprocess.PIPE,
                 text=True,
                 env=self.environment,
             )

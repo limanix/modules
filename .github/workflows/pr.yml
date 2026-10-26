@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   plan:
+    timeout-minutes: 5
     runs-on: ubuntu-24.04
     outputs:
       targets: ${{ steps.plan.outputs.targets }}
@@ -25,35 +26,23 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
+      - uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
+        with:
+          version: '3.53.1'
+
       - name: Select targets
         id: plan
-        shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          set -euo pipefail
-          changed=$(git diff --name-only HEAD^1 HEAD)
-          modules=$(find catalog/shell catalog/toolchains catalog/modules -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
-
-          every='^(catalog/_shared/|checks/|tools/|flake\.nix$|flake\.lock$|interface\.nix$)'
-          plumbing='^(Taskfile\.yml|\.taskrc\.yml|\.github/workflows/pr\.yml)$'
-          image='^(flake\.nix$|flake\.lock$|platform\.nix$|image\.nix$|tools/|Taskfile\.yml$|\.github/workflows/pr\.yml$)'
-
-          if [ "$EVENT_NAME" = workflow_dispatch ] || grep -qE "$every" <<< "$changed"; then
-            targets="$modules common"
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            task --yes harness -- plan --all >> "$GITHUB_OUTPUT"
           else
-            targets=$(grep -oE '^catalog/(shell|toolchains|modules)/[^/]+/' <<< "$changed" | cut -d/ -f3 | grep -Fx "$modules" | sort -u || true)
-            if grep -qE "$plumbing" <<< "$changed"; then targets="$targets common"; fi
-          fi
-
-          echo "targets=$(jq -cn '$ARGS.positional' --args $targets)" >> "$GITHUB_OUTPUT"
-          if [ "$EVENT_NAME" = workflow_dispatch ] || grep -qE "$image" <<< "$changed"; then
-            echo "image=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "image=false" >> "$GITHUB_OUTPUT"
+            task --yes harness -- plan --base HEAD^1 >> "$GITHUB_OUTPUT"
           fi
 
   lint:
+    timeout-minutes: 10
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -83,7 +72,8 @@ jobs:
 
   test:
     name: Test ${{ matrix.target }} (${{ matrix.runner }})
-    needs: [plan, lint]
+    timeout-minutes: 20
+    needs: plan
     if: ${{ needs.plan.outputs.targets != '[]' }}
     strategy:
       fail-fast: false
@@ -136,7 +126,7 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          python3 tools/harness cache prune .cache/nix-binary
+          task --yes harness CONTAINER_USER=host -- cache prune .cache/nix-binary
           rm -f .cache/nix/binary-cache-v*.sqlite*
 
       - name: Save Nix sources and local builds
@@ -151,36 +141,9 @@ jobs:
           key: ${{ steps.cache.outputs.cache-primary-key }}
 
   image:
-    name: Build image (${{ matrix.arch }})
-    needs: [plan, lint]
+    needs: plan
     if: ${{ needs.plan.outputs.image == 'true' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { arch: aarch64, runner: ubuntu-24.04-arm }
-          - { arch: x86_64, runner: ubuntu-24.04 }
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Allow user namespaces for systemd-repart
-        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      - name: Build the image
-        uses: mr-chelyshkin/actions/task-run@v2
-        with:
-          task: release/build
-          args: ARCH=${{ matrix.arch }}
-      - name: Keep the image
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: image-${{ matrix.arch }}
-          path: dist/
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 7
-          overwrite: true
+    uses: ./.github/workflows/image.yml
 
   gate:
     if: always()

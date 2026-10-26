@@ -1,5 +1,6 @@
 import argparse
 import os
+import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -7,7 +8,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from harness import REPOSITORY, cache, checks, drift, graph, release, update
+from harness import REPOSITORY, cache, checks, drift, graph, plan, release, update
 
 
 def parser() -> argparse.ArgumentParser:
@@ -18,6 +19,12 @@ def parser() -> argparse.ArgumentParser:
     check.add_argument("suite", choices=checks.SUITES)
     check.add_argument("phase", choices=checks.PHASES)
     check.add_argument("modules", nargs="*")
+
+    planner = commands.add_parser(
+        "plan", help="Select CI checks from changed paths and dependencies"
+    )
+    planner.add_argument("--base", default="HEAD^1")
+    planner.add_argument("--all", action="store_true", dest="all_targets")
 
     cache_commands = commands.add_parser("cache", help="The CI binary cache").add_subparsers(
         dest="action", required=True
@@ -49,9 +56,24 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parser().parse_args(argv)
+    try:
+        return run(arguments)
+    except subprocess.CalledProcessError as error:
+        if error.stderr:
+            print(error.stderr, end="", file=sys.stderr)
+        print(f"harness: command failed (exit {error.returncode}): {error.cmd}", file=sys.stderr)
+        return 1
+    except (OSError, ValueError) as error:
+        print(f"harness: {error}", file=sys.stderr)
+        return 1
+
+
+def run(arguments: argparse.Namespace) -> int:
     os.chdir(REPOSITORY)
     dist = REPOSITORY / "dist"
     match arguments.command:
+        case "plan":
+            plan.outputs(plan.plan(arguments.base, arguments.all_targets))
         case "check":
             return checks.check([arguments.suite, arguments.phase, *arguments.modules])
         case "cache" if arguments.action == "hook":

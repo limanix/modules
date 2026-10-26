@@ -1,3 +1,19 @@
+# Builds the base disk image for a new LimaNix virtual machine (VM).
+#
+# flake.nix loads this module together with platform.nix.
+# platform.nix defines how the VM runs; this file creates its starting disk.
+#
+# This module creates:
+# - An EFI boot partition with the label ESP and the files needed to boot.
+# - A Btrfs root partition with the label nixos and the NixOS system files.
+# - A compressed QCOW2 disk image for use by Lima.
+#
+# The partition labels and file systems match the settings in platform.nix.
+# The disk also includes Nix store records for the first boot.
+# A service loads these records into the Nix database before the Nix daemon starts.
+# It sets the system profile and installs the boot loader for the running system.
+# After setup, it removes the first-boot EFI image and the store records file.
+# The service runs only while that records file exists.
 {
   config,
   lib,

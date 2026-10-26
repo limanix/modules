@@ -148,7 +148,6 @@ in
             && (recommendation.args or [ ]) == (offer.args or [ ])
             && recommendation.languages == offer.languages
             && selectedPackage allConfiguration offer.package
-            && !allConfiguration.config.programs.neovim.enable
           )
           allConfiguration;
       userOverride =

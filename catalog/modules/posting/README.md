@@ -68,4 +68,3 @@ configuration.
 | The module installs the base Posting package and its config-location command runs | `eval.defaults`, `run.commands` |
 | POSTING_THEME defaults to ansi-dark, a theme that Posting offers | `eval.defaults`, `run.commands` |
 | POSTING_THEME follows the guest's flavor | `eval.latte` |
-| An ordinary assignment can replace POSTING_THEME | `eval.themeOverride` |

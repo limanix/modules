@@ -22,7 +22,7 @@ def next_tag(head_tags: Iterable[str], all_tags: Iterable[str]) -> str:
 
 def git_tags(arguments: list[str]) -> list[str]:
     completed = subprocess.run(
-        ["git", "tag", *arguments], capture_output=True, text=True, check=True
+        ["git", "tag", *arguments], stdout=subprocess.PIPE, text=True, check=True
     )
     return completed.stdout.split()
 
@@ -66,7 +66,7 @@ def build(arch: str, dist: Path) -> None:
             "--print-build-logs",
             f".#packages.{arch}-linux.image",
         ],
-        capture_output=True,
+        stdout=subprocess.PIPE,
         text=True,
         check=True,
     )

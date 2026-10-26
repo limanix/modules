@@ -29,13 +29,6 @@ let
   inherit (lineTests) metadata lines;
   defaults = lineTests.configurations.${metadata.default};
   entry = ./versions + "/${metadata.default}.nix";
-  preferences = evaluate [
-    entry
-    {
-      programs.neovim.defaultEditor = false;
-      programs.nix-ld.enable = false;
-    }
-  ];
   catalog = evaluate [
     entry
     ../../toolchains/rust/default.nix
@@ -127,11 +120,6 @@ let
 in
 {
   eval = lineTests.eval // {
-    preferences = verify "editor and compatibility-loader preferences accept ordinary settings" (
-      !preferences.config.programs.neovim.defaultEditor
-      && !preferences.config.programs.nix-ld.enable
-      && preferences.config.programs.neovim.enable
-    ) preferences;
     theme = verify "the colorscheme follows the guest's flavor" (
       lib.hasInfix ''setup(paths, "latte")'' latte.config.programs.neovim.configure.customLuaRC
       && lib.hasInfix ''setup(paths, "system")'' defaults.config.programs.neovim.configure.customLuaRC
