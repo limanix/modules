@@ -1,0 +1,4 @@
+description = "OpenJDK with the jdtls language server."
+
+versions = ["17", "21", "25"]
+default = "21"

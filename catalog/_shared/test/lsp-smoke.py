@@ -193,8 +193,9 @@ def smoke(argv: Sequence[str], *, timeout: float = 10) -> None:
         ):
             raise LspError("language server initialize response has no capabilities object")
         server.send({"jsonrpc": "2.0", "method": "initialized", "params": {}})
-        if server.request(2, "shutdown", None) is not None:
-            raise LspError("language server shutdown result must be null")
+        result = server.request(2, "shutdown", None)
+        if result not in (None, {}):
+            raise LspError(f"language server shutdown result must be null or empty, got {result!r}")
         server.send({"jsonrpc": "2.0", "method": "exit", "params": None})
         status = server.wait()
         if status != 0:

@@ -37,8 +37,8 @@ one catalog release.
 | Kind | Chosen in `limanix.toml` | Modules |
 | -- | -- | -- |
 | `shell` | `[shell]` | zsh, tmux, astronvim, neovim, yazi, lazygit, cli-tools |
-| `toolchains` | `[toolchains]` | go, python, nodejs, rust |
-| `modules` | `[nixos] modules`, as `lmx:<name>` | docker, gcloud, postgres, posting, harlequin, claude |
+| `toolchains` | `[toolchains]` | go, python, nodejs, rust, java, maven, gradle |
+| `modules` | `[nixos] modules`, as `lmx:<name>` | docker, gcloud, postgres, posting, harlequin, claude, quarkus |
 
 Every module follows the [catalog contract](catalog/README.md), which the client
 relies on; its own README explains how to select and use it.

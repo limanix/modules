@@ -1,0 +1,4 @@
+[maven]
+name = "Maven"
+text = "Builds projects with `mvn` on the JDK you pick."
+with = ["java"]

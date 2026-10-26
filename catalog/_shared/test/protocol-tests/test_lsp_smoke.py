@@ -41,11 +41,11 @@ def send(message, fragmented=False):
         if fragmented:
             time.sleep(.01)
 
-def lifecycle(fragmented=False):
+def lifecycle(fragmented=False, shutdown=None):
     send({'jsonrpc':'2.0','id':1,'result':{'capabilities':{}}}, fragmented)
     assert receive()['method'] == 'initialized'
     assert receive()['method'] == 'shutdown'
-    send({'jsonrpc':'2.0','id':2,'result':None}, fragmented)
+    send({'jsonrpc':'2.0','id':2,'result':shutdown}, fragmented)
     assert receive()['method'] == 'exit'
 
 assert receive()['method'] == 'initialize'
@@ -88,6 +88,11 @@ lifecycle()
         )
         with self.assertRaisesRegex(lsp.LspError, "closed stdout"):
             lsp.smoke(command(source), timeout=2)
+
+    def test_shutdown_result_is_null_or_empty(self):
+        lsp.smoke(command("lifecycle(shutdown={})"), timeout=2)
+        with self.assertRaisesRegex(lsp.LspError, "shutdown result"):
+            lsp.smoke(command("lifecycle(shutdown={'state':'done'})"), timeout=2)
 
     def test_missing_result_is_reported(self):
         with self.assertRaisesRegex(lsp.LspError, "neither result nor error"):
