@@ -2,7 +2,7 @@
   name = "python";
   title = "Python";
   directory = ./.;
-  main = "python";
+  main = "runtime";
   tool = "pyright";
   parsers.python = [ "python" ];
   packages = import ./packages.nix;
@@ -23,11 +23,11 @@
       priority,
     }:
     [
-      (builtins.removeAttrs (lib.getBin (lib.setPrio priority tools.python)) [ "doc" ])
+      (lib.setPrio priority tools.runtime)
       (lib.setPrio priority tools.virtualenv)
       (pkgs.runCommandLocal "python-${version}-command" { } ''
         mkdir -p "$out/bin"
-        ln -s "${tools.python.interpreter}" "$out/bin/python-${version}"
+        ln -s "${tools.runtime}/bin/python${tools.python.pythonVersion}" "$out/bin/python-${version}"
       '')
     ];
   commands = [

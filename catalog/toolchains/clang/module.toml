@@ -1,0 +1,4 @@
+description = "Clang and the LLVM tools for C and C++, next to GCC."
+
+versions = ["20", "21", "22"]
+default = "22"

@@ -1,0 +1,4 @@
+description = "GCC for C and C++, with GDB, clangd and the common build tools."
+
+versions = ["14", "15", "16"]
+default = "15"

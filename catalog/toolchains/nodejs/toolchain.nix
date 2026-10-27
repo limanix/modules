@@ -65,7 +65,7 @@
     }
     {
       label = "node-gyp";
-      text = "Add Python, make, and a C/C++ compiler for native addons.";
+      text = "Select gcc and python in [toolchains] for native addons.";
     }
   ];
   page = "modules/nodejs";

@@ -10,6 +10,7 @@ let
   lines = import ./test/lines-tests.nix { inherit pkgs lib; };
   release = import ./test/release-tests.nix { inherit lib; };
   theme = import ./test/theme-tests.nix { inherit evalSystem pkgs; };
+  compiler = import ./test/compiler-tests.nix { inherit pkgs; };
   unitTests =
     name: directory: extra:
     pkgs.runCommand "shared-${name}-tests"
@@ -34,6 +35,7 @@ in
     platform.run
     // theme.run
     // {
+      inherit compiler;
       terminal = unitTests "terminal" ./test/terminal-tests { };
       protocol = unitTests "protocol" ./test/protocol-tests { LSP_SMOKE_SOURCE = ./test/lsp-smoke.py; };
     };

@@ -63,11 +63,12 @@ installed in the system profile.
 
 ## Native dependencies
 
-npm packages built with `node-gyp` need Python, `make`, and a C/C++ compiler,
-which this module does not install. Prebuilt programs and native addons in npm
-packages can also need system libraries. See
-[Handle native dependencies](https://docs.limanix.dev/inside/languages#native-libraries)
-for both cases.
+npm packages built with `node-gyp` need Python, `make` and a C/C++ compiler:
+select [GCC](../gcc/README.md) and [Python](../python/README.md) next to Node.js
+in `[toolchains]`, and add the libraries an addon links against to
+`[nixos] packages`. Prebuilt programs in npm packages can also need system
+libraries; see
+[Handle native dependencies](https://docs.limanix.dev/inside/languages#native-libraries).
 
 ## Configuration and integration
 
@@ -82,5 +83,5 @@ for both cases.
 
 | Case | Behavior or next step |
 | -- | -- |
-| node-gyp build fails | Add Python, make, a compiler and required native libraries for that project |
+| node-gyp build fails | Select `gcc` and `python` in `[toolchains]`; add the native libraries the project needs to `[nixos] packages` |
 | Unexpected compiler version | The server uses the project TypeScript version when configured; its fallback follows base Nixpkgs |

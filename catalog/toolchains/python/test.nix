@@ -7,11 +7,11 @@ import ../../_shared/test/toolchain.nix {
   inherit evalSystem pkgs lib;
   spec = import ./toolchain.nix;
   coexisting = [
-    "python"
+    "runtime"
     "virtualenv"
   ];
   profileCommands = tools: {
-    python = "${tools.python}/bin/python";
+    python = "${tools.runtime}/bin/python";
     virtualenv = "${tools.virtualenv}/bin/virtualenv";
   };
   commands =
@@ -21,17 +21,25 @@ import ../../_shared/test/toolchain.nix {
       tools,
       ...
     }:
-    pkgs.runCommand "python-${line}-commands-smoke" { nativeBuildInputs = [ profile ]; } ''
+    pkgs.runCommandCC "python-${line}-commands-smoke" { nativeBuildInputs = [ profile ]; } ''
       export HOME="$TMPDIR/home"
       mkdir -p "$HOME"
-      test "$(readlink -f ${profile}/bin/python-${line})" = "$(readlink -f ${tools.python.interpreter})"
+      test "$(readlink -f ${profile}/bin/python-${line})" = "$(readlink -f ${tools.runtime}/bin/python${tools.python.pythonVersion})"
       python-${line} -c 'import platform; assert platform.python_version() == "${tools.python.version}"'
+      printf '#include <string>\nextern "C" int answer() { return std::string("forty-two").size() + 33; }\n' > wheel.cpp
+      NIX_DONT_SET_RPATH=1 g++ -shared -fPIC -o libwheel.so wheel.cpp
+      load='import ctypes; assert ctypes.CDLL("./libwheel.so").answer() == 42'
+      ! ${tools.python.interpreter} -c "$load" 2> /dev/null
+      python-${line} -c "$load"
+      python-${line} -c 'import os; assert "LD_LIBRARY_PATH" not in os.environ'
       python-${line} -m venv environment
       environment/bin/python -m pip --version
       environment/bin/python -c 'import sys; assert sys.prefix != sys.base_prefix'
+      environment/bin/python -c "$load"
       ${tools.virtualenv}/bin/virtualenv --no-download virtual-environment
       virtual-environment/bin/python -m pip --version
       virtual-environment/bin/python -c 'import platform; assert platform.python_version() == "${tools.python.version}"'
+      virtual-environment/bin/python -c "$load"
       touch "$out"
     '';
   eval =
@@ -43,11 +51,10 @@ import ../../_shared/test/toolchain.nix {
       verify,
       installedAsDeclared,
       selectedPackage,
-      packagePriority,
       ...
     }:
     let
-      runtimeOutputSelection =
+      runtimeSelection =
         variant:
         let
           configuration = configurations.${variant.version};
@@ -57,35 +64,19 @@ import ../../_shared/test/toolchain.nix {
             - builtins.length (
               builtins.filter (other: lib.versionOlder other.version variant.version) variants
             );
-          installed = lib.findFirst (
+          raw = builtins.any (
             package: toString package == tools.python.outPath
-          ) null configuration.config.environment.systemPackages;
-          profile = pkgs.buildEnv {
-            name = "python-${variant.version}-runtime-output-selection";
-            paths = [ installed ];
-            extraOutputsToInstall = [
-              "doc"
-              "man"
-              "info"
-            ];
-          };
-          selected = map toString (lib.concatMap (entry: entry.paths) profile.chosenOutputs);
+          ) configuration.config.environment.systemPackages;
         in
-        installed != null
-        && installed.outPath == tools.python.outPath
-        && installed.drvPath == tools.python.drvPath
-        && installed.interpreter == tools.python.interpreter
-        && installed.version == tools.python.version
-        && builtins.elem tools.python.outPath selected
-        && !(builtins.elem tools.python.doc.outPath selected)
-        && selectedPackage configuration tools.python
-        && packagePriority installed == priority
-        && installedAsDeclared configuration (lib.setPrio priority tools.python);
+        tools.runtime.outputs == [ "out" ]
+        && selectedPackage configuration tools.runtime
+        && installedAsDeclared configuration (lib.setPrio priority tools.runtime)
+        && !raw;
     in
     {
-      runtimeOutputSelection =
-        verify "every interpreter retains runtime identity without implicit HTML docs"
-          (builtins.all runtimeOutputSelection variants)
+      runtimeSelection =
+        verify "every line installs its wrapped interpreter in place of the raw one, without HTML docs"
+          (builtins.all runtimeSelection variants)
           allConfiguration;
     };
 }

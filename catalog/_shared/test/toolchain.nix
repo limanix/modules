@@ -144,7 +144,9 @@ in
             builtins.all (variant: checkLine variant.version allConfiguration) variants
             && builtins.all (attribute: selectedPackage allConfiguration newest.${attribute}) coexisting
             && recommendation.package.outPath == offer.package.outPath
-            && packagePriority recommendation.package == lib.meta.defaultPriority - (builtins.length lines - 1)
+            &&
+              packagePriority recommendation.package
+              == lib.meta.defaultPriority - (spec.priorityOffset or 0) - (builtins.length lines - 1)
             && installedAsDeclared allConfiguration recommendation.package
             && recommendation.command == offer.command
             && (recommendation.args or [ ]) == (offer.args or [ ])

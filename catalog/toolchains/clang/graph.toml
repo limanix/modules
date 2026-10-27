@@ -1,0 +1,4 @@
+[clang]
+name = "Clang"
+text = "Clang, clangd and clang-format next to GCC; AstroNvim gets the matching clangd."
+with = ["gcc", "astronvim"]
