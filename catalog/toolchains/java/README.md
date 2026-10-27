@@ -43,8 +43,9 @@ in every session.
 
 The selected JDK is also at `/usr/lib/jvm/openjdk-<line>`, where Gradle,
 IntelliJ IDEA and VS Code look for installed JDKs. When a project asks for
-another Java version, Gradle or the IDE downloads a generic Linux JDK; the
-module enables [nix-ld](https://github.com/nix-community/nix-ld) to run it.
+another Java version, Gradle or the IDE downloads a generic Linux JDK, which
+runs with [nix-ld](https://github.com/nix-community/nix-ld), on in every LimaNix
+VM.
 
 ## Editor support
 
@@ -58,7 +59,7 @@ that uses Lombok annotations.
 | Boundary | Contract |
 | -- | -- |
 | Public capability | `lmx.capabilities.jdk.package`, the newest selected JDK; `lmx.capabilities.languageSupport.tools.jdtls`; Java parser |
-| Settings | `JAVA_HOME`; `/usr/lib/jvm/openjdk-<line>` for every selected line; `programs.nix-ld.enable`, which a custom module may turn off |
+| Settings | `JAVA_HOME`; `/usr/lib/jvm/openjdk-<line>` for every selected line |
 | Integration | Maven, Gradle and Quarkus run on the JDK of the capability |
 | Services | No daemon |
 

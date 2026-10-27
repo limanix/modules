@@ -34,7 +34,6 @@
         lib.mkDefault
           config.lmx.internal.java.packages.${lib.last lines}.jdk;
       environment.sessionVariables.JAVA_HOME = "${jdk.home or jdk}";
-      programs.nix-ld.enable = lib.mkDefault true;
       systemd.tmpfiles.rules = [
         "d /usr/lib/jvm 0755 root root - -"
       ]

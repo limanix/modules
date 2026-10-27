@@ -94,12 +94,12 @@ servers, including those supplied by a project environment, through the AstroLSP
 Mason remains available for explicit additional installations with `:Mason` or
 `:LspInstall`; enable additional installed servers through AstroLSP's `servers`
 option. Automatic installation and registry refresh at startup are disabled.
-Nix-provided tools precede Mason tools on `PATH`. The module enables `nix-ld` by
-default to support foreign Linux binaries. This does not guarantee every Mason
-package works on NixOS: individual tools may also need libraries, an
-interpreter, or a compiler. Mason installs need network access and are
-user-managed, outside the catalog's package pins. To disable this compatibility
-loader, set `programs.nix-ld.enable = false` in a custom module.
+Nix-provided tools precede Mason tools on `PATH`. Mason tools are generic Linux
+binaries, which run with [nix-ld](https://github.com/nix-community/nix-ld), on
+in every LimaNix VM. This does not guarantee every Mason package works on NixOS:
+individual tools may also need libraries, an interpreter, or a compiler. Mason
+installs need network access and are user-managed, outside the catalog's package
+pins.
 
 ## Personal configuration
 
@@ -178,7 +178,7 @@ usage.
 
 | Boundary | Contract |
 | -- | -- |
-| Standard settings | `programs.neovim.defaultEditor` and `programs.nix-ld.enable` remain overridable |
+| Standard settings | `programs.neovim.defaultEditor` remains overridable |
 | Personal configuration | Native Neovim XDG directory: `init.lua`, `init.vim`, `lua/plugins/` and `lua/polish.lua` |
 | Integration | Consumes public language-support declarations; imports Neovim, Git and Lazygit |
 | Services | No daemon; plugins, parsers and language servers run with the editor |
@@ -189,7 +189,7 @@ usage.
 | -- | -- |
 | Existing init file | Your `init.lua` or `init.vim` replaces the bundled startup; remove it only when you choose to use the catalog setup |
 | Missing language server | Select a provider or declare the tool through the public capability; a binary on PATH alone is insufficient |
-| Foreign plugin or Mason tool | Extra tools may need libraries or interpreters even with nix-ld enabled |
+| Foreign plugin or Mason tool | Extra tools may need libraries or interpreters; add libraries to `programs.nix-ld.libraries` in a custom module |
 | Two AstroNvim lines | Choose one line; different supported lines fail with `astronvim: select one line` |
 | `:TSInstall` for a new language | Downloads the grammar and compiles it in the guest; needs network access |
 | Catalog update with a newer nvim-treesitter | Catalog parsers update with it; run `:TSUpdate` for parsers you installed |
