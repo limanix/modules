@@ -1,9 +1,9 @@
 # Python
 
 Installs the Python interpreter, virtualenv, and the Pyright language server for
-project environments inside the VM. The interpreter's separate HTML
-documentation is not installed automatically. Runtime `help()` and
-standard-library help remain available.
+project environments inside the VM. Binary wheels from PyPI load as on other
+Linux systems. The interpreter's separate HTML documentation is not installed
+automatically. Runtime `help()` and standard-library help remain available.
 
 ## Select
 
@@ -52,12 +52,18 @@ python -m pip install -r requirements.txt
 The environment includes pip. `virtualenv .venv` creates an equivalent
 environment with the virtualenv tool. Run `deactivate` to leave the environment.
 
-> [!NOTE]
->
-> A virtual environment does not provide system libraries. A pip package that
-> compiles C code or loads a native extension can need build tools or libraries
-> even after it installs; see
-> [Handle native dependencies](https://docs.limanix.dev/inside/languages#native-libraries).
+## Binary wheels and native code
+
+Wheels with native code, such as NumPy or pandas, expect the C++ runtime and
+zlib that other Linux systems provide. `python` loads both when it starts. The
+C++ runtime comes from the newest GCC in Nixpkgs, so it also serves extensions
+built with any [GCC](../gcc/README.md) line. Environments created with
+`python -m venv` or `virtualenv` run the same interpreter. Programs that Python
+starts do not inherit these libraries.
+
+A package that compiles C code while it installs needs a compiler and the
+headers of the library it uses: select [GCC](../gcc/README.md) and add the
+library to `[nixos] packages`.
 
 ## Language server
 
@@ -82,6 +88,7 @@ installed in the system profile.
 | -- | -- |
 | Public capability | `lmx.capabilities.languageSupport.tools.pyright`; Python parser |
 | Personal state | Project virtual environments, pip cache and Pyright project configuration |
+| Runtime libraries | `python3.X` is a copy of the interpreter that loads `libstdc++.so.6` and `libz.so.1` at startup; `python` and `python3` point to it |
 | Integration | Declares Pyright independently of interpreter lines without enabling an editor |
 | Services | No daemon |
 
@@ -90,6 +97,6 @@ installed in the system profile.
 | Case | Behavior or next step |
 | -- | -- |
 | Wrong interpreter in a venv | A venv retains the interpreter that created it; recreate it when changing interpreter lines |
-| Native extension fails | A venv does not supply compilers or system libraries |
+| A wheel needs another system library, such as `libGL.so.1` | Add the library to `[nixos] packages` and run Python with `LD_LIBRARY_PATH=/run/current-system/sw/lib` |
 | HTML manuals are absent | Runtime `help()` remains available; select an HTML documentation package separately if needed |
 | Pyright cannot find project dependencies | Configure the project environment in `pyrightconfig.json` or `pyproject.toml` |

@@ -32,6 +32,7 @@ import.
 | Check that my module installs a package or sets an option | [`test/helpers.nix`](#check-a-configuration) |
 | Check each version line of my module | [`test/lines.nix`](#test-version-lines) |
 | Add a language to `[toolchains]` | [`lib/toolchain.nix` and `test/toolchain.nix`](#define-a-toolchain) |
+| Let a C compiler find headers and libraries in the system profile | [`lib/compiler.nix`](#build-against-the-system-profile) |
 | Check which line's executable a command runs | [`test/profile-commands.nix`](#check-profile-commands) |
 | Take packages from another Nixpkgs revision | [`lmx.pins` and `pinned`](#use-another-nixpkgs-revision) |
 | Take each version line from the base, unstable or a snapshot | [`lib/release.nix`](#resolve-a-version-line) |
@@ -147,6 +148,24 @@ exports the tests of such a module: `eval.line-<line>`, `eval.allLines`,
 `run.userOverride` and `run.allLines`. The module adds its `commands` smoke
 test, the `coexisting` package attributes, the `profileCommands` of the shared
 profile and, when it has them, extra `eval` cases and `builds`.
+
+## Build against the system profile
+
+[lib/compiler.nix](lib/compiler.nix) takes a Nixpkgs compiler wrapper, such as
+`gcc15` or `clang_22`, and returns one that searches
+`/run/current-system/sw/include` after its own and the libc headers, and
+`/run/current-system/sw/lib` after the directories on its command line. Dynamic
+links get the same directory as their last `RUNPATH` entry, so a program falls
+back to the system profile only for libraries it finds nowhere else. Pass
+`prefix` to point a test compiler at another directory.
+
+```nix
+gcc = import ../../_shared/lib/compiler.nix { compiler = packages.gcc15; };
+```
+
+NixOS links only some directories into the profile: the module that installs the
+compiler adds `/include` to `environment.pathsToLink` and `dev` to
+`environment.extraOutputsToInstall`.
 
 ## Check profile commands
 

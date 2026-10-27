@@ -28,7 +28,7 @@ import ./lines.nix (
 
         lmx.capabilities.languageSupport = {
           languages = builtins.mapAttrs (_: parsers: { inherit parsers; }) spec.parsers;
-          tools.${spec.tool} = lib.mkOverride (1000 - rank) (
+          tools.${spec.tool} = lib.mkOverride ((spec.providerPriority or 1000) - rank) (
             offer // { package = lib.setPrio priority offer.package; }
           );
         };
