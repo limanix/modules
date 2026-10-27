@@ -71,7 +71,6 @@ in
   );
 
   programs = {
-    nix-ld.enable = lib.mkDefault true;
     neovim = {
       defaultEditor = lib.mkDefault true;
       configure.customLuaRC = ''

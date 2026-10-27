@@ -21,7 +21,6 @@ import ../../_shared/test/toolchain.nix {
     in
     config.lmx.capabilities.jdk.package.outPath == jdk.outPath
     && config.environment.sessionVariables.JAVA_HOME == jdk.home
-    && config.programs.nix-ld.enable
     && builtins.all registered lines;
   builds =
     { lines, toolsFor, ... }:
