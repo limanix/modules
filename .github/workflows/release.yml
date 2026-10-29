@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check module tag format
-        uses: mr-chelyshkin/actions/tag-format-check@v2
+        uses: mr-chelyshkin/actions/tag-format-check@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           pattern: '^v[1-9][0-9]*$'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
-      - uses: mr-chelyshkin/actions/tag-branch-check@v2
+      - uses: mr-chelyshkin/actions/tag-branch-check@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           branch: main
 
