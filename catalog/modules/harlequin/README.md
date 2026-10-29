@@ -22,14 +22,17 @@ the installed application and adapters.
 
 ## Use
 
-Connect to an existing PostgreSQL database inside the VM:
+Connect through the server's socket directory inside the VM. For the manual
+instance from [PostgreSQL](../postgres/README.md#run-manually):
 
 ```console
-harlequin --adapter postgres "postgresql://user@localhost:5432/database"
+harlequin --adapter postgres --host "$XDG_RUNTIME_DIR/postgresql-18" --dbname postgres
 ```
 
-Harlequin uses the standard PostgreSQL `PG*` environment variables for
-connection settings. The interface lets you browse the database catalog, edit
+For its [system service](../postgres/README.md#run-as-a-system-service), use
+`--host /run/postgresql --dbname "$(id -un)"`. Both connect as your VM user
+without a password. Harlequin also reads the standard PostgreSQL `PG*`
+environment variables. The interface lets you browse the database catalog, edit
 SQL and inspect query results. This module installs the client; select and
 configure a PostgreSQL service separately if you need a database server in the
 VM.
