@@ -52,7 +52,11 @@ in
           libtool
           gnum4
         ];
-        extraOutputsToInstall = [ "dev" ];
+        extraOutputsToInstall = [
+          "dev"
+          "out"
+          "lib"
+        ];
         pathsToLink = [
           "/include"
           "/share/aclocal"
