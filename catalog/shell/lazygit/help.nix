@@ -21,7 +21,7 @@ in
       }
       {
         label = "Settings";
-        text = "Personal settings go in ~/.config/lazygit/config.yml.";
+        text = "A personal ~/.config/lazygit/config.yml replaces /etc/xdg/lazygit/config.yml: start from a copy.";
       }
     ];
     guide = "https://docs.limanix.dev/modules/lazygit";

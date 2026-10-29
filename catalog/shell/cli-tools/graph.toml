@@ -13,10 +13,6 @@ name = "delta"
 text = "`git diff` and `git log -p` page through delta."
 with = ["bat", "theme"]
 
-[gh]
-name = "GitHub CLI"
-text = "`gh` for pull requests and issues, next to Git."
-
 [ripgrep]
 name = "ripgrep"
 text = "Search file contents."

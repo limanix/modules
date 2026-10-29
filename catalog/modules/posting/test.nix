@@ -25,7 +25,6 @@ in
   };
   run.commands = import ./test/smoke.nix {
     inherit pkgs;
-    inherit (defaultConfiguration) config;
     profile = profileFor defaultConfiguration;
   };
 }
