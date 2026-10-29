@@ -53,12 +53,13 @@ Add a library to `[nixos] packages` and build against it:
 packages = ["openssl", "libpq"]
 ```
 
-The module installs the development files of `[nixos] packages` and links their
-headers, `pkg-config` files, CMake packages and Autoconf macros into the system
-profile `/run/current-system/sw`. GCC and Clang search its headers and libraries
-after their own, so `cc -o app app.c -lssl` needs no extra flags. Programs they
-link search there last for libraries when they run. `pkg-config`, CMake and
-`aclocal` find the same packages.
+The module installs the libraries and development files of `[nixos] packages`
+and links their headers, libraries, `pkg-config` files, CMake packages and
+Autoconf macros into the system profile `/run/current-system/sw`. GCC and Clang
+search its headers and libraries after their own:
+`cc -o app app.c -lssl -lcrypto` needs no extra flags. Programs they link search
+there last for libraries when they run. `pkg-config`, CMake and `aclocal` find
+the same packages.
 
 Python packages with C extensions, node-gyp addons and crates with `-sys` build
 this way. node-gyp also needs Python: select `python` next to `nodejs` in
@@ -77,7 +78,7 @@ paths.
 | Boundary | Contract |
 | -- | -- |
 | Public capability | `lmx.capabilities.languageSupport.tools.clangd`; C, C++ and CMake parsers |
-| Settings | `environment.extraOutputsToInstall = [ "dev" ]`; links `/include`, `/share/aclocal`, `/share/cmake` and `/share/pkgconfig`; `PKG_CONFIG_PATH`, `CMAKE_PREFIX_PATH` and `ACLOCAL_PATH` point to `/run/current-system/sw` |
+| Settings | `environment.extraOutputsToInstall = [ "dev" "out" "lib" ]`; links `/include`, `/share/aclocal`, `/share/cmake` and `/share/pkgconfig`; `PKG_CONFIG_PATH`, `CMAKE_PREFIX_PATH` and `ACLOCAL_PATH` point to `/run/current-system/sw` |
 | Compilers | `cc`, `c++`, `gcc` and `g++` add `-idirafter /run/current-system/sw/include` and `-L/run/current-system/sw/lib`; dynamic links get `/run/current-system/sw/lib` as their last `RUNPATH` entry |
 | Integration | Clang imports this module; Go and Rust keep their GCC behind the selected line |
 | Services | No daemon |

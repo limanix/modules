@@ -10,7 +10,7 @@ let
   patchelf = "${pkgs.patchelf}/bin/patchelf";
   native = evaluate [
     ./default.nix
-    { environment.systemPackages = [ pkgs.zlib ]; }
+    { environment.systemPackages = [ pkgs.openssl ]; }
   ];
   withGo = evaluate [
     ./versions/14.nix
@@ -33,17 +33,17 @@ let
       export CMAKE_PREFIX_PATH='${local "CMAKE_PREFIX_PATH"}' ACLOCAL_PATH='${local "ACLOCAL_PATH"}'
       mkdir -p "$HOME" project
       cd project
-      printf '#include <stdio.h>\n#include <zlib.h>\nint main(void) { puts(zlibVersion()); return 0; }\n' > zlib.c
-      cc -o with-pkg-config zlib.c $(pkg-config --cflags --libs zlib)
+      printf '#include <stdio.h>\n#include <openssl/ssl.h>\nint main(void) { if (!OPENSSL_init_ssl(0, NULL)) return 1; puts(OpenSSL_version(OPENSSL_VERSION)); return 0; }\n' > openssl.c
+      cc -o with-pkg-config openssl.c $(pkg-config --cflags --libs openssl)
       ./with-pkg-config
-      cc -o with-search-path zlib.c -lz
+      cc -o with-search-path openssl.c -lssl -lcrypto
       ./with-search-path
-      printf 'cmake_minimum_required(VERSION 3.20)\nproject(native C)\nfind_package(ZLIB REQUIRED)\nadd_executable(native zlib.c)\ntarget_link_libraries(native ZLIB::ZLIB)\n' > CMakeLists.txt
+      printf 'cmake_minimum_required(VERSION 3.20)\nproject(native C)\nfind_package(OpenSSL REQUIRED)\nadd_executable(native openssl.c)\ntarget_link_libraries(native OpenSSL::SSL)\n' > CMakeLists.txt
       cmake -B build -G Ninja > /dev/null
       cmake --build build > /dev/null
       ./build/native
-      printf 'AC_INIT([native], [1])\nAM_INIT_AUTOMAKE([foreign])\nAC_PROG_CC\nLT_INIT\nPKG_CHECK_MODULES([ZLIB], [zlib])\nAC_CONFIG_FILES([Makefile])\nAC_OUTPUT\n' > configure.ac
-      printf 'bin_PROGRAMS = native\nnative_SOURCES = zlib.c\nnative_CFLAGS = $(ZLIB_CFLAGS)\nnative_LDADD = $(ZLIB_LIBS)\n' > Makefile.am
+      printf 'AC_INIT([native], [1])\nAM_INIT_AUTOMAKE([foreign])\nAC_PROG_CC\nLT_INIT\nPKG_CHECK_MODULES([OPENSSL], [openssl])\nAC_CONFIG_FILES([Makefile])\nAC_OUTPUT\n' > configure.ac
+      printf 'bin_PROGRAMS = native\nnative_SOURCES = openssl.c\nnative_CFLAGS = $(OPENSSL_CFLAGS)\nnative_LDADD = $(OPENSSL_LIBS)\n' > Makefile.am
       autoreconf -fi
       ./configure > /dev/null
       make > /dev/null
