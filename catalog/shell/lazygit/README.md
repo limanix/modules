@@ -39,10 +39,17 @@ and `?` to see the keys. Configure your commit identity as described in
 With the default `system` flavor, Lazygit keeps its own theme, which uses the
 terminal's colors and background. A Catppuccin flavor in `[theme]` of
 `limanix.toml` sets the colors of its palette in `/etc/xdg/lazygit/config.yml`.
-A personal `~/.config/lazygit/config.yml` takes precedence through Lazygit's
-native XDG lookup. Project `.lazygit.yml` and `.git/lazygit.yml` settings retain
-their native precedence. To change managed settings, assign
-`programs.lazygit.settings` in a custom NixOS module:
+Lazygit reads only the first `config.yml` it finds: a personal
+`~/.config/lazygit/config.yml` replaces the managed file, with the clipboard
+command and any Catppuccin colors it sets. To keep them, start from a copy:
+
+```console
+install -D -m 644 /etc/xdg/lazygit/config.yml ~/.config/lazygit/config.yml
+```
+
+Project `.lazygit.yml` and `.git/lazygit.yml` settings retain their native
+precedence. To change managed settings, assign `programs.lazygit.settings` in a
+custom NixOS module:
 
 ```nix
 { ... }:
@@ -59,7 +66,7 @@ The package is configurable with `programs.lazygit.package`.
 | -- | -- |
 | Settings | `programs.lazygit.package` and `programs.lazygit.settings` |
 | Managed configuration | `/etc/xdg/lazygit/config.yml` |
-| Personal configuration | `~/.config/lazygit/config.yml`; project `.lazygit.yml` and `.git/lazygit.yml` |
+| Personal configuration | `~/.config/lazygit/config.yml`, which replaces the managed file; project `.lazygit.yml` and `.git/lazygit.yml` |
 | Integration | Enables Git; AstroNvim opens the same Lazygit application |
 | Clipboard | Copy commands send text to the Mac clipboard through the platform's `pbcopy`; see [Terminal and clipboard](https://docs.limanix.dev/inside/clipboard) |
 | Services and capabilities | No daemon or language-support declarations |

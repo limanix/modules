@@ -59,10 +59,10 @@ independent of the selected line, and loads Lombok: the editor understands code
 that uses Lombok annotations.
 
 The `jdtls` launcher keeps the state of each project in its own directory under
-`${XDG_CACHE_HOME:-~/.cache}/limanix/jdtls`, named after the full canonical
-project path. AstroNvim supplies the project root; other editors use the
-launcher's working directory. An explicit `-data PATH` or `-data=PATH` keeps the
-editor's own choice. Nothing removes the state of old projects: with no Java
+`${XDG_CACHE_HOME:-~/.cache}/limanix/jdtls`, named by a SHA-256 hash of the
+canonical project path. AstroNvim supplies the project root; other editors use
+the launcher's working directory. An explicit `-data PATH` or `-data=PATH` keeps
+the editor's own choice. Nothing removes the state of old projects: with no Java
 editor open, `rm -rf ~/.cache/limanix/jdtls` clears it, and jdtls indexes each
 project again.
 

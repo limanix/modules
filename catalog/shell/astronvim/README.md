@@ -57,11 +57,10 @@ directly; it does not clone plugins on first launch or update them when you log
 in. Apply a catalog update to update bundled plugins. Lazy's cache, lock file,
 sessions, and Mason installations remain in your user directories.
 
-The base parser list is read from the pinned AstroNvim configuration. Selected
-language modules contribute their additional parsers through the NixOS
-configuration. Go adds Go and its module formats; Rust adds Rust; Node.js adds
-JavaScript, TypeScript, and TSX; Python declares Python support. Nix builds
-these parsers with their queries, and at each start the editor links them into
+The base parser list is read from the pinned AstroNvim configuration. Each
+selected [toolchain](https://docs.limanix.dev/modules/#toolchains) adds the
+parsers of its languages through the NixOS configuration. Nix builds these
+parsers with their queries, and at each start the editor links them into
 Tree-sitter's install directory, `~/.local/share/nvim/site`. Automatic parser
 installation is disabled. A catalog update replaces the links; `:TSUpdate`
 leaves catalog parsers alone.
@@ -78,18 +77,14 @@ instead, declare it in a custom module, for example
 
 ## Language servers
 
-Language modules declare their language servers together with the packages they
-install. AstroNvim reads the merged declarations from NixOS and enables those
-servers through AstroLSP. The [Go](../../toolchains/go/README.md) module
-declares `gopls`; [Rust](../../toolchains/rust/README.md) declares
-`rust-analyzer`. The [Python](../../toolchains/python/README.md) module declares
-Pyright; [Node.js](../../toolchains/nodejs/README.md) declares the
-JavaScript/TypeScript language server. The editor adapter maps `rust-analyzer`
-to `rust_analyzer` and `typescript-language-server` to `ts_ls`. Each server uses
-its final declaration's command and arguments. Installing an additional
-executable on `PATH` alone does not enable an LSP server. Enable additional
-servers, including those supplied by a project environment, through the AstroLSP
-`servers` option in user configuration.
+Each selected toolchain declares its language server together with the packages
+it installs; the toolchain's page names the server. AstroNvim reads the merged
+declarations from NixOS and enables those servers through AstroLSP. The editor
+adapter maps `rust-analyzer` to `rust_analyzer` and `typescript-language-server`
+to `ts_ls`. Each server uses its final declaration's command and arguments.
+Installing an additional executable on `PATH` alone does not enable an LSP
+server. Enable additional servers, including those supplied by a project
+environment, through the AstroLSP `servers` option in user configuration.
 
 Mason remains available for explicit additional installations with `:Mason` or
 `:LspInstall`; enable additional installed servers through AstroLSP's `servers`
@@ -164,10 +159,11 @@ startup to mark the active Neovim pane for tmux.
 Configure a Nerd Font and true color support in the terminal on macOS. For an
 SSH session the font belongs on the host, not in the VM.
 
-Yanks go to the Mac clipboard through the platform's `pbcopy`, inside or outside
-tmux. `p` puts the last yank without asking the terminal and never waits for a
-clipboard read. Paste from the Mac with Cmd+V in insert mode, or insert it with
-`:r !pbpaste`. The terminal on the Mac must allow OSC 52; see
+Yanks go to the Mac clipboard: inside tmux through the platform's `pbcopy`,
+outside tmux as an OSC 52 sequence that Neovim writes itself. `p` puts the last
+yank without asking the terminal and never waits for a clipboard read. Paste
+from the Mac with Cmd+V in insert mode, or insert it with `:r !pbpaste`. The
+terminal on the Mac must allow OSC 52; see
 [Terminal and clipboard](https://docs.limanix.dev/inside/clipboard).
 
 See the [AstroNvim guide](https://docs.astronvim.com/) and
