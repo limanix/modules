@@ -53,7 +53,7 @@ rustup installs on first use:
 ```toml
 [toolchain]
 channel = "1.89.0"
-components = ["rustfmt", "clippy"]
+components = ["rustfmt", "clippy", "rust-analyzer", "rust-src"]
 ```
 
 See [overrides](https://rust-lang.github.io/rustup/overrides.html) for the order
@@ -105,6 +105,7 @@ and the
 | -- | -- |
 | No network when the VM starts | Cargo has no default toolchain; the service retries, or restart it with `systemctl --user restart rust-toolchain` |
 | Project needs another toolchain | Add `rust-toolchain.toml`; rustup installs that toolchain on first use |
+| rust-analyzer stops with `infinite recursion detected` | The project's `rust-toolchain.toml` lacks the component: add `rust-analyzer` and `rust-src` to its `components`, and rustup installs them on next use |
 | A channel should move | Run `rustup update`; the module installs a toolchain only when the value changes |
 | Native dependency fails | GCC and pkg-config are present; provide the required library and its search path |
 | Disk fills with toolchains | List them with `rustup toolchain list`, remove one with `rustup toolchain uninstall` |
