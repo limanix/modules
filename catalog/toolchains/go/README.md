@@ -59,6 +59,9 @@ Packages that link to C libraries also need those libraries; see
 [Handle native dependencies](https://docs.limanix.dev/inside/languages#native-libraries).
 The Delve debugger runs as `dlv`.
 
+`go install` puts commands in `~/go/bin` by default; the module puts that
+directory on `PATH` before the system profile.
+
 ## Toolchain downloads
 
 When a project's `go.mod` or `go.work` requires a newer Go version, Go can
@@ -89,7 +92,7 @@ and the [gopls editor setup](https://go.dev/gopls/#editors).
 | Boundary | Contract |
 | -- | -- |
 | Public capability | `lmx.capabilities.languageSupport.tools.gopls`; Go, gomod and gosum parsers |
-| Personal state | Go module and build caches; project `go.mod` and `go.work` |
+| Personal state | Go module and build caches; commands from `go install` in `~/go/bin`; project `go.mod` and `go.work` |
 | Integration | Declares the selected server without enabling an editor; AstroNvim consumes it |
 | Services | No daemon |
 
