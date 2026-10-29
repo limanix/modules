@@ -163,9 +163,11 @@ back to the system profile only for libraries it finds nowhere else. Pass
 gcc = import ../../_shared/lib/compiler.nix { compiler = packages.gcc15; };
 ```
 
-NixOS links only some directories into the profile: the module that installs the
-compiler adds `/include` to `environment.pathsToLink` and `dev` to
-`environment.extraOutputsToInstall`.
+NixOS links only some directories and outputs into the profile: the module that
+installs the compiler adds `/include` to `environment.pathsToLink` and `dev`,
+`out` and `lib` to `environment.extraOutputsToInstall`. A package with a `bin`
+output, such as OpenSSL, keeps its libraries in `out` or `lib`; by default NixOS
+installs only its `bin` and `man` outputs.
 
 ## Check profile commands
 
