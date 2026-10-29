@@ -1,4 +1,4 @@
 [gcc]
 name = "GCC"
-text = "Compiles C and C++ and lets Python, Node.js and Rust build native extensions against [nixos] packages."
-with = ["astronvim", "python", "nodejs", "rust"]
+text = "Compiles C and C++ and lets Go, Python, Node.js and Rust build native code against [nixos] packages."
+with = ["astronvim", "go", "python", "nodejs", "rust"]
