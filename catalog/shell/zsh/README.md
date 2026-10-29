@@ -49,7 +49,13 @@ Nix build and sourced when Zsh starts.
 Atuin records history in the VM user's data directory, normally
 `~/.local/share/atuin/history.db`. Automatic synchronization and update checks
 are disabled; no account is needed. Its managed settings are in
-`/etc/atuin/config.toml`.
+`/etc/atuin/config.toml`. Atuin reads only one `config.toml`: a personal
+`~/.config/atuin/config.toml` replaces the managed file, with both disabled
+settings. To keep them, start from a copy:
+
+```console
+install -D -m 644 /etc/atuin/config.toml ~/.config/atuin/config.toml
+```
 
 For a project that already has an `.envrc`, inspect that file and run this
 inside the project directory in the VM:

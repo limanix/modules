@@ -52,7 +52,11 @@ in
     programs = {
       zsh = {
         enable = true;
-        shellInit = builtins.readFile ./first-run.zsh;
+        shellInit = builtins.readFile ./first-run.zsh + ''
+          if [[ ''${ATUIN_CONFIG_DIR-} == /etc/atuin && -e ''${XDG_CONFIG_HOME:-$HOME/.config}/atuin/config.toml ]]; then
+            unset ATUIN_CONFIG_DIR
+          fi
+        '';
         enableCompletion = true;
         # Oh My Zsh initializes completion after adding its functions and plugins.
         enableGlobalCompInit = false;
