@@ -36,6 +36,14 @@
       '')
       pkgs.gcc
     ];
+  extra = _: {
+    environment.extraInit = ''
+      case ":$PATH:" in
+        *":$HOME/go/bin:"*) ;;
+        *) PATH="$HOME/go/bin:$PATH" ;;
+      esac
+    '';
+  };
   commands = [
     "go"
     "gofmt"
