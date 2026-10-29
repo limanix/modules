@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        input: [nixpkgs, unstable, nixos]
+        input: [nixpkgs, nixos]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,8 +32,12 @@ jobs:
         env:
           INPUT: ${{ matrix.input }}
         run: task --yes harness -- update "$INPUT" >> "$GITHUB_OUTPUT"
+      - name: Update nixos-unstable
+        if: matrix.input == 'nixpkgs'
+        id: unstable
+        run: task --yes harness -- update unstable >> "$GITHUB_OUTPUT"
       - name: Create token
-        if: steps.update.outputs.next != '' || steps.update.outputs.before != steps.update.outputs.after
+        if: steps.update.outputs.next != '' || steps.update.outputs.before != steps.update.outputs.after || steps.unstable.outputs.before != steps.unstable.outputs.after
         id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -44,8 +48,7 @@ jobs:
           repositories: modules
           owner: limanix
       - name: Open the pull request
-        if: steps.update.outputs.next != '' || steps.update.outputs.before != steps.update.outputs.after
-        id: pr
+        if: steps.app-token.outcome == 'success'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.app-token.outputs.token }}
@@ -55,18 +58,14 @@ jobs:
             flake.nix
             flake.lock
             catalog/_shared/unstable.toml
-          commit-message: Update ${{ matrix.input }} to ${{ steps.update.outputs.next || steps.update.outputs.date }}
-          title: Update ${{ matrix.input }} to ${{ steps.update.outputs.next || steps.update.outputs.date }}
+          commit-message: ${{ matrix.input == 'nixos' && format('Update nixos to {0}', steps.update.outputs.next) || 'Update nixpkgs and nixos-unstable' }}
+          title: ${{ matrix.input == 'nixos' && format('Update nixos to {0}', steps.update.outputs.next) || 'Update nixpkgs and nixos-unstable' }}
           body: |
-            Updates ${{ matrix.input }} from ${{ steps.update.outputs.current || steps.update.outputs.before }} to ${{ steps.update.outputs.next || steps.update.outputs.after }}.
+            ${{ steps.update.outputs.next && format('Updates nixos from {0} to {1}.', steps.update.outputs.current, steps.update.outputs.next) || '' }}
+            ${{ steps.update.outputs.before != steps.update.outputs.after && format('Updates nixpkgs from {0} to {1}.', steps.update.outputs.before, steps.update.outputs.after) || '' }}
+            ${{ steps.unstable.outputs.before != steps.unstable.outputs.after && format('Updates nixos-unstable from {0} to {1}.', steps.unstable.outputs.before, steps.unstable.outputs.after) || '' }}
 
-            ${{ matrix.input == 'nixos' && 'This is a new NixOS release and needs review: fix any image build failures and boot its image artifact in Lima before merging.' || 'Merges once the checks pass; the merge releases the catalog. A version line that moved waits for a reviewer.' }}
-      - name: Merge once the checks pass
-        if: matrix.input != 'nixos' && steps.pr.outputs.pull-request-number
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          NUMBER: ${{ steps.pr.outputs.pull-request-number }}
-        run: gh pr merge "$NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash
+            ${{ matrix.input == 'nixos' && 'This is a new NixOS release and needs review: fix any image build failures and boot its image artifact in Lima before merging.' || 'Merge it once the checks pass; the merge releases the catalog.' }}
 
   drift:
     name: Report catalog drift
