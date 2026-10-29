@@ -11,10 +11,15 @@ let
   };
   inherit (release) packages;
   go = packages.${release.package};
+  tools =
+    if pkgs.lib.versionOlder (pkgs.lib.versions.majorMinor pkgs.go.version) version then
+      (release.resolve "unstable").packages
+    else
+      packages;
 in
 assert release.matches go.version;
 {
   inherit go;
-  inherit (packages) gopls delve;
+  inherit (tools) gopls delve;
   inherit (release) endOfLife;
 }

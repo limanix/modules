@@ -21,13 +21,18 @@ The value selects one line:
 
 | Value | Go | gopls | Delve | Notes |
 | -- | -- | -- | -- | -- |
-| `1.27` | 1.27.x | Base | Base | Recommended |
+| `1.27` | 1.27.x | Unstable | Unstable | Recommended |
 | `1.26` | 1.26.x | Base | Base |  |
 | `1.25` | 1.25.x | Base | Base | End of life |
 
-Lines marked `.x` and their gopls and Delve come from the
+Lines marked `.x` come from the
 [base Nixpkgs revision](../../README.md#package-pins-and-unfree-permissions) and
-receive its updates with each catalog release.
+receive its updates with each catalog release. Up to the base's default Go, a
+line takes gopls and Delve from the base too. A newer line takes both from the
+catalog's
+[nixos-unstable revision](../../README.md#package-pins-and-unfree-permissions),
+because the base builds them for its default Go and its Delve cannot debug a
+newer one.
 
 Support status follows the
 [Go release policy](https://go.dev/doc/devel/release). Selecting an end-of-life
