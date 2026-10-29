@@ -46,25 +46,25 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: mr-chelyshkin/actions/task-run@v2
+      - uses: mr-chelyshkin/actions/task-run@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           task: ci/nix/fmt
-      - uses: mr-chelyshkin/actions/task-run@v2
+      - uses: mr-chelyshkin/actions/task-run@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           task: ci/nix/lint
-      - uses: mr-chelyshkin/actions/task-run@v2
+      - uses: mr-chelyshkin/actions/task-run@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           task: ci/markdown/fmt
-      - uses: mr-chelyshkin/actions/task-run@v2
+      - uses: mr-chelyshkin/actions/task-run@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           task: ci/python/fmt
-      - uses: mr-chelyshkin/actions/task-run@v2
+      - uses: mr-chelyshkin/actions/task-run@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           task: ci/python/lint
-      - uses: mr-chelyshkin/actions/task-run@v2
+      - uses: mr-chelyshkin/actions/task-run@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           task: ci/python/typecheck
-      - uses: mr-chelyshkin/actions/task-run@v2
+      - uses: mr-chelyshkin/actions/task-run@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           task: ci/python/test
 
@@ -101,7 +101,7 @@ jobs:
           sudo chown -R 0:0 .cache/nix .cache/nix-binary
 
       - name: Run checks
-        uses: mr-chelyshkin/actions/task-run@v2
+        uses: mr-chelyshkin/actions/task-run@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           task: ${{ matrix.target == 'common' && 'ci/catalog/layer' || 'ci/catalog/modules' }}
           args: |
@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Require every selected check
-        uses: mr-chelyshkin/actions/job-results-check@v2
+        uses: mr-chelyshkin/actions/job-results-check@577ea5b38e0b2ad2bffe7977574fda5e59657a60 # v2
         with:
           results: ${{ toJSON(needs) }}
           skipped: >-
