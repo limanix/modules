@@ -7,8 +7,9 @@
 # This module sets:
 # - VM support, the EFI boot loader, and automatic disk growth.
 # - The root and boot file systems, with the disk labels from image.nix.
-# - Lima and SSH services for access from the host computer, with /etc/ssh/authorized_keys.d
-#   readable: Lima creates it private, which hides the keys that NixOS accounts declare.
+# - Lima and SSH services for access from the host computer, with key login only and
+#   /etc/ssh/authorized_keys.d readable: Lima creates it private, which hides the keys that
+#   NixOS accounts declare.
 # - nix-ld, which runs programs built for other Linux systems, such as editor servers.
 # - GNU tar that can extract symbolic links into shared folders: Apple's virtiofs refuses the
 #   mode-0 placeholder files that GNU tar creates for them.
@@ -57,7 +58,13 @@
   };
 
   services.lima.enable = true;
-  services.openssh.enable = true;
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+    };
+  };
   systemd.tmpfiles.rules = [ "d /etc/ssh/authorized_keys.d 0755 root root -" ];
   environment.systemPackages = [
     (lib.hiPrio (
