@@ -42,5 +42,5 @@ the Maven version that it pins, on the same JDK.
 | -- | -- |
 | Settings | Maven runs on `lmx.capabilities.jdk.package` |
 | Personal state | Downloaded dependencies in `~/.m2/repository` |
-| Integration | Imports the Java toolchain; without a `java` line it runs on the Java default |
+| Integration | Imports the Java toolchain |
 | Services | No daemon |
