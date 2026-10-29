@@ -22,6 +22,7 @@ in
     catalogLayout = import ./catalog-layout-tests.nix { inherit lib; };
     testABI = import ./test-contract-tests.nix { inherit lib system; };
     buildPolicy = import ./build-policy-tests.nix { inherit lib system; };
+    drift = import ./drift-tests.nix { inherit lib; };
     sharedSchemas = import ./shared.nix { inherit pkgs lib; };
     sharedDeclarations = import ./shared-tests.nix { inherit pkgs lib; };
     declarationOwnership = import ./ownership-tests.nix { inherit lib; };
