@@ -43,9 +43,9 @@ gradle build
 `gradle --version` shows the JDK under `Launcher JVM`. A project with
 `./gradlew` runs the Gradle version that it pins, on the same JDK.
 
-Gradle and `./gradlew` find the selected JDK at `/usr/lib/jvm`. A build that
-asks for another Java version through a Java toolchain makes Gradle download
-that JDK; see [other JDKs](../java/README.md#other-tools-and-jdks).
+Gradle and `./gradlew` find the selected JDK at `/usr/lib/jvm`. Downloading
+another JDK requires a configured toolchain download repository. See
+[other JDKs](../java/README.md#other-tools-and-jdks) for setup.
 
 ## Configuration and integration
 

@@ -158,6 +158,13 @@ in
     lineTests.run
     // features
     // {
+      lspCommands = pkgs.runCommand "astronvim-lsp-commands" { } ''
+        export HOME="$TMPDIR/home" XDG_CONFIG_HOME="$TMPDIR/config"
+        export XDG_DATA_HOME="$TMPDIR/data" XDG_STATE_HOME="$TMPDIR/state" XDG_CACHE_HOME="$TMPDIR/cache"
+        export LMX_INIT=${./init.lua}
+        ${pkgs.neovim-unwrapped}/bin/nvim --headless -u NONE -i NONE -l ${./test/jdtls-command.lua}
+        touch "$out"
+      '';
       languageServer = import ./test/integration.nix {
         inherit pkgs;
         inherit (defaults) config;

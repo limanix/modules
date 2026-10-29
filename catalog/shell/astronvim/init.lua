@@ -121,6 +121,28 @@ return function(paths, flavor)
         opts.config = opts.config or {}
         for server, configuration in pairs(paths.servers) do
           if not vim.tbl_contains(opts.servers, server) then table.insert(opts.servers, server) end
+          local command = configuration.cmd
+          if server == "jdtls" and type(command) == "table" and vim.islist(command) and #command > 0 then
+            local strings = true
+            for _, argument in ipairs(command) do
+              if type(argument) ~= "string" then strings = false; break end
+            end
+            if strings then
+              configuration = vim.tbl_extend("force", configuration, {
+                cmd = function(dispatchers, config)
+                  local environment = config.cmd_env
+                  if config.root_dir then
+                    environment = vim.tbl_extend("force", environment or {}, { LMX_JDTLS_ROOT = config.root_dir })
+                  end
+                  return vim.lsp.rpc.start(vim.deepcopy(command), dispatchers, {
+                    cwd = config.cmd_cwd,
+                    env = environment,
+                    detached = config.detached,
+                  })
+                end,
+              })
+            end
+          end
           opts.config[server] = vim.tbl_deep_extend("force", opts.config[server] or {}, configuration)
         end
       end,
