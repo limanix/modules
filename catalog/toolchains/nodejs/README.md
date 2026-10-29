@@ -44,6 +44,10 @@ npm run build
 `npm install` installs the project's dependencies, and `npm run build` runs the
 project's `build` script, if it defines one.
 
+`npm install -g` installs into `~/.npm-global`: the module sets
+`NPM_CONFIG_PREFIX` to that directory and puts its `bin` on `PATH` before the
+system profile.
+
 ## Language server
 
 The module installs
@@ -75,7 +79,7 @@ libraries; see
 | Boundary | Contract |
 | -- | -- |
 | Public capability | `lmx.capabilities.languageSupport.tools.typescript-language-server`; JavaScript, TypeScript and TSX parsers |
-| Personal state | Project `node_modules`, lock files and package-manager caches |
+| Personal state | Project `node_modules`, lock files, package-manager caches and global packages in `~/.npm-global` |
 | Integration | Declares the server without enabling an editor; versioned npm/npx run the matching Node.js line |
 | Services | No daemon |
 

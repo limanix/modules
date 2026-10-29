@@ -43,6 +43,15 @@
         done
       '')
     ];
+  extra = _: {
+    environment.sessionVariables.NPM_CONFIG_PREFIX = "$HOME/.npm-global";
+    environment.extraInit = ''
+      case ":$PATH:" in
+        *":$HOME/.npm-global/bin:"*) ;;
+        *) PATH="$HOME/.npm-global/bin:$PATH" ;;
+      esac
+    '';
+  };
   commands = [
     "node"
     "npm"
