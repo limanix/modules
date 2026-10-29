@@ -14,14 +14,11 @@ let
 in
 {
   eval = {
-    defaults = verify "Posting is installed with the terminal's colors by default" (import
-      ./test/check.nix
-      {
-        inherit (defaultConfiguration) config;
-        hasPackage = helpers.installed defaultConfiguration;
-        inherit pkgs;
-      }
-    ) defaultConfiguration;
+    defaults = verify "Posting is installed with Catppuccin Mocha by default" (import ./test/check.nix {
+      inherit (defaultConfiguration) config;
+      hasPackage = helpers.installed defaultConfiguration;
+      inherit pkgs;
+    }) defaultConfiguration;
     latte = verify "the Posting theme follows the guest's flavor" (
       latte.config.environment.variables.POSTING_THEME == "catppuccin-latte"
     ) latte;

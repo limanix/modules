@@ -11,8 +11,8 @@ in
   imports = [ ./help.nix ];
 
   environment.systemPackages = [ pkgs.posting ];
-  # Textual's ANSI theme draws in the terminal's colors and on its background.
+  # Posting crashes on Textual's terminal themes; the system flavor keeps Mocha.
   environment.variables.POSTING_THEME = lib.mkDefault (
-    if flavor == "system" then "ansi-dark" else "catppuccin-${flavor}"
+    if flavor == "system" then "catppuccin-mocha" else "catppuccin-${flavor}"
   );
 }

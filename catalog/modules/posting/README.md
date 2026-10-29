@@ -1,7 +1,7 @@
 # Posting
 
-Installs Posting, a terminal client for HTTP APIs, and sets its default theme to
-match the guest.
+Installs Posting, a terminal client for HTTP APIs, and sets its default theme
+from `[theme]` in `limanix.toml`.
 
 ## Select
 
@@ -48,14 +48,16 @@ settings.
 
 ## Theme
 
-The module sets `POSTING_THEME` to follow `[theme]` in `limanix.toml`. The
-`system` flavor uses `ansi-dark`, with the terminal's colors and background. A
-Catppuccin flavor uses `catppuccin-<flavor>`, such as `catppuccin-latte`. For a
-light terminal, add this to your existing `[env]` table:
+The module sets `POSTING_THEME` to follow `[theme]` in `limanix.toml`. A
+Catppuccin flavor uses `catppuccin-<flavor>`, such as `catppuccin-latte`.
+Posting fails to start with Textual's terminal themes `ansi-dark` and
+`ansi-light`. With the default `system` flavor it stays `catppuccin-mocha`, with
+its own background. For a light terminal, add this to your existing `[env]`
+table:
 
 ```toml
 [env]
-POSTING_THEME = "ansi-light"
+POSTING_THEME = "catppuccin-latte"
 ```
 
 Personal settings are in `~/.config/posting/config.yaml`, following
@@ -66,7 +68,7 @@ Personal settings are in `~/.config/posting/config.yaml`, following
 
 | Boundary | Contract |
 | -- | -- |
-| Settings | `environment.variables.POSTING_THEME` defaults to `ansi-dark` with the system flavor and to `catppuccin-<flavor>` with a Catppuccin flavor; `[env]` and personal YAML may override it |
+| Settings | `environment.variables.POSTING_THEME` defaults to `catppuccin-mocha` with the system flavor and to `catppuccin-<flavor>` with a Catppuccin flavor; `[env]` and personal YAML may override it |
 | Personal state | `~/.config/posting/config.yaml` and request collections, respecting XDG configuration |
 | Integration | Needs no other module; collections live with your projects |
 | Services and capabilities | No API server or language-support declarations |
