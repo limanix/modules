@@ -144,11 +144,15 @@ reconnecting; continuum restores the latest snapshot when the tmux server
 starts.
 
 The snapshot includes sessions, windows, pane layout, and working directories.
-Resurrect restarts its upstream default list of programs, such as editors,
-pagers, and terminal monitors. It does not preserve running processes or unsaved
-editor buffers. Development servers and test commands need to be started again.
-See
-[the supported program list](https://github.com/tmux-plugins/tmux-resurrect/blob/master/docs/restoring_programs.md).
+Resurrect restarts a program from its
+[default list](https://github.com/tmux-plugins/tmux-resurrect/blob/master/docs/restoring_programs.md)
+only when the saved command starts with the program's name, as with `less` and
+`top`. Neovim, its `vi` and `vim` aliases, and `man` start through Nix wrappers,
+so the snapshot records a full path and their panes come back as shells. To
+reopen AstroNvim's files and splits, quit the editor before `limanix update` and
+[resume its last session](../astronvim/README.md#save-and-resume-a-project) in a
+new `nvim`. Resurrect does not preserve running processes or unsaved editor
+buffers. Development servers and test commands need to be started again.
 
 Personal overrides belong in `~/.tmux.conf` inside the VM. Keep the status line
 enabled and preserve continuum's `status-right` hook if you customize it.
