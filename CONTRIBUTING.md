@@ -19,6 +19,7 @@ runs in the container that CI uses; `task -l` lists them.
 | Use shared helpers, capabilities or theme colors | [Shared helpers](catalog/_shared/README.md) | `task ci/catalog/layer` |
 | Give a tool the guest's colors | [Colors and themes](catalog/README.md#colors-and-themes) | The module's checks |
 | Add a theme | [Colors and themes](catalog/README.md#colors-and-themes) | `task generate/previews`, then the layer and the modules with colors |
+| Add a prompt | [Prompts](catalog/README.md#prompts) | `task ci/catalog/modules MODULES="<name>"`, then `task generate/previews` |
 | Change the harness in `tools/` or `checks/` | [Repository layout](README.md#repository-layout) | `task ci/python/test` and the other `ci/python/*` tasks |
 | Move a Nixpkgs pin | [Releases](README.md#releases) | `task harness -- update nixpkgs` |
 
@@ -49,7 +50,7 @@ branch, dependent modules included.
 | Check the modules you changed, or the layer for `_shared` | `task ci/catalog/modules MODULES="<names>"`, `task ci/catalog/layer` |
 | Check formatting and lint | `task ci/nix/fmt`, `task ci/nix/lint`, `task ci/markdown/fmt` |
 | Check the harness after a change in `tools/` | `task ci/python/fmt`, `task ci/python/lint`, `task ci/python/typecheck`, `task ci/python/test` |
-| Regenerate generated files | `task generate/graph` after a `graph.toml` change; `task generate/previews` after a theme or color change |
+| Regenerate generated files | `task generate/graph` after a `graph.toml` change; `task generate/previews` after a theme, color or prompt change |
 
 The `nix/fmt/fix`, `nix/lint/fix`, `markdown/fmt/fix`, `python/fmt/fix` and
 `python/lint/fix` tasks rewrite files in place. Update a module's README in the

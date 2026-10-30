@@ -17,6 +17,14 @@
       "with": ["neovim", "lazygit", "tmux", "go", "rust", "python", "nodejs", "theme"]
     },
     {
+      "id": "bash-git-prompt",
+      "name": "bash-git-prompt",
+      "text": "A Bash prompt with Git state in the theme's colors.",
+      "kind": "shell",
+      "module": "bash-git-prompt",
+      "with": ["theme"]
+    },
+    {
       "id": "bat",
       "name": "bat",
       "text": "bat and delta highlight in the colors of the theme.",
@@ -81,12 +89,60 @@
       "with": ["astronvim", "theme"]
     },
     {
+      "id": "liquidprompt",
+      "name": "Liquidprompt",
+      "text": "An adaptive prompt for Bash and Zsh in the theme's colors.",
+      "kind": "shell",
+      "module": "liquidprompt",
+      "with": ["zsh", "theme"]
+    },
+    {
       "id": "neovim",
       "name": "Neovim",
       "text": "AstroNvim runs on it; on its own, Neovim is a plain editor.",
       "kind": "shell",
       "module": "neovim",
       "with": ["astronvim"]
+    },
+    {
+      "id": "oh-my-posh",
+      "name": "Oh My Posh",
+      "text": "A prompt for Bash and Zsh with the theme as its palette.",
+      "kind": "shell",
+      "module": "oh-my-posh",
+      "with": ["zsh", "theme"]
+    },
+    {
+      "id": "powerlevel10k",
+      "name": "Powerlevel10k",
+      "text": "A fast Zsh prompt in a style made from the theme's colors.",
+      "kind": "shell",
+      "module": "powerlevel10k",
+      "with": ["zsh", "theme"]
+    },
+    {
+      "id": "pure",
+      "name": "Pure",
+      "text": "The default Zsh prompt, in the colors of the theme.",
+      "kind": "shell",
+      "module": "pure",
+      "with": ["zsh", "theme"]
+    },
+    {
+      "id": "spaceship",
+      "name": "Spaceship",
+      "text": "A Zsh prompt whose sections take the theme's colors.",
+      "kind": "shell",
+      "module": "spaceship",
+      "with": ["zsh", "theme"]
+    },
+    {
+      "id": "starship",
+      "name": "Starship",
+      "text": "A prompt for Bash and Zsh with the theme as its palette.",
+      "kind": "shell",
+      "module": "starship",
+      "with": ["zsh", "theme"]
     },
     {
       "id": "tmux",
@@ -107,10 +163,10 @@
     {
       "id": "zsh",
       "name": "Zsh",
-      "text": "Zsh comes with Oh My Zsh, a Pure or Starship prompt, and fzf on Ctrl-T and Alt-C.",
+      "text": "Zsh comes with Oh My Zsh, history search, and fzf on Ctrl-T and Alt-C.",
       "kind": "shell",
       "module": "zsh",
-      "with": ["ohmyzsh", "pure", "starship", "fzf", "yazi"]
+      "with": ["ohmyzsh", "fzf", "yazi"]
     },
     {
       "id": "ohmyzsh",
@@ -119,22 +175,6 @@
       "kind": "shell",
       "module": "zsh",
       "with": ["zsh"]
-    },
-    {
-      "id": "pure",
-      "name": "Pure",
-      "text": "The default Zsh prompt, in the colors of the theme.",
-      "kind": "shell",
-      "module": "zsh",
-      "with": ["zsh", "theme"]
-    },
-    {
-      "id": "starship",
-      "name": "Starship",
-      "text": "`prompt = \"starship\"` swaps Pure for Starship with the theme palette.",
-      "kind": "shell",
-      "module": "zsh",
-      "with": ["zsh", "theme"]
     },
     {
       "id": "clang",

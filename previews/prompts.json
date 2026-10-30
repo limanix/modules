@@ -1,0 +1,61 @@
+[
+  {
+    "name": "bash-git-prompt",
+    "title": "bash-git-prompt",
+    "description": "bash-git-prompt, a Bash prompt with the directory, Git state and the last command's status, in the colors of the guest's theme.",
+    "shells": [
+      "bash"
+    ]
+  },
+  {
+    "name": "liquidprompt",
+    "title": "Liquidprompt",
+    "description": "Liquidprompt, an adaptive prompt for Bash and Zsh that shows what matters where you are: Git state, jobs, load and the last error, in the colors of the guest's theme.",
+    "shells": [
+      "bash",
+      "zsh"
+    ]
+  },
+  {
+    "name": "oh-my-posh",
+    "title": "Oh My Posh",
+    "description": "Oh My Posh, a prompt for Bash and Zsh with the user, the directory, Git state and command duration, in the colors of the guest's theme.",
+    "shells": [
+      "bash",
+      "zsh"
+    ]
+  },
+  {
+    "name": "powerlevel10k",
+    "title": "Powerlevel10k",
+    "description": "Powerlevel10k, a fast Zsh prompt with Git state, the exit status and command duration, in the colors of the guest's theme.",
+    "shells": [
+      "zsh"
+    ]
+  },
+  {
+    "name": "pure",
+    "title": "Pure",
+    "description": "Pure, a two-line Zsh prompt with the directory, Git state and command duration, in the colors of the guest's theme.",
+    "shells": [
+      "zsh"
+    ]
+  },
+  {
+    "name": "spaceship",
+    "title": "Spaceship",
+    "description": "Spaceship, a Zsh prompt with the directory, Git state, the versions of the tools a project uses and the exit status, in the colors of the guest's theme.",
+    "shells": [
+      "zsh"
+    ]
+  },
+  {
+    "name": "starship",
+    "title": "Starship",
+    "description": "Starship, a fast prompt for Bash and Zsh with the hostname, Git state, language versions and exit status, in the colors of the guest's theme.",
+    "shells": [
+      "bash",
+      "zsh"
+    ]
+  }
+]

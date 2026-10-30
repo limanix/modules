@@ -39,6 +39,7 @@ import.
 | Take a module without lines from nixos-unstable | [`lib/source.nix`](#resolve-a-version-line) |
 | Offer a language server or parsers to editors | [`languageSupport`](#share-language-tools) |
 | Use the guest's theme colors | [`theme`](#theme-colors) |
+| Draw a theme color with an escape sequence, or show the `lmx` words in a prompt | [`lib/sgr.nix` and `lib/status-words.nix`](#colors-in-shell-code) |
 | Drive a terminal program or a language server in `run` | [Process helpers](#drive-processes) |
 
 ## Check a configuration
@@ -422,6 +423,25 @@ colorscheme in the locked Nixpkgs and its published palette. Add a theme as one
 more table with `title`, `homepage`, `dark` and all 18 roles; every module then
 draws it without a change. A check compares catppuccin-mocha with the palette
 that `pkgs.catppuccin` packages.
+
+## Colors in shell code
+
+[lib/sgr.nix](lib/sgr.nix) turns a color of `colors` or `palette` into the SGR
+parameters that draw it as the foreground: `"34"` for the terminal's blue,
+`"38;2;122;162;247"` for a palette color, `"39"` for the terminal's default.
+
+```nix
+blue = import ../../_shared/lib/sgr.nix lib config.lmx.capabilities.theme.colors.blue;
+prompt = ''\[\e[${blue}m\]\w\[\e[0m\] '';
+```
+
+[lib/status-words.nix](lib/status-words.nix) holds `bash` and `zsh` shell code
+that sets `LMX_STATUS_WORDS` before each prompt to the words of
+`lmx status --short`, empty inside tmux. Add it after the prompt's own
+initialization, for a prompt that shows an environment variable but runs no
+command of its own. [test/prompt-smoke.nix](test/prompt-smoke.nix) sources a
+prompt's initialization in an interactive Bash or Zsh and runs a check script
+there, for a prompt's `run` checks.
 
 ## Change `_shared`
 

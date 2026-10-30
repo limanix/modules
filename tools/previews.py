@@ -1,7 +1,8 @@
-"""Draw each theme's preview: a tmux window with Neovim, eza and delta, saved as SVG.
+"""Draw the previews the site shows, saved as SVG: each theme and each prompt.
 
-The scene runs the catalog's own configuration of each tool in a pseudo-terminal; pyte keeps the
-screen that tmux draws, and the SVG paints it cell by cell in the theme's colors.
+A theme's scene is a tmux window with Neovim, eza and delta; a prompt's scene is its shell in a Git
+repository. Each runs the catalog's own configuration in a pseudo-terminal; pyte keeps the screen,
+and the SVG paints it cell by cell in the theme's colors.
 """
 
 import fcntl
@@ -11,6 +12,7 @@ import pty
 import re
 import select
 import shlex
+import signal
 import struct
 import subprocess
 import sys
@@ -24,6 +26,7 @@ from typing import Any
 import pyte
 
 COLUMNS, ROWS = 120, 32
+PROMPT_COLUMNS, PROMPT_ROWS = 72, 8
 WIDTH, HEIGHT, FONT, PADDING = 8.4, 18.0, 14, 14
 FONTS = (
     "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
@@ -163,6 +166,98 @@ def capture(scene: dict[str, Any], home: Path) -> pyte.Screen:
     return screen
 
 
+def prompt_capture(scene: dict[str, Any], home: Path) -> pyte.Screen:
+    root = home / "root"
+    for directory in ("etc", "tmp", "home/dev"):
+        (root / directory).mkdir(parents=True)
+    (root / "etc/passwd").write_text("dev:x:1000:1000:dev:/home/dev:/bin/sh\n")
+    (root / "etc/group").write_text("dev:x:1000:\n")
+    user = home / "dev"
+    project_directory = user / "greeter"
+    project_directory.mkdir(parents=True)
+    project(project_directory)
+    (user / ".prompt-init").write_text(scene["init"])
+    (user / ".xdg").mkdir()
+    for name, source in scene["xdg"].items():
+        (user / ".xdg" / name).symlink_to(source)
+    environment = {
+        **os.environ,
+        "HOME": "/home/dev",
+        "USER": "dev",
+        "LOGNAME": "dev",
+        "SHELL": scene["shellPath"],
+        "TMPDIR": "/tmp",
+        "SHLVL": "0",
+        "TERM": "xterm-256color",
+        "COLORTERM": "truecolor",
+        "LANG": "C.UTF-8",
+        "XDG_CONFIG_DIRS": "/home/dev/.xdg",
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": "safe.directory",
+        "GIT_CONFIG_VALUE_0": "*",
+        "LP_ENABLE_LOAD": "0",
+        "LP_ENABLE_TEMP": "0",
+        "LP_ENABLE_BATT": "0",
+    }
+    jail = [
+        "proot",
+        "-r",
+        str(root),
+        "-b",
+        "/nix",
+        "-b",
+        "/proc",
+        "-b",
+        "/dev",
+        "-b",
+        "/sys",
+        "-b",
+        f"{user}:/home/dev",
+        "-i",
+        "1000:1000",
+        "-w",
+        "/home/dev/greeter",
+    ]
+    options = ["-f", "-i"] if scene["shell"] == "zsh" else ["--norc", "--noprofile", "-i"]
+    screen = Screen(PROMPT_COLUMNS, PROMPT_ROWS)
+    stream = pyte.ByteStream(screen)
+    pid, descriptor = pty.fork()
+    if pid == 0:
+        fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", PROMPT_ROWS, PROMPT_COLUMNS, 0, 0))
+        os.execvpe(jail[0], [*jail, scene["shellPath"], *options], environment)
+    os.set_blocking(descriptor, False)
+
+    def settle() -> None:
+        deadline = time.monotonic() + 30
+        quiet = time.monotonic()
+        while time.monotonic() < deadline:
+            if select.select([descriptor], [], [], 0.1)[0]:
+                try:
+                    data = os.read(descriptor, 65536)
+                except OSError as error:
+                    raise SystemExit(f"{scene['name']}: the shell exited") from error
+                stream.feed(data)
+                quiet = time.monotonic()
+            if time.monotonic() - quiet > 2:
+                return
+        lines = "\n".join(screen.display)
+        raise SystemExit(f"{scene['name']}: the prompt did not settle:\n{lines}")
+
+    try:
+        settle()
+        for line in ("source ~/.prompt-init; clear", "git status --short", "false"):
+            os.write(descriptor, f"{line}\r".encode())
+            settle()
+    finally:
+        os.kill(pid, signal.SIGKILL)
+        os.close(descriptor)
+        os.waitpid(pid, 0)
+    if "init.lua" not in "\n".join(screen.display):
+        lines = "\n".join(screen.display)
+        raise SystemExit(f"{scene['name']}: the scene lacks the Git status:\n{lines}")
+    return screen
+
+
 def paint(color: str, palette: dict[str, str], default: str) -> str:
     if color == "default":
         return default
@@ -171,16 +266,15 @@ def paint(color: str, palette: dict[str, str], default: str) -> str:
     return "#" + color.lower()
 
 
-def svg(screen: pyte.Screen, scene: dict[str, Any]) -> str:
-    palette = scene["palette"]
-    width = COLUMNS * WIDTH + 2 * PADDING
-    height = ROWS * HEIGHT + 2 * PADDING
+def svg(screen: pyte.Screen, palette: dict[str, str], title: str, columns: int, rows: int) -> str:
+    width = columns * WIDTH + 2 * PADDING
+    height = rows * HEIGHT + 2 * PADDING
     shapes: list[str] = []
     texts: list[str] = []
-    for row in range(ROWS):
+    for row in range(rows):
         line = screen.buffer[row]
         cells = []
-        for column in range(COLUMNS):
+        for column in range(columns):
             cell = line[column]
             foreground = paint(cell.fg, palette, palette["foreground"])
             background = paint(cell.bg, palette, palette["background"])
@@ -191,10 +285,10 @@ def svg(screen: pyte.Screen, scene: dict[str, Any]) -> str:
             )
         y = PADDING + row * HEIGHT
         column = 0
-        while column < COLUMNS:
+        while column < columns:
             background = cells[column][2]
             end = column
-            while end < COLUMNS and cells[end][2] == background:
+            while end < columns and cells[end][2] == background:
                 end += 1
             if background != palette["background"]:
                 shapes.append(
@@ -204,10 +298,10 @@ def svg(screen: pyte.Screen, scene: dict[str, Any]) -> str:
                 )
             column = end
         column = 0
-        while column < COLUMNS:
+        while column < columns:
             style = cells[column][1:2] + cells[column][3:]
             end = column
-            while end < COLUMNS and cells[end][1:2] + cells[end][3:] == style:
+            while end < columns and cells[end][1:2] + cells[end][3:] == style:
                 end += 1
             run = "".join(cell[0] for cell in cells[column:end])
             attributes = f'fill="{style[0]}"'
@@ -224,7 +318,7 @@ def svg(screen: pyte.Screen, scene: dict[str, Any]) -> str:
                     f'y="{y + HEIGHT * 0.75:.1f}" {attributes}>{escape(word.group())}</text>'
                 )
             column = end
-    title = escape(scene["title"])
+    title = escape(title)
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {width:.0f} {height:.0f}" role="img" aria-label="{title}">\n'
@@ -239,16 +333,27 @@ def svg(screen: pyte.Screen, scene: dict[str, Any]) -> str:
 
 def main() -> None:
     scenes = json.loads(Path(sys.argv[1]).read_text())
-    output = Path(sys.argv[2])
+    prompts = json.loads(Path(sys.argv[2]).read_text())
+    output = Path(sys.argv[3])
     output.mkdir()
     themes = []
     for scene in sorted(scenes, key=lambda item: item["title"]):
         with tempfile.TemporaryDirectory() as home:
             screen = capture(scene, Path(home))
-        (output / f"{scene['name']}.svg").write_text(svg(screen, scene))
+        picture = svg(screen, scene["palette"], scene["title"], COLUMNS, ROWS)
+        (output / f"{scene['name']}.svg").write_text(picture)
         keys = ("name", "title", "homepage", "dark", "palette")
         themes.append({key: scene[key] for key in keys})
     (output / "themes.json").write_text(json.dumps(themes, indent=2) + "\n")
+    (output / "prompts").mkdir()
+    entries = []
+    for scene in sorted(prompts, key=lambda item: item["title"].lower()):
+        with tempfile.TemporaryDirectory() as home:
+            screen = prompt_capture(scene, Path(home))
+        picture = svg(screen, scene["palette"], scene["title"], PROMPT_COLUMNS, PROMPT_ROWS)
+        (output / "prompts" / f"{scene['name']}.svg").write_text(picture)
+        entries.append({key: scene[key] for key in ("name", "title", "description", "shells")})
+    (output / "prompts.json").write_text(json.dumps(entries, indent=2) + "\n")
 
 
 if __name__ == "__main__":

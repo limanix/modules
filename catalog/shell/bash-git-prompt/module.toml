@@ -1,0 +1,4 @@
+description = "bash-git-prompt, a Bash prompt with the directory, Git state and the last command's status, in the colors of the guest's theme."
+
+[prompt]
+shells = ["bash"]

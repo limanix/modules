@@ -50,7 +50,7 @@ modules/
 ├── catalog/        the catalog: _shared/, shell/, toolchains/, modules/ and graph.json
 ├── checks/         the harness in Nix: discovery, contract validation and test aggregation
 ├── tools/          the harness in Python: the check runner, updates, the disk build, releases and the graph
-├── previews/       the theme previews that the site shows, written by task generate/previews
+├── previews/       the theme and prompt previews that the site shows, written by task generate/previews
 ├── interface.nix   the options every VM gets: account identity, sessions and help cards
 ├── platform.nix    the guest platform: disk layout, boot loader and Lima integration
 ├── image.nix       the base disk, built from platform.nix
@@ -99,7 +99,7 @@ library; ruff, mypy and pytest are development tools in that image.
 | `task ci/catalog/modules MODE=eval MODULES="go docker"` | Checks the named modules, or all of them; `MODE` is `check`, `eval` or `run` |
 | `task ci/catalog/layer SUITE=shared MODE=eval` | Checks the shared layer, or the harness with `SUITE=platform` |
 | `task generate/graph` | Writes `catalog/graph.json`, the site's catalog graph, from the `graph.toml` of each module |
-| `task generate/previews` | Writes `previews/`, a picture of tmux, Neovim, eza and delta in each theme and the themes' palettes, for the site |
+| `task generate/previews` | Writes `previews/` for the site: a picture of tmux, Neovim, eza and delta in each theme with the themes' palettes, and a picture of each prompt with the shells it runs in |
 | `task harness -- plan --base main` | Prints the checks selected by committed changes from `main` to `HEAD`, including dependent modules |
 | `task harness -- update nixpkgs` | Updates a pinned input; accepts `nixpkgs`, `unstable` or `nixos` |
 | `task release/build` | Builds the base disk of this machine's architecture into `dist/` |

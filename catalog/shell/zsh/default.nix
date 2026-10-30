@@ -1,12 +1,9 @@
 {
-  config,
   lib,
   pkgs,
   ...
 }:
 let
-  inherit (config.lmx.zsh) prompt;
-  inherit (config.lmx.capabilities) theme;
   carapaceInit =
     pkgs.runCommandLocal "carapace-init.zsh"
       {
@@ -27,30 +24,13 @@ in
     ./theme.nix
   ];
 
-  options.lmx.zsh.prompt = lib.mkOption {
-    type = lib.types.enum [
-      "pure"
-      "starship"
-      "none"
-    ];
-    default = "pure";
-    description = ''
-      Prompt of Zsh: Pure, Starship, or none, which leaves the prompt to personal startup files.
-      Pure and Starship use the colors of the guest's theme, the terminal's own with the system
-      theme, and, outside tmux, show the words of `lmx status --short`.
-    '';
-  };
-
   config = {
     limanix.user.shell = lib.mkDefault pkgs.zsh;
 
-    environment.systemPackages =
-      with pkgs;
-      [
-        carapace
-        zsh-fzf-tab
-      ]
-      ++ lib.optional (prompt == "pure") pure-prompt;
+    environment.systemPackages = with pkgs; [
+      carapace
+      zsh-fzf-tab
+    ];
 
     programs = {
       zsh = {
@@ -85,34 +65,11 @@ in
           source ${pkgs.zsh-fzf-tab}/share/fzf-tab/fzf-tab.plugin.zsh
         '';
 
-        # Starship sets its own prompt initialization; none leaves the prompt to ~/.zshrc.
-        promptInit = lib.mkIf (prompt != "starship") (
-          lib.mkDefault (
-            if prompt == "pure" then
-              import ./pure.nix {
-                inherit lib theme;
-                pure = pkgs.pure-prompt;
-              }
-            else
-              ""
-          )
-        );
+        # A prompt component replaces this; without one, ~/.zshrc sets the prompt.
+        promptInit = lib.mkDefault "";
       };
 
       fzf.keybindings = true;
-
-      starship = {
-        enable = prompt == "starship";
-        settings =
-          lib.recursiveUpdate
-            (import ./starship.nix {
-              inherit lib theme;
-            })
-            {
-              hostname.ssh_only = lib.mkDefault false;
-              status.disabled = lib.mkDefault false;
-            };
-      };
 
       atuin = {
         enable = true;

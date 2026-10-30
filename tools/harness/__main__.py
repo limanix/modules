@@ -52,7 +52,9 @@ def parser() -> argparse.ArgumentParser:
     reports.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY", ""))
 
     commands.add_parser("graph", help="Write catalog/graph.json from the graph.toml files")
-    commands.add_parser("previews", help="Write previews/, the theme previews of the site")
+    commands.add_parser(
+        "previews", help="Write previews/, the theme and prompt previews of the site"
+    )
     return root
 
 

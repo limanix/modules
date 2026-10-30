@@ -1,17 +1,19 @@
 # Zsh
 
 Makes Zsh the VM user's login shell and configures Oh My Zsh, command
-completion, a prompt, searchable local history, directory navigation, and
-project environments.
+completion, searchable local history, directory navigation, and project
+environments.
 
 ## Select
 
-The `terminal` shell preset includes Zsh, and `prompt` chooses its prompt:
+The `terminal` shell preset includes Zsh. `prompt` chooses one of the catalog's
+prompts, such as [Pure](../pure/README.md); `none` leaves the prompt to your
+`~/.zshrc`:
 
 ```toml
 [shell]
 preset = "terminal"
-prompt = "pure" # pure, starship or none
+prompt = "pure"
 ```
 
 [Apply the change](https://docs.limanix.dev/vms/update#apply-a-change) after
@@ -33,7 +35,6 @@ version.
 | Tool | Behavior inside the VM |
 | -- | -- |
 | Oh My Zsh | Loads the shell framework; the chosen prompt replaces its themes |
-| Prompt | Pure by default: directory, Git state, command duration and a failed command's color; Starship with `prompt = "starship"` adds the hostname, detected language versions and the exit status |
 | Zsh autosuggestions | Suggests commands from shell history; press Right to accept |
 | Zsh syntax highlighting | Highlights commands as you type |
 | fzf-tab and Carapace | Press Tab to search completion candidates |
@@ -73,29 +74,6 @@ Direnv requires approval again when `.envrc` changes. For Nix projects,
 nix-direnv provides cached `use flake` and `use nix` environments. This module
 does not create an environment definition for the project.
 
-## Prompt
-
-Both managed prompts use the colors of the guest's theme. With the default
-`system` theme they are the terminal's own colors. The prompt follows the theme
-of the terminal on your Mac. Another theme in `[theme]` of `limanix.toml` uses
-its palette instead. Outside tmux, both show the words of `lmx status --short`
-that need attention, such as `restart`; inside tmux, tmux's status line shows
-them.
-
-| `prompt` | Behavior |
-| -- | -- |
-| `pure` | [Pure](https://github.com/sindresorhus/pure) on two lines. Its colors are `zstyle ':prompt:pure:*' color` settings; a terminal without 24-bit color gets the nearest of 256 colors. The `lmx` words appear in the right prompt |
-| `starship` | Starship with the theme's palette, the hostname and the exit status. A personal `~/.config/starship.toml` takes precedence; managed settings accept ordinary `programs.starship.settings` assignments, including the `lmx` segment, `custom.lmx` |
-| `none` | No managed prompt: set `PROMPT` in your `~/.zshrc` |
-
-With Pure, change a color or the right prompt in `~/.zshrc`, which Zsh reads
-after the managed startup:
-
-```zsh
-zstyle ':prompt:pure:path' color cyan
-RPROMPT='%*'   # replaces the lmx words with the time
-```
-
 ## Customize
 
 Add personal shell settings to `~/.zshrc` inside the VM. To change managed
@@ -109,9 +87,8 @@ For example, enable Oh My Zsh's Git aliases:
 }
 ```
 
-The module's public setting `lmx.zsh.prompt` takes the values of `prompt`. An
-ordinary `programs.zsh.promptInit` assignment replaces the managed Pure or empty
-prompt initialization.
+An ordinary `programs.zsh.promptInit` assignment replaces the prompt that a
+prompt module starts.
 
 Zsh is the suggested login shell. To keep the Zsh tools while choosing a
 different login shell, set `limanix.user.shell` in a custom module. For example:
@@ -130,8 +107,8 @@ persistent terminal sessions.
 
 | Boundary | Contract |
 | -- | -- |
-| Public settings | `lmx.zsh.prompt`: `pure`, `starship` or `none`; `limanix.user.shell` accepts a different login shell |
-| Standard settings | `programs.zsh.*`, `programs.starship.settings`, `programs.atuin.*` and the tools' NixOS options |
+| Public settings | `limanix.user.shell` accepts a different login shell |
+| Standard settings | `programs.zsh.*`, `programs.atuin.*` and the tools' NixOS options |
 | Personal state | `~/.zshrc`, native XDG configuration, Atuin history and project direnv state |
 | Integration | Supplies shell hooks; Yazi adds its directory handoff independently |
 | Services and capabilities | No language-support provider declarations; Atuin synchronization defaults off |
@@ -146,4 +123,3 @@ persistent terminal sessions.
 | Pristine home | The managed shell starts without creating `~/.zshrc` or opening the setup wizard |
 | Custom startup directory | Zsh reads personal startup files from `ZDOTDIR` when set |
 | You want the setup wizard | The normal `zsh-newuser-install` function remains available for explicit manual use |
-| Colors look wrong with Pure | `limanix shell` passes on `COLORTERM` when the terminal on the Mac sets it to `truecolor` or `24bit`. Without it, a palette theme gets the nearest of 256 colors: set `COLORTERM` in the Mac shell or in the `[env]` table, or choose colors from the 256-color palette with `zstyle`. The `system` theme needs neither |

@@ -7,14 +7,6 @@ let
   helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   inherit (helpers) evaluate verify profileFor;
   defaultConfiguration = evaluate [ ./default.nix ];
-  # Starship starts with a palette theme, the case of explicit colors; Pure with the default.
-  starshipConfiguration = evaluate [
-    ./default.nix
-    {
-      lmx.zsh.prompt = "starship";
-      lmx.capabilities.theme.name = "catppuccin-mocha";
-    }
-  ];
   cases = import ./test/tests.nix {
     module.path = ./default.nix;
     userName = defaultConfiguration.config.limanix.user.name;
@@ -36,7 +28,7 @@ let
 in
 {
   eval = {
-    defaults = verify "Zsh login shell, Pure prompt, tools and local-history defaults" (import
+    defaults = verify "Zsh login shell, no managed prompt, tools and local-history defaults" (import
       ./test/check.nix
       {
         inherit (defaultConfiguration) config;
@@ -46,8 +38,5 @@ in
     ) defaultConfiguration;
   }
   // cases.evaluation;
-  run = {
-    startup = smoke "pure" defaultConfiguration;
-    starship = smoke "starship" starshipConfiguration;
-  };
+  run.startup = smoke "default" defaultConfiguration;
 }

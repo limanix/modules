@@ -1,7 +1,7 @@
-"""Write previews/, the theme previews that the site shows.
+"""Write previews/, the theme and prompt previews that the site shows.
 
-Nix builds tools/previews.nix, which draws the scene of every theme; this command copies the
-result into previews/ and gives the files the owner of the repository.
+Nix builds tools/previews.nix, which draws the scene of every theme and prompt; this command
+copies the result into previews/ and gives the files the owner of the repository.
 """
 
 import os
@@ -34,7 +34,7 @@ def write(repository: Path = REPOSITORY) -> Path:
     shutil.rmtree(target, ignore_errors=True)
     shutil.copytree(built, target)
     owner = repository.stat()
-    for path in [target, *target.iterdir()]:
+    for path in [target, *target.rglob("*")]:
         path.chmod(0o755 if path.is_dir() else 0o644)
         os.chown(path, owner.st_uid, owner.st_gid)
     return target

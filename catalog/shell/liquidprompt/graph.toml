@@ -1,0 +1,4 @@
+[liquidprompt]
+name = "Liquidprompt"
+text = "An adaptive prompt for Bash and Zsh in the theme's colors."
+with = ["zsh", "theme"]
