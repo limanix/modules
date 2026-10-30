@@ -116,11 +116,27 @@ stay in the Nix store. Additional user plugins can be installed explicitly with
 `:Lazy install`; startup does not download missing plugins. XDG configuration,
 data, state, and cache directory overrides are respected.
 
-The bundled colorscheme is Catppuccin. With the default `system` flavor its
-background is transparent. The terminal's background shows through. The light or
-dark background that Neovim detects in the terminal chooses Latte or Mocha for
-the text. A Catppuccin flavor in `[theme]` of `limanix.toml` uses that flavor
-with its own background. For another theme, assign AstroUI's `colorscheme` in a
+Each theme in `[theme]` of `limanix.toml` draws the editor with its own Neovim
+colorscheme from the catalog's Nixpkgs, on the theme's background:
+
+| Theme | Plugin | Colorscheme |
+| -- | -- | -- |
+| `catppuccin-mocha` | catppuccin-nvim | `catppuccin-mocha` |
+| `tokyo-night` | tokyonight.nvim | `tokyonight-night` |
+| `dracula` | dracula.nvim | `dracula` |
+| `nord` | nord.nvim | `nord` |
+| `gruvbox-dark` | gruvbox.nvim | `gruvbox` |
+| `rose-pine` | rose-pine | `rose-pine-main` |
+| `kanagawa-wave` | kanagawa.nvim | `kanagawa-wave` |
+| `everforest-dark` | everforest | `everforest` |
+| `solarized-light` | nvim-solarized-lua | `solarized` |
+| `github-light` | github-nvim-theme | `github_light_default` |
+
+With the default `system` theme the colorscheme is Catppuccin with a transparent
+background. The terminal's background shows through. The light or dark
+background that Neovim detects in the terminal chooses Latte or Mocha for the
+text. A theme without a colorscheme of its own draws its palette with
+Catppuccin's. For another colorscheme, assign AstroUI's `colorscheme` in a
 personal Lazy specification:
 
 ```lua

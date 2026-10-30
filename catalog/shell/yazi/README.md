@@ -39,13 +39,12 @@ manager without the shell directory handoff. Selecting Yazi does not enable Zsh.
 
 ## Colors and configuration
 
-With the default `system` flavor, Yazi runs as packaged, with its own light and
+With the default `system` theme, Yazi runs as packaged, with its own light and
 dark presets: they draw in the terminal's colors, apart from the fixed colors of
 file icons, and on its background, and Yazi picks the one that matches the
-terminal. A Catppuccin flavor in `[theme]` of `limanix.toml` instead wraps the
-upstream Yazi binary with a store-backed theme in its
-[palette](https://catppuccin.com/palette/); it does not rebuild Yazi's Rust
-sources to change colors. With a Catppuccin flavor:
+terminal. Another theme in `[theme]` of `limanix.toml` instead wraps the
+upstream Yazi binary with a store-backed theme in its palette; it does not
+rebuild Yazi's Rust sources to change colors. With such a theme:
 
 | Configuration | Theme and file behavior |
 | -- | -- |

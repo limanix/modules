@@ -33,9 +33,9 @@ let
     entry
     ../../toolchains/rust/default.nix
   ];
-  latte = evaluate [
+  themed = evaluate [
     entry
-    { lmx.capabilities.theme.flavor = "latte"; }
+    { lmx.capabilities.theme.name = "tokyo-night"; }
   ];
   suppliedGopls = pkgs.writeShellScriptBin "gopls" ''
     test "$#" -ge 1 && test "$1" = --catalog-smoke || exit 64
@@ -120,10 +120,10 @@ let
 in
 {
   eval = lineTests.eval // {
-    theme = verify "the colorscheme follows the guest's flavor" (
-      lib.hasInfix ''setup(paths, "latte")'' latte.config.programs.neovim.configure.customLuaRC
-      && lib.hasInfix ''setup(paths, "system")'' defaults.config.programs.neovim.configure.customLuaRC
-    ) latte;
+    theme = verify "the colorscheme follows the guest's theme" (
+      lib.hasInfix ''"colorscheme":"tokyonight-night"'' themed.config.programs.neovim.configure.customLuaRC
+      && lib.hasInfix ''"name":"system"'' defaults.config.programs.neovim.configure.customLuaRC
+    ) themed;
     optionalProviders = verify "language providers remain optional" (
       (capability defaults).tools == { }
       && (capability defaults).languages == { }

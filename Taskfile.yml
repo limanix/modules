@@ -147,6 +147,13 @@ tasks:
           CLI_ARGS: graph
           CONTAINER_USER: host
 
+  generate/previews:
+    desc: Write previews/, the theme previews the site shows
+    cmds:
+      - task: harness
+        vars:
+          CLI_ARGS: previews
+
   release/build:
     desc: Build the base disk of ARCH into dist/
     requires:

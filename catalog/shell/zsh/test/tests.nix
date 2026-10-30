@@ -20,10 +20,10 @@ let
     { limanix.user.shell = pkgs.bashInteractive; }
   ];
   starship = withPrompt "starship" { };
-  starshipLatte = withPrompt "starship" { lmx.capabilities.theme.flavor = "latte"; };
-  pureLatte = withPrompt "pure" { lmx.capabilities.theme.flavor = "latte"; };
+  starshipThemed = withPrompt "starship" { lmx.capabilities.theme.name = "everforest-dark"; };
+  pureThemed = withPrompt "pure" { lmx.capabilities.theme.name = "everforest-dark"; };
   none = withPrompt "none" { };
-  inherit (starshipLatte.config.programs.starship) settings;
+  inherit (starshipThemed.config.programs.starship) settings;
   commands = configuration: configuration.config.limanix.help.zsh.commands;
   pureInit = configuration: configuration.config.programs.zsh.promptInit;
 in
@@ -46,21 +46,18 @@ in
       && lib.strings.trim (pureInit none) == ""
       && !(builtins.elem "starship" (commands none))
     ) none;
-    theme =
-      verify "Pure and Starship follow the guest's flavor, and the terminal's colors with system"
-        (
-          settings.palette == "catppuccin_latte"
-          && settings.palettes.catppuccin_latte == starshipLatte.config.lmx.capabilities.theme.palette
-          && lib.hasInfix "zstyle ':prompt:pure:path' color '${pureLatte.config.lmx.capabilities.theme.palette.blue}'" (
-            pureInit pureLatte
-          )
-          && lib.hasInfix "zstyle ':prompt:pure:path' color '4'" (pureInit defaultConfiguration)
-          && lib.hasInfix "%F{11}" (pureInit defaultConfiguration)
-          && starship.config.programs.starship.settings.palettes.system.blue == "4"
-          && starship.config.programs.starship.settings.palette == "system"
-          && !(starship.config.programs.starship.settings.palettes.system ? text)
-        )
-        pureLatte;
+    theme = verify "Pure and Starship follow the guest's theme, and the terminal's colors with system" (
+      settings.palette == "everforest-dark"
+      && settings.palettes.everforest-dark == starshipThemed.config.lmx.capabilities.theme.palette
+      && lib.hasInfix "zstyle ':prompt:pure:path' color '${pureThemed.config.lmx.capabilities.theme.palette.blue}'" (
+        pureInit pureThemed
+      )
+      && lib.hasInfix "zstyle ':prompt:pure:path' color '4'" (pureInit defaultConfiguration)
+      && lib.hasInfix "%F{11}" (pureInit defaultConfiguration)
+      && starship.config.programs.starship.settings.palettes.system.blue == "4"
+      && starship.config.programs.starship.settings.palette == "system"
+      && !(starship.config.programs.starship.settings.palettes.system ? foreground)
+    ) pureThemed;
     segment = verify "outside tmux, Pure and Starship show the words of lmx status --short" (
       lib.hasPrefix ''[ -n "$TMUX" ] || '' settings.custom.lmx.command
       && lib.hasSuffix "lmx status --short" settings.custom.lmx.command
@@ -68,6 +65,6 @@ in
         pureInit defaultConfiguration
       )
       && lib.hasInfix "RPROMPT='$_lmx_prompt_words'" (pureInit defaultConfiguration)
-    ) starshipLatte;
+    ) starshipThemed;
   };
 }

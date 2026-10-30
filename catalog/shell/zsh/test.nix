@@ -7,12 +7,12 @@ let
   helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   inherit (helpers) evaluate verify profileFor;
   defaultConfiguration = evaluate [ ./default.nix ];
-  # Starship starts with a Catppuccin flavor, the case of explicit colors; Pure with the default.
+  # Starship starts with a palette theme, the case of explicit colors; Pure with the default.
   starshipConfiguration = evaluate [
     ./default.nix
     {
       lmx.zsh.prompt = "starship";
-      lmx.capabilities.theme.flavor = "mocha";
+      lmx.capabilities.theme.name = "catppuccin-mocha";
     }
   ];
   cases = import ./test/tests.nix {

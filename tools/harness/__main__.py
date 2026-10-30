@@ -8,7 +8,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from harness import REPOSITORY, cache, checks, drift, graph, plan, release, update
+from harness import REPOSITORY, cache, checks, drift, graph, plan, previews, release, update
 
 
 def parser() -> argparse.ArgumentParser:
@@ -52,6 +52,7 @@ def parser() -> argparse.ArgumentParser:
     reports.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY", ""))
 
     commands.add_parser("graph", help="Write catalog/graph.json from the graph.toml files")
+    commands.add_parser("previews", help="Write previews/, the theme previews of the site")
     return root
 
 
@@ -100,6 +101,8 @@ def run(arguments: argparse.Namespace) -> int:
             drift.report(arguments.repository)
         case "graph":
             graph.write()
+        case "previews":
+            previews.write()
     return 0
 
 

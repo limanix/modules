@@ -2,7 +2,7 @@
 let
   inherit (config.lmx.zsh) prompt;
   inherit (config.lmx.capabilities) theme;
-  pathColor = if theme.flavor == "system" then toString theme.ansi.blue else theme.palette.blue;
+  pathColor = toString theme.colors.blue;
   promptChecks =
     {
       pure = ''
@@ -23,7 +23,7 @@ let
       starship = ''
         [[ $STARSHIP_CONFIG == /nix/store/* ]]
         starship print-config | grep -F 'ssh_only = false'
-        starship print-config | grep -F 'palette = "catppuccin_mocha"'
+        starship print-config | grep -F 'palette = "catppuccin-mocha"'
         starship module directory | grep -F '38;2;137;180;250'
         [[ -n $(starship module hostname) ]]
         starship module status --status 7 | grep -F 7

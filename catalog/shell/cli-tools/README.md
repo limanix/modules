@@ -78,9 +78,36 @@ Inside a Git repository, `git diff` and `git log -p` use delta when Git opens a
 pager. Interactive staging uses delta's color-only filter. The settings are
 written to the VM's system Git configuration; a repository or user Git
 configuration can override them. bat, and delta through it, highlight in the
-colors of the guest's theme: with the default `system` flavor, `BAT_THEME=ansi`
-uses the terminal's colors, and a Catppuccin flavor selects bat's theme of the
-same name, such as `Catppuccin Mocha`.
+colors of the guest's theme. With the default `system` theme, `BAT_THEME=ansi`
+uses the terminal's colors. Another theme sets `BAT_THEME=limanix`, a bat theme
+built from its palette, and `BAT_CACHE_PATH` to the bat cache that holds it;
+delta reads the same cache, and its added and removed lines take the palette's
+green and red. A personal `bat cache --build` needs a `BAT_CACHE_PATH` of your
+own, for example in the `[env]` table.
+
+## Colors
+
+The other tools draw in the guest's theme too. With the default `system` theme
+they keep the terminal's own colors: fzf runs with `--color=16`, btop with its
+`TTY` theme, and the rest with their defaults. Another theme gives each the
+roles of its palette:
+
+| Tool | Setting |
+| -- | -- |
+| fzf | `FZF_DEFAULT_OPTS` with the theme's `--color` |
+| `ls`, eza, fd, dust and Zsh completion | `LS_COLORS`, generated with vivid |
+| eza columns | `EZA_COLORS` |
+| jq | `JQ_COLORS` |
+| btop | Its default theme, `limanix`; a personal `btop.conf` keeps its own |
+| Git status, branches and log decorations | `color.*` in the system Git configuration |
+| `man` and `less` | `LESS_TERMCAP_*` and `GROFF_NO_SGR=1` |
+| ripgrep | `RIPGREP_CONFIG_PATH` |
+| tealdeer | `TEALDEER_CONFIG_DIR` |
+
+Your own value in the `[env]` table of `limanix.toml`, or in a startup file,
+replaces any of these variables; a repository or user Git configuration replaces
+the colors of Git. yq, xh and duf keep their own colors: they take no colors
+that a module could set system-wide.
 
 ## Configuration and integration
 

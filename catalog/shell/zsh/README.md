@@ -51,11 +51,16 @@ Atuin records history in the VM user's data directory, normally
 are disabled; no account is needed. Its managed settings are in
 `/etc/atuin/config.toml`. Atuin reads only one `config.toml`: a personal
 `~/.config/atuin/config.toml` replaces the managed file, with both disabled
-settings. To keep them, start from a copy:
+settings. To keep them, start from a copy, with the theme it names:
 
 ```console
 install -D -m 644 /etc/atuin/config.toml ~/.config/atuin/config.toml
+cp -r /etc/atuin/themes ~/.config/atuin/
 ```
+
+With a theme other than `system` in `[theme]` of `limanix.toml`, the command
+highlighting, the autosuggestions and Atuin's search draw in its palette; the
+`system` theme leaves them in the terminal's colors.
 
 For a project that already has an `.envrc`, inspect that file and run this
 inside the project directory in the VM:
@@ -71,11 +76,11 @@ does not create an environment definition for the project.
 ## Prompt
 
 Both managed prompts use the colors of the guest's theme. With the default
-`system` flavor they are the terminal's own colors. The prompt follows the theme
-of the terminal on your Mac. A Catppuccin flavor in `[theme]` of `limanix.toml`
-uses its palette instead. Outside tmux, both show the words of
-`lmx status --short` that need attention, such as `restart`; inside tmux, tmux's
-status line shows them.
+`system` theme they are the terminal's own colors. The prompt follows the theme
+of the terminal on your Mac. Another theme in `[theme]` of `limanix.toml` uses
+its palette instead. Outside tmux, both show the words of `lmx status --short`
+that need attention, such as `restart`; inside tmux, tmux's status line shows
+them.
 
 | `prompt` | Behavior |
 | -- | -- |
@@ -141,4 +146,4 @@ persistent terminal sessions.
 | Pristine home | The managed shell starts without creating `~/.zshrc` or opening the setup wizard |
 | Custom startup directory | Zsh reads personal startup files from `ZDOTDIR` when set |
 | You want the setup wizard | The normal `zsh-newuser-install` function remains available for explicit manual use |
-| Colors look wrong with Pure | With a Catppuccin flavor, set `COLORTERM=truecolor` when the terminal supports 24-bit color, or choose colors from its 256-color palette with `zstyle`; the `system` flavor needs neither |
+| Colors look wrong with Pure | `limanix shell` passes on `COLORTERM` when the terminal on the Mac sets it to `truecolor` or `24bit`. Without it, a palette theme gets the nearest of 256 colors: set `COLORTERM` in the Mac shell or in the `[env]` table, or choose colors from the 256-color palette with `zstyle`. The `system` theme needs neither |

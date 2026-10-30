@@ -53,9 +53,9 @@ profile discovery and precedence.
 
 ## Theme
 
-The default theme is Catppuccin in the guest's flavor. Harlequin refuses
-Textual's terminal theme. With the default `system` flavor it stays Catppuccin
-Mocha, with its own background.
+The default theme, `limanix`, draws the palette of the guest's theme with
+Textual. Harlequin refuses Textual's terminal theme, so with the default
+`system` theme it draws catppuccin-mocha's colors, with their own background.
 
 ## Configuration and integration
 

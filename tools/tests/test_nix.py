@@ -10,7 +10,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def test_primary_error_keeps_the_last_error_block_without_source_lines() -> None:
     diagnostic = nix.primary_error((FIXTURES / "failure.err").read_text())
     assert diagnostic.startswith(
-        "       error: A definition for option `lmx.capabilities.theme.flavor'"
+        "       error: A definition for option `lmx.capabilities.theme.name'"
     )
     assert "espresso" in diagnostic
     assert "while evaluating" not in diagnostic

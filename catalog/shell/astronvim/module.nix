@@ -33,6 +33,7 @@ in
             message = "astronvim: select one line";
           }
         ];
+        lmx.internal.neovim.colorscheme = false;
       }
     ]
     ++ map (

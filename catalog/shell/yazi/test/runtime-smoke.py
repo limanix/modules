@@ -95,17 +95,17 @@ def run(name, shell, init, profile, color, personal=None, explicit=None, exit_ke
 
 
 profile = os.environ["LMX_YAZI_PROFILE"]
-run("bash-default", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;137;220;235")
-run("zsh-default", os.environ["LMX_ZSH"], os.environ["LMX_ZSH_INIT"], profile, b"38;2;137;220;235")
-run("latte", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], os.environ["LMX_YAZI_LATTE_PROFILE"], b"38;2;4;165;229")
+run("bash-default", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;148;226;213")
+run("zsh-default", os.environ["LMX_ZSH"], os.environ["LMX_ZSH_INIT"], profile, b"38;2;148;226;213")
+run("solarized", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], os.environ["LMX_YAZI_SOLARIZED_PROFILE"], b"38;2;42;161;152")
 run("personal", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;255;0;0", personal="#ff0000")
 run("explicit", os.environ["LMX_ZSH"], os.environ["LMX_ZSH_INIT"], profile, b"38;2;0;255;0", explicit="#00ff00")
 run("managed", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], os.environ["LMX_YAZI_MANAGED_PROFILE"], b"38;2;18;52;86")
-run("retain-cwd", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;137;220;235", exit_key=b"Q")
-run("newline-cwd", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;137;220;235", project_name="project with spaces\n")
+run("retain-cwd", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;148;226;213", exit_key=b"Q")
+run("newline-cwd", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;148;226;213", project_name="project with spaces\n")
 
-run("personal-keymap", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;137;220;235", non_theme=True)
+run("personal-keymap", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], profile, b"38;2;148;226;213", non_theme=True)
 run("managed-explicit", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], os.environ["LMX_YAZI_MANAGED_PROFILE"], b"38;2;18;52;86", explicit="#00ff00")
 run("managed-flavor", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], os.environ["LMX_YAZI_FLAVOR_PROFILE"], b"38;2;171;205;239")
-# The system flavor draws on the terminal's own background: no 24-bit background appears.
+# The system theme draws on the terminal's own background: no 24-bit background appears.
 run("system-default", os.environ["LMX_BASH"], os.environ["LMX_BASH_INIT"], os.environ["LMX_YAZI_SYSTEM_PROFILE"], b"project with spaces", absent=b"48;2;")

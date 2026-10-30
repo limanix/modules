@@ -1,19 +1,19 @@
 { config, hasPackage, ... }:
 let
-  inherit (config.lmx.capabilities.theme) flavor palette;
+  inherit (config.lmx.capabilities.theme) name palette;
   inherit (config.programs.lazygit) settings;
   expectedTheme = {
     activeBorderColor = [
-      palette.blue
+      palette.accent
       "bold"
     ];
-    inactiveBorderColor = [ palette.subtext0 ];
+    inactiveBorderColor = [ palette.border ];
     optionsTextColor = [ palette.blue ];
-    selectedLineBgColor = [ palette.surface0 ];
-    cherryPickedCommitBgColor = [ palette.surface1 ];
+    selectedLineBgColor = [ palette.surface ];
+    cherryPickedCommitBgColor = [ palette.selection ];
     cherryPickedCommitFgColor = [ palette.blue ];
     unstagedChangesColor = [ palette.red ];
-    defaultFgColor = [ palette.text ];
+    defaultFgColor = [ palette.foreground ];
     searchingActiveBorderColor = [ palette.yellow ];
   };
 in
@@ -22,8 +22,8 @@ config.programs.git.enable
 && hasPackage config.programs.git.package
 && hasPackage config.programs.lazygit.package
 && (
-  if flavor == "system" then
+  if name == "system" then
     !(settings ? gui)
   else
-    settings.gui.theme == expectedTheme && settings.gui.authorColors."*" == palette.lavender
+    settings.gui.theme == expectedTheme && settings.gui.authorColors."*" == palette.blue
 )

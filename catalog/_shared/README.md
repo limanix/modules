@@ -13,7 +13,7 @@ flowchart LR
     subgraph shared[_shared]
         schemas[Schemas: languageSupport, pins, theme]
         helpers[Test helpers in test/]
-        data[palette.toml, unstable.toml]
+        data[themes.toml, unstable.toml]
     end
     default -- sets and reads lmx options --> schemas
     default -. reads .-> data
@@ -370,36 +370,58 @@ python ${../../../_shared/test/lsp-smoke.py} --timeout 10 ${profile}/bin/gopls
 ## Theme colors
 
 `lmx.capabilities.theme` holds the guest's colors: the terminal's own colors, or
-a Catppuccin flavor and its colors. Read it in configuration values:
+one of the themes in [themes.toml](themes.toml). Every module that draws colors
+takes them from here, by role, so that one choice in `limanix.toml` recolors the
+whole guest. Read it in configuration values:
 
 ```nix
 { config, ... }:
 let
-  inherit (config.lmx.capabilities.theme) flavor palette ansi;
+  inherit (config.lmx.capabilities.theme) name palette colors dark;
 in
 {
-  # flavor == "system" by default: ansi.blue == 4, the terminal's blue
-  # flavor == "mocha": palette.blue == "#89b4fa"
+  # name == "system" by default: colors.accent == 5, the terminal's magenta
+  # name == "tokyo-night": colors.accent == palette.accent == "#7aa2f7"
 }
 ```
 
-- `flavor` is `system`, the default, or `latte`, `frappe`, `macchiato` or
-  `mocha`. A system has one flavor: equal definitions agree, different
-  definitions at the same priority fail. The user selects it with `[theme]` in
-  `limanix.toml`; modules never set it. Every catalog module with colors reads
+- `name` is `system`, the default, or a table of `themes.toml`. A system has one
+  theme: equal definitions agree, different definitions at the same priority
+  fail. The user selects it with `[theme]` in `limanix.toml`; modules never set
   it.
-- `palette` is read-only: the flavor's 26 colors by name, such as `blue`, as
-  `#rrggbb`. With `system` it holds Mocha's colors, for a tool that knows only
+- `palette` is read-only: the theme's 18 colors by role, as `#rrggbb`. With
+  `system` it holds catppuccin-mocha's colors, for a tool that knows only
   explicit colors.
-- `ansi` is read-only: for each name of `palette`, the terminal color that
-  stands for it with `system`. A number from 0 to 15 is one of the terminal's 16
-  colors; `null` is its default foreground or background, so the terminal's own
-  background shows through. [ansi.toml](ansi.toml) holds the table.
-- With `system`, use `ansi` and leave backgrounds to the terminal: the colors
-  then follow the theme of the terminal on the Mac, and change with it.
-- [palette.toml](palette.toml) copies the four flavors of Catppuccin palette
-  v1.8.0 from the revision that `pkgs.catppuccin` packages; a check compares the
-  two.
+- `dark` is read-only: whether the palette's colors sit on a dark background.
+- `ansi` is read-only: for each role, the terminal color that stands for it with
+  `system`. A number from 0 to 15 is one of the terminal's 16 colors; `null` is
+  its default foreground or background, so the terminal's own background shows
+  through. [ansi.toml](ansi.toml) holds the table.
+- `colors` is read-only: what to draw each role with, `ansi`'s value with
+  `system` and `palette`'s otherwise. With `system`, leave backgrounds to the
+  terminal: the colors then follow the theme of the terminal on the Mac, and
+  change with it.
+
+| Role | Draws |
+| -- | -- |
+| `background` | Main background |
+| `background_dark` | Panels and bars one step darker, such as a status line |
+| `background_darker` | The deepest background, such as a border between panels |
+| `surface` | Raised elements: the current line, a menu, a message |
+| `selection` | Selected text and items |
+| `border` | Borders, separators and inactive outlines |
+| `muted` | Comments, hints and disabled text |
+| `subtle` | Secondary text and labels |
+| `foreground` | Main text |
+| `accent` | The theme's signature color: focus, the active item, highlights |
+| `red`, `orange`, `yellow`, `green`, `cyan`, `blue`, `purple`, `pink` | Hues; red marks errors, yellow warnings, green success, blue information |
+
+A theme that has no color for a role takes its nearest one, so two roles may
+share a color. `themes.toml` names the source of each theme: its own Neovim
+colorscheme in the locked Nixpkgs and its published palette. Add a theme as one
+more table with `title`, `homepage`, `dark` and all 18 roles; every module then
+draws it without a change. A check compares catppuccin-mocha with the palette
+that `pkgs.catppuccin` packages.
 
 ## Change `_shared`
 

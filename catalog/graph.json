@@ -3,7 +3,7 @@
     {
       "id": "theme",
       "name": "`[theme]`",
-      "text": "One `[theme]` in `limanix.toml` colors the editor, the prompt, tmux, Lazygit, Yazi, bat, delta, Harlequin and Posting.",
+      "text": "One `[theme]` in `limanix.toml` colors the editor, the prompt, tmux, Lazygit, Yazi, bat, delta, Harlequin and Posting by the same roles.",
       "kind": null,
       "module": null,
       "with": []
@@ -251,7 +251,7 @@
     {
       "id": "posting",
       "name": "Posting",
-      "text": "A terminal HTTP client in the Catppuccin flavor of the theme; Mocha with `system`.",
+      "text": "A terminal HTTP client in the colors of the theme; catppuccin-mocha's with `system`.",
       "kind": "modules",
       "module": "posting",
       "with": ["theme"]

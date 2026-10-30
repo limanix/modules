@@ -10,7 +10,7 @@
 let
   managedProfile = profileFor configurations.managedOverride;
   flavorProfile = profileFor configurations.managedFlavor;
-  latteProfile = profileFor configurations.latte;
+  solarizedProfile = profileFor configurations.solarized;
 in
 {
   shellErrors =
@@ -39,7 +39,7 @@ in
         LMX_YAZI_SYSTEM_PROFILE = systemProfile;
         LMX_YAZI_MANAGED_PROFILE = managedProfile;
         LMX_YAZI_FLAVOR_PROFILE = flavorProfile;
-        LMX_YAZI_LATTE_PROFILE = latteProfile;
+        LMX_YAZI_SOLARIZED_PROFILE = solarizedProfile;
         LMX_BASH = "${pkgs.bashInteractive}/bin/bash";
         LMX_ZSH = "${pkgs.zsh}/bin/zsh";
         LMX_BASH_INIT = pkgs.writeText "yazi-bash-init" config.programs.bash.interactiveShellInit;

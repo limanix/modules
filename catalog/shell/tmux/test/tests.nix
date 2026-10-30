@@ -26,11 +26,11 @@ let
       };
     }
   ];
-  latte = evaluate [
+  themed = evaluate [
     module.path
-    { lmx.capabilities.theme.flavor = "latte"; }
+    { lmx.capabilities.theme.name = "nord"; }
   ];
-  inherit (latte.config.lmx.capabilities.theme) palette;
+  inherit (themed.config.lmx.capabilities.theme) palette;
   text = configuration: configuration.config.environment.etc."tmux.conf".text;
   bindings =
     lib.concatMap
@@ -63,8 +63,10 @@ in
       && lib.hasInfix "set -g mouse on" (text navigationDisabled)
       && lib.hasInfix "set -s set-clipboard on" (text navigationDisabled)
     ) navigationDisabled;
-    theme = verify "styles follow the guest's flavor, and the terminal's colors with system" (
-      lib.hasInfix "set -g status-style 'bg=${palette.mantle},fg=${palette.text}'" (text latte)
+    theme = verify "styles follow the guest's theme, and the terminal's colors with system" (
+      lib.hasInfix "set -g status-style 'bg=${palette.background_dark},fg=${palette.foreground}'" (
+        text themed
+      )
       && lib.hasInfix "set -g status-style 'bg=default,fg=default'" (text defaultConfiguration)
       && lib.hasInfix "set -g pane-active-border-style 'fg=magenta'" (text defaultConfiguration)
       && !lib.hasInfix "#" (
@@ -74,12 +76,12 @@ in
           )
         )
       )
-    ) latte;
+    ) themed;
     segment =
       verify "the status line shows the words of lmx status --short"
-        (lib.hasInfix "#[fg=${palette.peach},bold]#(/run/current-system/sw/bin/lmx status --short)" (
-          text latte
+        (lib.hasInfix "#[fg=${palette.orange},bold]#(/run/current-system/sw/bin/lmx status --short)" (
+          text themed
         ))
-        latte;
+        themed;
   };
 }
