@@ -44,9 +44,9 @@ in
       defaults.core.pager == "${pkgs.delta}/bin/delta"
       && defaults.interactive.diffFilter == "${pkgs.delta}/bin/delta --color-only";
     gitOverrides = userSettings.core.pager == "cat" && userSettings.interactive.diffFilter == "cat";
-    terminalColors =
+    themeColors =
       configuration.config.environment.variables.BAT_THEME == "ansi"
-      && !(latte.config.environment.variables ? BAT_THEME);
+      && latte.config.environment.variables.BAT_THEME == "Catppuccin Latte";
   };
   run = import ./test/run.nix {
     inherit pkgs;

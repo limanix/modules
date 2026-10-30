@@ -77,9 +77,10 @@ key mounted into the VM or a credential helper.
 Inside a Git repository, `git diff` and `git log -p` use delta when Git opens a
 pager. Interactive staging uses delta's color-only filter. The settings are
 written to the VM's system Git configuration; a repository or user Git
-configuration can override them. With the default `system` theme flavor,
-`BAT_THEME=ansi` makes bat, and delta through it, highlight in the terminal's
-colors.
+configuration can override them. bat, and delta through it, highlight in the
+colors of the guest's theme: with the default `system` flavor, `BAT_THEME=ansi`
+uses the terminal's colors, and a Catppuccin flavor selects bat's theme of the
+same name, such as `Catppuccin Mocha`.
 
 ## Configuration and integration
 
