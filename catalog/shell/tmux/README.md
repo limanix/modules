@@ -86,10 +86,10 @@ custom module.
 
 ## Appearance
 
-The colors come from the guest's theme. With the default `system` flavor they
-are the terminal's own colors, and the status line has no background of its own:
-the terminal's shows through. A Catppuccin flavor in `[theme]` of `limanix.toml`
-uses its [palette](https://catppuccin.com/palette/) instead. The styles load
+The colors come from the guest's theme. With the default `system` theme they are
+the terminal's own colors, and the status line has no background of its own: the
+terminal's shows through. Another theme in `[theme]` of `limanix.toml` draws the
+status line, borders and selection in its palette instead. The styles load
 before the restoration plugins, which preserve continuum's status-line hook.
 
 The right side of the status line starts with the words of `lmx status --short`

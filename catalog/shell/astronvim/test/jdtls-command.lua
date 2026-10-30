@@ -19,7 +19,7 @@ local function configure(configuration)
     lazy = base .. "/lazy", astro = base .. "/astro", catppuccin = base .. "/catppuccin",
     parsers = base .. "/parsers", plugins = {},
     servers = { jdtls = configuration, gopls = { cmd = other } },
-  }, "system")
+  }, { name = "system", dark = true })
   assert(vim.deep_equal(options.config.gopls.cmd, other), "non-Java server command changed")
   return options.config.jdtls
 end

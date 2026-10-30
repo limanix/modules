@@ -1,6 +1,6 @@
 # Catalog contract
 
-Rules for catalog module authors, revision 6. NixOS combines modules into one
+Rules for catalog module authors, revision 7. NixOS combines modules into one
 configuration. Nix evaluates that configuration; builds and system activation
 are separate steps.
 
@@ -94,6 +94,43 @@ name. See [language tools](_shared/README.md#share-language-tools) and
 [theme colors](_shared/README.md#theme-colors) when your module uses
 capabilities. A tool provider must not enable an editor just by declaring its
 tools.
+
+## Colors and themes
+
+The guest has one theme, chosen with `[theme]` in `limanix.toml`. A module that
+draws colors takes them from `lmx.capabilities.theme` by role, so one choice
+recolors the whole guest; [theme colors](_shared/README.md#theme-colors)
+describes the roles and the options.
+
+| Do | Do not |
+| -- | -- |
+| Draw each element with `colors.<role>`, and use `palette.<role>` only for a tool that needs explicit colors even with `system` | Name a theme or write a color literal in a module |
+| With `system`, draw with the terminal colors that `colors` holds and leave backgrounds to the terminal, or keep the tool's own terminal-color mode | Fall back to the terminal's colors when another theme is chosen |
+| Set colors with `lib.mkDefault`, an environment variable or a system file that a personal setting replaces | Override a user's own configuration |
+| Draw a template written for Catppuccin through [`lib/catppuccin.nix`](_shared/lib/catppuccin.nix) and a Textual theme through [`lib/textual.nix`](_shared/lib/textual.nix) | Copy the colors of one theme into a module |
+| Say in the module README which settings carry the colors and how a user replaces them | Leave a tool that has colors out of the theme without saying why |
+
+The editor is the only exception to drawing by role: a theme may bring its own
+Neovim colorscheme, listed in
+[`shell/neovim/colorschemes.nix`](shell/neovim/colorschemes.nix), and a theme
+without one draws its palette with catppuccin-nvim. A tool that takes no colors
+a module can set system-wide keeps its own colors, and its README names it.
+
+To add a theme:
+
+1. Add a table to [`_shared/themes.toml`](_shared/themes.toml) with `title`,
+   `homepage`, `dark` and all 18 roles. Take the values from the theme's own
+   Neovim colorscheme and its published palette, name the source in a comment,
+   and give a role the theme has no color for its nearest one.
+1. Add the theme's colorscheme to `shell/neovim/colorschemes.nix` when Nixpkgs
+   packages it.
+1. Run `task generate/previews` to write the preview that the site shows for the
+   theme.
+1. Run `task ci/catalog/layer` and the checks of the modules that read the
+   theme:
+   `task ci/catalog/modules MODULES="tmux lazygit yazi zsh cli-tools astronvim neovim harlequin posting"`.
+1. The client accepts the theme once its `[theme] name` lists it: add the name
+   to the client's choices and release the client with this catalog.
 
 ## Version lines
 

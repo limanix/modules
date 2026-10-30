@@ -6,31 +6,33 @@
 let
   helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   defaultConfiguration = helpers.evaluate [ ./default.nix ];
-  latte = helpers.evaluate [
+  themed = helpers.evaluate [
     ./default.nix
-    { lmx.capabilities.theme.flavor = "latte"; }
+    { lmx.capabilities.theme.name = "dracula"; }
   ];
+  inherit (defaultConfiguration.config.lmx.capabilities) theme;
   package =
-    flavor:
+    configuration:
     import ./package.nix {
-      inherit pkgs flavor;
+      inherit pkgs;
+      inherit (configuration.config.lmx.capabilities) theme;
     };
 in
 {
   eval.defaults = helpers.verify "the module-owned adapter and theme package is installed" (
-    helpers.installedAsDeclared defaultConfiguration (package "mocha")
+    helpers.installedAsDeclared defaultConfiguration (package defaultConfiguration)
     && import ./test/check.nix {
       hasPackage = helpers.installed defaultConfiguration;
-      inherit pkgs;
+      inherit pkgs theme;
     }
   ) defaultConfiguration;
-  eval.latte =
-    helpers.verify "the default theme follows the guest's flavor"
-      (helpers.installedAsDeclared latte (package "latte"))
-      latte;
+  eval.themed =
+    helpers.verify "the default theme follows the guest's theme"
+      (helpers.installedAsDeclared themed (package themed))
+      themed;
   run = import ./test/smoke.nix {
     profile = helpers.profileFor defaultConfiguration;
-    inherit pkgs;
+    inherit pkgs theme;
   };
-  builds.harlequin = package "mocha";
+  builds.harlequin = package defaultConfiguration;
 }

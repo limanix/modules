@@ -66,7 +66,7 @@ local function use_mac_clipboard()
   }
 end
 
-return function(paths, flavor)
+return function(paths, theme)
   use_mac_clipboard()
   vim.opt.rtp:prepend(paths.lazy)
   vim.fn.mkdir(vim.fn.stdpath("state"), "p")
@@ -84,24 +84,35 @@ return function(paths, flavor)
   for repository, directory in pairs(paths.plugins) do
     table.insert(specs, { repository, dir = directory, optional = true, build = false })
   end
-  -- With the system flavor the terminal's background shows through, and the light or dark
+  -- With the system theme the terminal's background shows through, and the light or dark
   -- background that Neovim detects in the terminal chooses Latte or Mocha for the text. Neovim
   -- bundles a colorscheme of its own named catppuccin; catppuccin-nvim is the plugin's.
-  local system = flavor == "system"
+  local system = theme.name == "system"
+  local flavour = theme.dark and "mocha" or "latte"
+  if theme.colorscheme then
+    vim.o.background = theme.dark and "dark" or "light"
+    vim.list_extend(specs, {
+      { name = "theme", dir = theme.plugin, lazy = false, priority = 1000 },
+      { "AstroNvim/astroui", opts = { colorscheme = theme.colorscheme } },
+    })
+  else
+    vim.list_extend(specs, {
+      {
+        "catppuccin/nvim",
+        name = "catppuccin",
+        dir = paths.catppuccin,
+        lazy = false,
+        priority = 1000,
+        opts = system and {
+          flavour = "auto",
+          background = { light = "latte", dark = "mocha" },
+          transparent_background = true,
+        } or { flavour = flavour, color_overrides = { [flavour] = theme.catppuccin } },
+      },
+      { "AstroNvim/astroui", opts = { colorscheme = system and "catppuccin-nvim" or "catppuccin-" .. flavour } },
+    })
+  end
   vim.list_extend(specs, {
-    {
-      "catppuccin/nvim",
-      name = "catppuccin",
-      dir = paths.catppuccin,
-      lazy = false,
-      priority = 1000,
-      opts = system and {
-        flavour = "auto",
-        background = { light = "latte", dark = "mocha" },
-        transparent_background = true,
-      } or { flavour = flavor },
-    },
-    { "AstroNvim/astroui", opts = { colorscheme = system and "catppuccin-nvim" or "catppuccin-" .. flavor } },
     {
       "AstroNvim/astrocore",
       opts = function(_, opts)

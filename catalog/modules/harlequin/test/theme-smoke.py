@@ -22,7 +22,7 @@ def check_theme(arguments, expected):
 
 
 with patch.object(cli.Harlequin, "run", capture_theme):
-    check_theme([], "catppuccin-mocha")
+    check_theme([], "limanix")
     config = Path(os.environ["XDG_CONFIG_HOME"]) / "harlequin" / "config.toml"
     config.write_text(
         'default_profile = "personal"\n[profiles.personal]\ntheme = "harlequin"\n'

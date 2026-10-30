@@ -22,7 +22,10 @@ let
       '';
 in
 {
-  imports = [ ./help.nix ];
+  imports = [
+    ./help.nix
+    ./theme.nix
+  ];
 
   options.lmx.zsh.prompt = lib.mkOption {
     type = lib.types.enum [
@@ -34,7 +37,7 @@ in
     description = ''
       Prompt of Zsh: Pure, Starship, or none, which leaves the prompt to personal startup files.
       Pure and Starship use the colors of the guest's theme, the terminal's own with the system
-      flavor, and, outside tmux, show the words of `lmx status --short`.
+      theme, and, outside tmux, show the words of `lmx status --short`.
     '';
   };
 

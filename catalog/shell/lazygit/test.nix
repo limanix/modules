@@ -7,9 +7,9 @@ let
   helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   inherit (helpers) evaluate verify profileFor;
   defaultConfiguration = evaluate [ ./default.nix ];
-  latte = evaluate [
+  themed = evaluate [
     ./default.nix
-    { lmx.capabilities.theme.flavor = "latte"; }
+    { lmx.capabilities.theme.name = "gruvbox-dark"; }
   ];
 in
 {
@@ -22,10 +22,10 @@ in
         hasPackage = helpers.installed defaultConfiguration;
       }
     ) defaultConfiguration;
-    latte = verify "the managed colors follow the guest's flavor" (import ./test/check.nix {
-      inherit (latte) config;
-      hasPackage = helpers.installed latte;
-    }) latte;
+    themed = verify "the managed colors follow the guest's theme" (import ./test/check.nix {
+      inherit (themed) config;
+      hasPackage = helpers.installed themed;
+    }) themed;
     clipboard = verify "copies go to the Mac clipboard through the platform's pbcopy" (
       defaultConfiguration.config.programs.lazygit.settings.os.copyToClipboardCmd
       == "printf %s {{text}} | pbcopy"

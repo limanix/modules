@@ -6,7 +6,7 @@
 }:
 let
   # Yazi's own presets use the terminal's colors and follow its light or dark background.
-  system = config.lmx.capabilities.theme.flavor == "system";
+  system = config.lmx.capabilities.theme.name == "system";
   colors = config.lmx.capabilities.theme.palette;
   names = [
     "black"
@@ -26,10 +26,10 @@ let
     "lightcyan"
   ];
   values = with colors; [
-    base
-    text
-    subtext0
-    surface2
+    background
+    foreground
+    subtle
+    border
     red
     red
     green
@@ -37,13 +37,13 @@ let
     yellow
     yellow
     blue
-    mauve
-    mauve
-    sky
-    sky
+    purple
+    purple
+    cyan
+    cyan
   ];
   themeText = lib.replaceStrings ((map (name: ''"${name}"'') names) ++ [ "overall = {}" ]) (
-    (map (value: ''"${value}"'') values) ++ [ ''overall = { bg = "${colors.base}" }'' ]
+    (map (value: ''"${value}"'') values) ++ [ ''overall = { bg = "${colors.background}" }'' ]
   ) (builtins.readFile ./theme-default.toml);
   theme = builtins.fromTOML themeText;
   themeFile = pkgs.writeText "yazi-theme.toml" themeText;

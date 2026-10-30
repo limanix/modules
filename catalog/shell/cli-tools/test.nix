@@ -13,11 +13,14 @@ let
       programs.git.config.interactive.diffFilter = "cat";
     }
   ];
-  latte = helpers.evaluate [
+  themed = helpers.evaluate [
     ./default.nix
-    { lmx.capabilities.theme.flavor = "latte"; }
+    { lmx.capabilities.theme.name = "kanagawa-wave"; }
   ];
   settings = record: builtins.head record.config.programs.git.config;
+  btop = lib.findFirst (
+    package: (package.pname or "") == "btop"
+  ) null configuration.config.environment.systemPackages;
   defaults = settings configuration;
   userSettings = settings overridden;
 in
@@ -35,22 +38,31 @@ in
         pkgs.jq
         pkgs.yq-go
         pkgs.xh
-        pkgs.btop
         pkgs.dust
         pkgs.duf
         pkgs.tealdeer
-      ];
+      ]
+      && btop != null;
     gitDefaults =
       defaults.core.pager == "${pkgs.delta}/bin/delta"
       && defaults.interactive.diffFilter == "${pkgs.delta}/bin/delta --color-only";
     gitOverrides = userSettings.core.pager == "cat" && userSettings.interactive.diffFilter == "cat";
     themeColors =
+      let
+        variables = themed.config.environment.variables;
+        themedSettings = settings themed;
+      in
       configuration.config.environment.variables.BAT_THEME == "ansi"
-      && latte.config.environment.variables.BAT_THEME == "Catppuccin Latte";
+      && !(configuration.config.environment.variables ? BAT_CACHE_PATH)
+      && variables.BAT_THEME == "limanix"
+      && lib.hasPrefix builtins.storeDir variables.BAT_CACHE_PATH
+      && themedSettings.core.pager != defaults.core.pager
+      && themedSettings.delta.plus-style == "syntax #2b2f2f";
   };
   run = import ./test/run.nix {
     inherit pkgs;
     inherit (configuration) config;
     profile = helpers.profileFor configuration;
   };
+  builds.btop = btop;
 }

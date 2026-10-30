@@ -10,7 +10,7 @@ let
     assert(package.loaded.lazy, "bundled Lazy startup did not run")
     assert(vim.g.colors_name:match("^catppuccin"), "default Catppuccin theme did not load")
     assert(vim.api.nvim_get_hl(0, { name = "Normal" }).bg == nil,
-      "the system flavor hides the terminal's background: "
+      "the system theme hides the terminal's background: "
         .. vim.api.nvim_exec2("verbose highlight Normal", { output = true }).output)
     assert(require("lazy.core.config").plugins.AstroNvim, "AstroNvim is absent")
     for name, plugin in pairs(require("lazy.core.config").plugins) do

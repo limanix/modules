@@ -1,20 +1,14 @@
 { lib, theme }:
 let
-  system = theme.flavor == "system";
-  # The terminal's own colors by number with the system flavor; its default colors need no entry.
-  name = if system then "system" else "catppuccin_${theme.flavor}";
-  colors =
-    if system then
-      lib.mapAttrs (_: toString) (lib.filterAttrs (_: color: color != null) theme.ansi)
-    else
-      theme.palette;
+  # The terminal's own colors by number with the system theme; its default colors need no entry.
+  colors = lib.mapAttrs (_: toString) (lib.filterAttrs (_: color: color != null) theme.colors);
 in
 lib.mapAttrsRecursive (_: lib.mkDefault) {
-  palette = name;
-  palettes.${name} = colors;
+  palette = theme.name;
+  palettes.${theme.name} = colors;
   directory.style = "bold blue";
-  hostname.style = "bold lavender";
-  git_branch.style = "bold mauve";
+  hostname.style = "bold accent";
+  git_branch.style = "bold purple";
   git_status.style = "bold red";
   cmd_duration.style = "bold yellow";
   character = {
@@ -27,7 +21,7 @@ lib.mapAttrsRecursive (_: lib.mkDefault) {
     command = ''[ -n "$TMUX" ] || exec /run/current-system/sw/bin/lmx status --short'';
     when = true;
     shell = [ "sh" ];
-    style = "bold peach";
+    style = "bold orange";
     format = "([$output]($style) )";
   };
 }
