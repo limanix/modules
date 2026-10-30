@@ -61,7 +61,8 @@ a release label.
 
 A tag `v<N>` on `main` releases the catalog and its disks; the
 [README](README.md#releases) lists what creates a tag. Each client build bundles
-one catalog release. A change to selectors, metadata, public options,
-capabilities or the list of themes reaches users only with a client release that
-bundles it; release the catalog first, then open the client pull request that
-moves to it.
+one catalog release. A change to selectors, metadata, public options or
+capabilities reaches users only with a client release that bundles it; release
+the catalog first, then open the client pull request that moves to it. New
+themes and prompts need no client change: a client takes their names from the
+catalog it bundles.

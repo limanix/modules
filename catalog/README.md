@@ -130,8 +130,9 @@ To add a theme:
 1. Run `task ci/catalog/layer` and the checks of the modules that read the
    theme:
    `task ci/catalog/modules MODULES="tmux lazygit yazi zsh cli-tools astronvim neovim harlequin posting"`.
-1. The client accepts the theme once its `[theme] name` lists it: add the name
-   to the client's choices and release the client with this catalog.
+1. Release the catalog. A client offers the themes of the catalog it bundles,
+   and the catalog release publishes the client releases that support it again
+   with it: the theme needs no change in the client.
 
 ## Prompts
 
@@ -155,8 +156,9 @@ shells = ["bash", "zsh"]
 
 `task generate/previews` draws each prompt in its shell for the site, from the
 `prompt` table and the help card's title; run it after adding or changing a
-prompt. A prompt's name also needs a place in the client: see
-[the client's contributing guide](https://github.com/limanix/client/blob/main/CONTRIBUTING.md).
+prompt. A client offers the prompts of the catalog it bundles, and checks the
+`prompt` table for the preset's shell: a new prompt needs no change in the
+client.
 
 ## Version lines
 
