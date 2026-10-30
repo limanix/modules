@@ -19,6 +19,7 @@ import sys
 import tempfile
 import termios
 import time
+from collections.abc import Callable
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -98,7 +99,7 @@ def configuration(source: str, target: Path) -> None:
     target.write_text(text)
 
 
-def capture(scene: dict[str, Any], home: Path) -> pyte.Screen:
+def capture_theme(scene: dict[str, Any], home: Path) -> pyte.Screen:
     directory = home / "greeter"
     directory.mkdir()
     project(directory)
@@ -166,7 +167,7 @@ def capture(scene: dict[str, Any], home: Path) -> pyte.Screen:
     return screen
 
 
-def prompt_capture(scene: dict[str, Any], home: Path) -> pyte.Screen:
+def capture_prompt(scene: dict[str, Any], home: Path) -> pyte.Screen:
     root = home / "root"
     for directory in ("etc", "tmp", "home/dev"):
         (root / directory).mkdir(parents=True)
@@ -331,29 +332,47 @@ def svg(screen: pyte.Screen, palette: dict[str, str], title: str, columns: int, 
     )
 
 
-def main() -> None:
-    scenes = json.loads(Path(sys.argv[1]).read_text())
-    prompts = json.loads(Path(sys.argv[2]).read_text())
-    output = Path(sys.argv[3])
-    output.mkdir()
-    themes = []
-    for scene in sorted(scenes, key=lambda item: item["title"]):
+Capture = Callable[[dict[str, Any], Path], pyte.Screen]
+
+
+def write(
+    output: Path,
+    kind: str,
+    scenes: list[dict[str, Any]],
+    capture: Capture,
+    size: tuple[int, int],
+    keys: tuple[str, ...],
+) -> None:
+    (output / kind).mkdir()
+    entries = []
+    for scene in sorted(scenes, key=lambda item: item["title"].lower()):
         with tempfile.TemporaryDirectory() as home:
             screen = capture(scene, Path(home))
-        picture = svg(screen, scene["palette"], scene["title"], COLUMNS, ROWS)
-        (output / f"{scene['name']}.svg").write_text(picture)
-        keys = ("name", "title", "homepage", "dark", "palette")
-        themes.append({key: scene[key] for key in keys})
-    (output / "themes.json").write_text(json.dumps(themes, indent=2) + "\n")
-    (output / "prompts").mkdir()
-    entries = []
-    for scene in sorted(prompts, key=lambda item: item["title"].lower()):
-        with tempfile.TemporaryDirectory() as home:
-            screen = prompt_capture(scene, Path(home))
-        picture = svg(screen, scene["palette"], scene["title"], PROMPT_COLUMNS, PROMPT_ROWS)
-        (output / "prompts" / f"{scene['name']}.svg").write_text(picture)
-        entries.append({key: scene[key] for key in ("name", "title", "description", "shells")})
-    (output / "prompts.json").write_text(json.dumps(entries, indent=2) + "\n")
+        picture = svg(screen, scene["palette"], scene["title"], *size)
+        (output / kind / f"{scene['name']}.svg").write_text(picture)
+        entries.append({key: scene[key] for key in keys})
+    (output / f"{kind}.json").write_text(json.dumps(entries, indent=2) + "\n")
+
+
+def main() -> None:
+    themes, prompts, output = sys.argv[1:]
+    Path(output).mkdir()
+    write(
+        Path(output),
+        "themes",
+        json.loads(Path(themes).read_text()),
+        capture_theme,
+        (COLUMNS, ROWS),
+        ("name", "title", "homepage", "dark", "palette"),
+    )
+    write(
+        Path(output),
+        "prompts",
+        json.loads(Path(prompts).read_text()),
+        capture_prompt,
+        (PROMPT_COLUMNS, PROMPT_ROWS),
+        ("name", "title", "description", "shells"),
+    )
 
 
 if __name__ == "__main__":

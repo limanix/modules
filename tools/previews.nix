@@ -6,7 +6,7 @@ let
   pkgs = import nixpkgs { inherit system; };
   inherit (pkgs) lib;
   themes = builtins.fromTOML (builtins.readFile ../catalog/_shared/themes.toml);
-  scene =
+  theme =
     name:
     let
       inherit
@@ -77,7 +77,7 @@ let
       palette = config.lmx.capabilities.theme.palette;
     };
 in
-pkgs.runCommand "theme-previews"
+pkgs.runCommand "catalog-previews"
   {
     nativeBuildInputs = [
       (pkgs.python3.withPackages (python: [ python.pyte ]))
@@ -87,14 +87,14 @@ pkgs.runCommand "theme-previews"
       pkgs.ncurses
       pkgs.proot
     ];
-    scenes = builtins.toJSON (map scene (builtins.attrNames themes));
+    themes = builtins.toJSON (map theme (builtins.attrNames themes));
     prompts = builtins.toJSON (map prompt prompts);
     passAsFile = [
-      "scenes"
+      "themes"
       "prompts"
     ];
   }
   ''
     export TERMINFO_DIRS=${pkgs.ncurses}/share/terminfo
-    python3 ${./previews.py} "$scenesPath" "$promptsPath" "$out"
+    python3 ${./previews.py} "$themesPath" "$promptsPath" "$out"
   ''
