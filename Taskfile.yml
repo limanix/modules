@@ -148,11 +148,12 @@ tasks:
           CONTAINER_USER: host
 
   generate/previews:
-    desc: Write previews/, the theme previews the site shows
+    desc: Write previews/, the theme and prompt previews the site shows
     cmds:
       - task: harness
         vars:
           CLI_ARGS: previews
+          CONTAINER_RUN_ARGS: --hostname example-box
 
   release/build:
     desc: Build the base disk of ARCH into dist/

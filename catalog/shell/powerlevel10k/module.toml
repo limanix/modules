@@ -1,0 +1,4 @@
+description = "Powerlevel10k, a fast Zsh prompt with Git state, the exit status and command duration, in the colors of the guest's theme."
+
+[prompt]
+shells = ["zsh"]

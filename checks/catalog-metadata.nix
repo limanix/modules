@@ -1,6 +1,6 @@
 # Validate the public fields read from a module.toml file.
 #
-# This checks the module name, description, version lines, and default line.
+# This checks the module name, description, version lines, default line and prompt shells.
 # Unknown fields, reserved names, and invalid values are rejected.
 # Version lines are returned in numeric order for the rest of the checks.
 # This validation does not load a NixOS configuration or build packages.
@@ -9,6 +9,7 @@ let
   require =
     condition: message: if condition then true else throw "Module catalog: ${name}: ${message}";
   lines = metadata.versions or [ ];
+  shells = metadata.prompt.shells or null;
   validLine =
     line:
     builtins.isString line
@@ -41,6 +42,7 @@ assert require (builtins.all (
     "description"
     "versions"
     "default"
+    "prompt"
   ]
 ) (builtins.attrNames metadata)) "module.toml contains unknown fields";
 assert require (metadata ? description) "description is required";
@@ -68,7 +70,35 @@ assert require (
   else
     metadata ? default && builtins.isString metadata.default && builtins.elem metadata.default lines
 ) "default must name a declared line and must be absent without lines";
+assert require (
+  !(metadata ? prompt)
+  || (
+    builtins.isAttrs metadata.prompt
+    && builtins.attrNames metadata.prompt == [ "shells" ]
+    && builtins.isList shells
+    && shells != [ ]
+    && builtins.all (
+      shell:
+      builtins.elem shell [
+        "bash"
+        "zsh"
+      ]
+    ) shells
+    &&
+      builtins.length shells == builtins.length (
+        builtins.attrNames (
+          builtins.listToAttrs (
+            map (shell: {
+              name = shell;
+              value = true;
+            }) shells
+          )
+        )
+      )
+  )
+) "prompt must hold only shells, a nonempty list of distinct bash and zsh";
 {
   lines = builtins.sort numericOrder lines;
 }
 // (if lines == [ ] then { } else { inherit (metadata) default; })
+// (if metadata ? prompt then { inherit (metadata) prompt; } else { })

@@ -14,9 +14,8 @@ config.limanix.user.shell == pkgs.zsh
 && config.programs.zsh.autosuggestions.enable
 && config.programs.zsh.syntaxHighlighting.enable
 && config.programs.fzf.keybindings
-&& config.lmx.zsh.prompt == "pure"
 && !config.programs.starship.enable
-&& lib.hasInfix "prompt pure" config.programs.zsh.promptInit
+&& lib.strings.trim config.programs.zsh.promptInit == ""
 && config.programs.atuin.enable
 && config.programs.atuin.enableZshIntegration
 && !config.programs.atuin.settings.auto_sync
@@ -28,6 +27,5 @@ config.limanix.user.shell == pkgs.zsh
   pkgs.carapace
   pkgs.fzf
   pkgs.zsh-fzf-tab
-  pkgs.pure-prompt
   config.programs.zsh.ohMyZsh.package
 ]

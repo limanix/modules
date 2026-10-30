@@ -54,6 +54,9 @@ let
     assert require (
       normalized.lines == [ ] || files.versions or null == "directory"
     ) "${label}: versions must be a directory";
+    assert require (
+      !(normalized ? prompt) || kind == "shell"
+    ) "${label}: only a shell component declares prompt shells";
     assert require (builtins.all (
       line: versionFiles."${line}.nix" or null == "regular"
     ) normalized.lines) "${label}: every declared line needs a regular versions/<line>.nix";

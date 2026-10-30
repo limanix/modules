@@ -1,4 +1,3 @@
-{ config, lib, ... }:
 let
   metadata = builtins.fromTOML (builtins.readFile ./module.toml);
 in
@@ -13,8 +12,7 @@ in
       "fzf"
       "zoxide"
       "carapace"
-    ]
-    ++ lib.optional (config.lmx.zsh.prompt == "starship") "starship";
+    ];
     tips = [
       {
         label = "History";

@@ -1,6 +1,6 @@
 # Catalog contract
 
-Rules for catalog module authors, revision 7. NixOS combines modules into one
+Rules for catalog module authors, revision 8. NixOS combines modules into one
 configuration. Nix evaluates that configuration; builds and system activation
 are separate steps.
 
@@ -37,6 +37,7 @@ Module names must be unique across kinds and match
 | `description` | Required nonempty string |
 | `versions` | Optional list of unique lines matching `[0-9]+(\.[0-9]+)*`, each at most 63 characters |
 | `default` | Required member of nonempty `versions`; absent otherwise |
+| `prompt` | Optional, `shell` kind only: a table whose `shells` lists the shells a [prompt](#prompts) runs in, `bash`, `zsh` or both |
 
 Unknown metadata fields are errors. A module without version lines needs only
 `description`. Add a `versions/<line>.nix` entry for each declared line. The
@@ -131,6 +132,31 @@ To add a theme:
    `task ci/catalog/modules MODULES="tmux lazygit yazi zsh cli-tools astronvim neovim harlequin posting"`.
 1. The client accepts the theme once its `[theme] name` lists it: add the name
    to the client's choices and release the client with this catalog.
+
+## Prompts
+
+A prompt is a `shell` component that `prompt` in `[shell]` of `limanix.toml`
+selects by its name. Its `module.toml` names the shells it runs in, and the
+client accepts it only with a preset of one of them:
+
+```toml
+description = "Example, a prompt for Bash and Zsh, in the colors of the guest's theme."
+
+[prompt]
+shells = ["bash", "zsh"]
+```
+
+| Do | Do not |
+| -- | -- |
+| Start the prompt from `programs.bash.promptInit` and `programs.zsh.promptInit`, with `lib.mkDefault`, for each shell it names | Change other startup settings, or start in a shell it does not name |
+| Draw by role from `lmx.capabilities.theme`, the terminal's own colors with `system` | Use symbols that need a Nerd Font or a Powerline font: every terminal font must draw the prompt |
+| Outside tmux, show the words of `lmx status --short` from the prompt's own segment, or from `LMX_STATUS_WORDS` that [`lib/status-words.nix`](_shared/lib/status-words.nix) sets | Show them inside tmux, whose status line shows them |
+| Let the prompt's personal settings file take precedence, and name it in the README | Override a personal setting |
+
+`task generate/previews` draws each prompt in its shell for the site, from the
+`prompt` table and the help card's title; run it after adding or changing a
+prompt. A prompt's name also needs a place in the client: see
+[the client's contributing guide](https://github.com/limanix/client/blob/main/CONTRIBUTING.md).
 
 ## Version lines
 

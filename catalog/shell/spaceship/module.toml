@@ -1,0 +1,4 @@
+description = "Spaceship, a Zsh prompt with the directory, Git state, the versions of the tools a project uses and the exit status, in the colors of the guest's theme."
+
+[prompt]
+shells = ["zsh"]

@@ -1,0 +1,4 @@
+description = "Liquidprompt, an adaptive prompt for Bash and Zsh that shows what matters where you are: Git state, jobs, load and the last error, in the colors of the guest's theme."
+
+[prompt]
+shells = ["bash", "zsh"]

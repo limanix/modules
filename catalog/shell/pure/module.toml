@@ -1,0 +1,4 @@
+description = "Pure, a two-line Zsh prompt with the directory, Git state and command duration, in the colors of the guest's theme."
+
+[prompt]
+shells = ["zsh"]
