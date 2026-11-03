@@ -1,6 +1,5 @@
 { lib, theme }:
 let
-  # The terminal's own colors by number with the system theme; its default colors need no entry.
   colors = lib.mapAttrs (_: toString) (lib.filterAttrs (_: color: color != null) theme.colors);
 in
 lib.mapAttrsRecursive (_: lib.mkDefault) {

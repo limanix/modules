@@ -1,5 +1,4 @@
-# Starts an interactive shell that sources a prompt's initialization, then runs a check script in
-# the same shell: Zsh without startup files, or Bash without them.
+# Test prompt initialization in an interactive shell without user startup files.
 {
   pkgs,
   name,

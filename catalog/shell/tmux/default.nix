@@ -7,7 +7,8 @@
 let
   inherit (config.lmx.capabilities.theme) colors;
   roles = builtins.attrNames colors;
-  # tmux's names of the terminal's 16 colors, which it also prints back.
+
+  # Indexed terminal colors use tmux's names.
   terminal = [
     "black"
     "red"
@@ -26,7 +27,6 @@ let
     "brightcyan"
     "brightwhite"
   ];
-  # A role as a tmux color: the terminal's own with the system theme, the palette's otherwise.
   color =
     role:
     let

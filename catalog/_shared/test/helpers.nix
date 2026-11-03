@@ -53,7 +53,7 @@ in
     inherit pkgs lib;
   };
   profileFor = configuration: configuration.config.system.path;
-  # A package source as the evaluated system resolves it: the same loader with its pins and unfree list.
+  # Resolve sources with the tested system's pins and unfree permissions.
   sourceFor =
     configuration: source:
     import ../lib/source.nix {

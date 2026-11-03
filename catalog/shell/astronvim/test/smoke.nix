@@ -59,8 +59,7 @@ let
 
 in
 {
-  # Yanks go to pbcopy inside tmux and to Neovim's OSC 52 outside it; puts never wait for a
-  # terminal clipboard query.
+  # Cover pbcopy in tmux and OSC 52 outside it; paste must not query the terminal.
   clipboard = runEditor "astronvim-clipboard" editor ''
     mkdir -p "$TMPDIR/bin"
     printf '#!%s\ncat > "$TMPDIR/clipboard"\n' "$(command -v sh)" > "$TMPDIR/bin/pbcopy"

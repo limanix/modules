@@ -1,9 +1,4 @@
-# Validate the public fields read from a module.toml file.
-#
-# This checks the module name, description, version lines, default line and prompt shells.
-# Unknown fields, reserved names, and invalid values are rejected.
-# Version lines are returned in numeric order for the rest of the checks.
-# This validation does not load a NixOS configuration or build packages.
+# Validate module.toml metadata and normalize version lines into numeric order.
 name: metadata:
 let
   require =

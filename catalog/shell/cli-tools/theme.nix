@@ -9,7 +9,8 @@ let
   inherit (theme) palette;
   system = theme.name == "system";
   catppuccin = import ../../_shared/lib/catppuccin.nix palette;
-  # A template written for Catppuccin Mocha, drawn in the guest's palette by role.
+
+  # Reuse Catppuccin Mocha templates with the guest palette.
   recolor =
     name: template:
     pkgs.runCommand name
@@ -33,6 +34,7 @@ let
     ln -s ${recolor "limanix.tmTheme" "${mocha "bat"}/bat/Catppuccin Mocha.tmTheme"} source/themes/limanix.tmTheme
     bat cache --build --source source --target "$out"
   '';
+
   # delta reads bat's themes only from the bat directory of XDG_CACHE_HOME.
   delta =
     if system then
@@ -48,6 +50,7 @@ let
           wrapProgram "$out/bin/delta" --set XDG_CACHE_HOME "$out/share/limanix"
         '';
       };
+
   # btop has no setting outside the user's own btop.conf, so its default theme is patched.
   btop = pkgs.btop.overrideAttrs (previous: {
     postPatch = (previous.postPatch or "") + ''
@@ -197,7 +200,7 @@ in
         FZF_DEFAULT_OPTS = "--color=${if system then "16" else fzfColors}";
       }
       // (
-        # With the system theme bat, and delta through it, highlight in the terminal's colors.
+        # Keep bat and delta in terminal colors for the system theme.
         if system then
           { BAT_THEME = "ansi"; }
         else

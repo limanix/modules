@@ -7,13 +7,11 @@ let
   helpers = import ../../_shared/test/helpers.nix { inherit evalSystem pkgs lib; };
   inherit (helpers) evaluate verify profileFor;
   defaultConfiguration = evaluate [ ./default.nix ];
-  # Whether `yazi` is the wrapper that adds the store-backed theme.
   themed =
     configuration:
     lib.hasInfix "yazi-with-default-theme" (
       configuration.config.programs.yazi.package.drvAttrs.buildCommand or ""
     );
-  # The store-backed theme and its wrapper exist with a palette theme.
   mochaConfiguration = evaluate [
     ./default.nix
     { lmx.capabilities.theme.name = "catppuccin-mocha"; }

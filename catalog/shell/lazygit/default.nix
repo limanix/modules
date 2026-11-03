@@ -9,7 +9,8 @@ in
 
   programs.lazygit = {
     enable = true;
-    # Lazygit's own theme uses the terminal's colors, which the system theme asks for.
+
+    # Keep Lazygit's terminal colors for the system theme.
     settings.gui = lib.mkIf (name != "system") {
       theme = lib.mapAttrs (_: lib.mkDefault) {
         activeBorderColor = [
@@ -27,7 +28,8 @@ in
       };
       authorColors."*" = lib.mkDefault palette.blue;
     };
-    # The platform's pbcopy sends the text through the terminal to the Mac clipboard.
+
+    # Use the Mac clipboard through the platform's pbcopy.
     settings.os.copyToClipboardCmd = lib.mkDefault "printf %s {{text}} | pbcopy";
   };
 }

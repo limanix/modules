@@ -1,9 +1,4 @@
-# Check every public schema at the root of catalog/_shared.
-#
-# shared-files.nix provides the list, without test.nix or private helpers.
-# Each file is evaluated on its own by shared-declarations.nix.
-# Its imports and option declarations must follow the shared schema rules.
-# common.nix includes this check in the platform suite.
+# Validate each public shared schema independently of the other schemas.
 { pkgs, lib }:
 let
   files = import ./shared-files.nix;

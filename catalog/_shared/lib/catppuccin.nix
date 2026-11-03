@@ -1,5 +1,4 @@
-# The 26 colors of a Catppuccin flavor drawn from a theme's palette, so that a template written
-# for Catppuccin draws any theme by role.
+# Adapt Catppuccin templates to the guest palette by color role.
 palette: {
   rosewater = palette.pink;
   flamingo = palette.pink;

@@ -1,13 +1,10 @@
-# Initialization of the Pure prompt in the colors of the guest's theme: the terminal's own colors
-# with the system theme, the theme's palette otherwise. Outside tmux, the right prompt shows the
-# words of `lmx status --short`; inside tmux, its status line shows them.
+# Pure prompt with the guest theme and VM status outside tmux.
 {
   lib,
   pure,
   theme,
 }:
 let
-  # A role as a zsh color: the terminal's color number, or the palette's #rrggbb.
   color = role: if theme.colors.${role} == null then "default" else toString theme.colors.${role};
   colors = lib.mapAttrs (_: color) {
     path = "blue";

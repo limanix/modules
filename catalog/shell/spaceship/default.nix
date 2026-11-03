@@ -8,7 +8,6 @@ let
   inherit (config.lmx.capabilities) theme;
   spaceship = "${pkgs.spaceship-prompt}/lib/spaceship-prompt";
   color = role: if theme.colors.${role} == null then "default" else toString theme.colors.${role};
-  # Spaceship's sections name their default colors; each becomes the color of a role.
   roles = {
     cyan = "cyan";
     magenta = "purple";

@@ -1,5 +1,4 @@
-# The previews that the site shows, saved as SVG with JSON about them: each theme drawn on tmux,
-# Neovim, eza and delta from the catalog, and each prompt in a Git repository.
+# Render catalog theme and prompt previews for the site.
 let
   nixpkgs = import ../checks/nixpkgs.nix;
   system = builtins.currentSystem;

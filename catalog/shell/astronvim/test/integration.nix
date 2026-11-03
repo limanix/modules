@@ -23,7 +23,7 @@ let
         return vim.treesitter.highlighter.active[buffer] ~= nil
       end), "language buffer has no active Tree-sitter highlighting")
     '';
-  # The Rust module declares rustup's proxy; Rust from Nixpkgs stands in for a downloaded toolchain.
+  # Exercise rustup's proxy with an offline Nixpkgs toolchain.
   rustToolchain = pkgs.symlinkJoin {
     name = "rust-linked-toolchain";
     paths = [

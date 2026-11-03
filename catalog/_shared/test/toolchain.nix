@@ -1,6 +1,5 @@
-# The tests every toolchain exports: each line installs its packages, offers its parsers and
-# warns at end of life; explicit lines coexist and the newest one wins; a user-selected language
-# server replaces the recommendation; the installed server answers the LSP handshake.
+# Shared checks for versioned toolchains and editor integration.
+# Covers line coexistence, provider overrides and the installed server's LSP handshake.
 {
   evalSystem,
   pkgs,
