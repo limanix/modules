@@ -1,9 +1,4 @@
-"""Draw the previews the site shows, saved as SVG: each theme and each prompt.
-
-A theme's scene is a tmux window with Neovim, eza and delta; a prompt's scene is its shell in a Git
-repository. Each runs the catalog's own configuration in a pseudo-terminal; pyte keeps the screen,
-and the SVG paints it cell by cell in the theme's colors.
-"""
+"""Draw the previews the site shows, saved as SVG: each theme and each prompt."""
 
 import fcntl
 import json
@@ -312,7 +307,7 @@ def svg(screen: pyte.Screen, palette: dict[str, str], title: str, columns: int, 
                 attributes += ' font-style="italic"'
             if style[3]:
                 attributes += ' text-decoration="underline"'
-            # One text per word: SVG viewers collapse runs of spaces.
+
             for word in re.finditer(r"\S+", run):
                 texts.append(
                     f'<text x="{PADDING + (column + word.start()) * WIDTH:.1f}" '

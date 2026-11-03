@@ -1,10 +1,5 @@
-# Create a NixOS evaluation environment for catalog checks.
-#
-# The caller supplies Nixpkgs, the target system, modules, and a test user name.
-# catalog/_shared/test/platform.nix provides the shared test settings.
-# Minimal boot and file system settings allow a complete system to be evaluated.
-# The result includes its configuration, options, packages, and import graph.
-# This file does not boot a VM or build a disk image.
+# Evaluate catalog modules with the shared test platform.
+# Boot settings complete the configuration; this does not start a VM.
 {
   nixpkgs,
   system,

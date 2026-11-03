@@ -1,8 +1,4 @@
-# Compares every release map with the lines that the base Nixpkgs and the catalog's nixos-unstable
-# revision carry, by the rule of Release maps in catalog/README.md. `harness drift` renders the
-# findings and keeps the drift issue current.
-#
-# Usage: nix eval --json --impure --file tools/drift.nix
+# Used by `harness drift` to compare release maps with the base and unstable pins.
 let
   catalog = ../catalog;
   lock = (builtins.fromJSON (builtins.readFile ../flake.lock)).nodes.nixpkgs;

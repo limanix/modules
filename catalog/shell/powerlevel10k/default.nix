@@ -8,7 +8,8 @@ let
   inherit (config.lmx.capabilities) theme;
   p10k = "${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k";
   color = role: if theme.colors.${role} == null then "default" else toString theme.colors.${role};
-  # The eight-color lean style names terminal colors by number; each becomes the color of a role.
+
+  # Recolor the bundled lean preset by theme role.
   roles = {
     "1" = "red";
     "2" = "green";

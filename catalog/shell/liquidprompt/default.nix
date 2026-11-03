@@ -8,7 +8,6 @@ let
   inherit (config.lmx.capabilities) theme;
   sgr = role: import ../../_shared/lib/sgr.nix lib theme.palette.${role};
   background = role: "48" + lib.removePrefix "38" (sgr role);
-  # Liquidprompt names terminal colors; each becomes the color of a role.
   colors = {
     RED = sgr "red";
     BOLD_RED = "1;${sgr "red"}";

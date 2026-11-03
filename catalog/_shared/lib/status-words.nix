@@ -1,6 +1,5 @@
-# Shell code that sets LMX_STATUS_WORDS before each prompt to the words of `lmx status --short`, for a
-# prompt that shows an environment variable. Inside tmux, its status line shows the words instead.
-# Source it after the prompt's own initialization, so the words are ready before it draws.
+# Prompt status for Bash and Zsh; tmux shows it in its status line instead.
+# Source after prompt initialization so status refreshes before the prompt draws.
 let
   update = ''
     _lmx_status_words() {

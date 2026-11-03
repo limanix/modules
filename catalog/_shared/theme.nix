@@ -1,12 +1,5 @@
-# Colors of the guest, chosen once in the declaration and read by modules and the platform.
-#
-# Identity: one theme per system. `name` is `system`, the terminal's own colors and background,
-# or a table of themes.toml. `palette` holds the theme's colors by role, `dark` tells whether they
-# sit on a dark background, `ansi` holds the terminal colors in ansi.toml that stand for the same
-# roles, and `colors` holds what a module draws with; all four are read-only.
-# Merge: `name` holds one value. Equal definitions agree; different definitions at the same
-# priority fail evaluation.
-# Conflicts: modules read the theme and never set it. The user chooses the theme.
+# Shared guest theme and color roles for catalog modules.
+# `system` keeps terminal colors, with a palette fallback for explicit-color tools.
 { config, lib, ... }:
 let
   themes = builtins.fromTOML (builtins.readFile ./themes.toml);

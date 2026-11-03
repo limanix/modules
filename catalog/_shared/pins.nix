@@ -17,8 +17,8 @@
       inherit (pkgs.stdenv.hostPlatform) system;
       unfreePackages = config.nixpkgs.config.allowUnfreePackages or [ ];
     };
-    # The catalog's nixos-unstable revision as { rev, sha256 }, for a platform that offers its
-    # packages; it declares the pin itself before it reads pinned.
+
+    # Expose the unstable revision without fetching or evaluating its packages.
     unstableSource = builtins.fromTOML (builtins.readFile ./unstable.toml);
   };
 }

@@ -1,6 +1,5 @@
-# A module with version lines: releases.nix names the lines, default.nix recommends the default
-# one, versions/<line>.nix selects a line, and every selected line installs its packages and warns
-# at end of life. The module's own file supplies what differs between lines of different modules.
+# Shared version selection, package installation and end-of-life warnings.
+# Module-specific behavior comes from the supplied spec.
 spec:
 {
   config,

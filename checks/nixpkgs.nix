@@ -1,9 +1,5 @@
-# Load the exact Nixpkgs source recorded in flake.lock for catalog checks.
-#
-# This validates the lock format, GitHub source, commit, and content hash.
-# The input reference must also match flake.nix.
-# The returned source is fetched at that commit and checked against the hash.
-# Tests use this pinned source as their base package set.
+# Load the catalog's locked Nixpkgs source, verifying its hash and input reference.
+# flake.nix and flake.lock must select the same input.
 let
   lock = builtins.fromJSON (builtins.readFile ../flake.lock);
   root = lock.nodes.${lock.root or ""} or { };

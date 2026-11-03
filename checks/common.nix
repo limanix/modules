@@ -1,10 +1,4 @@
-# Collect checks for the public interface and the test harness itself.
-#
-# modules.nix loads this file for the platform suite.
-# The eval cases test catalog rules, shared schemas, imports, and ownership.
-# The fails cases check invalid interface settings.
-# The run case checks the permissions of the Nix build process.
-# This file uses the same eval, fails, and run groups as a module's test.nix.
+# Platform suite: public interface, catalog rules and harness checks.
 {
   evalSystem,
   pkgs,

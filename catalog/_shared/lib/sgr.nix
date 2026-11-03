@@ -1,5 +1,4 @@
-# The SGR parameters that draw a theme color in the foreground: one of the terminal's 16 colors by
-# number, a palette's #rrggbb as 24-bit color, or null for the terminal's default foreground.
+# Encode foreground SGR: ANSI index, truecolor hex, or terminal default.
 lib: color:
 if color == null then
   "39"

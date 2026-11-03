@@ -1,6 +1,5 @@
-# One language of [toolchains]: a module with version lines that also offers a language server
-# to editors. Each line recommends its server with a rank, so the newest selected line wins, and
-# the server that the configuration finally selects is installed.
+# Extend versioned modules with editor support.
+# Recommend the newest selected line's server, unless the user overrides it.
 spec:
 import ./lines.nix (
   spec
