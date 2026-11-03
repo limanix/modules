@@ -1,8 +1,5 @@
-# List the public schemas at the root of catalog/_shared.
-#
-# Only regular .nix files are included; the reserved test.nix is excluded.
-# Files in lib/ and test/ are not public schemas.
-# Shared declaration checks use this list to choose files and validate imports.
+# Public shared schemas are regular root-level .nix files except test.nix.
+# Files in lib/ and test/ remain private.
 let
   directory = ../catalog/_shared;
   entries = builtins.readDir directory;

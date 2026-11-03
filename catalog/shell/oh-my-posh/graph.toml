@@ -1,0 +1,4 @@
+[oh-my-posh]
+name = "Oh My Posh"
+text = "A prompt for Bash and Zsh with the theme as its palette."
+with = ["zsh", "theme"]

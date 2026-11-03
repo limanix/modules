@@ -13,7 +13,7 @@ includes:
     internal: true
 
 vars:
-  NIX_IMAGE: ghcr.io/mr-chelyshkin/ci/nix:2.35.2@sha256:546ed6d23f4df0c3c81b5b6af427f7a8f4647e54e7e4100280c686838b96bb80
+  NIX_IMAGE: ghcr.io/mr-chelyshkin/ci/nix:2.35.2@sha256:ce7c5934137723d9f6b735daa1aa16f849b760271e5771bcfd0578184987a127
 
   nix_cache_env: XDG_CACHE_HOME=/workspace/.cache
   nix_build_caps: >-
@@ -146,6 +146,14 @@ tasks:
         vars:
           CLI_ARGS: graph
           CONTAINER_USER: host
+
+  generate/previews:
+    desc: Write previews/, the theme and prompt previews the site shows
+    cmds:
+      - task: harness
+        vars:
+          CLI_ARGS: previews
+          CONTAINER_RUN_ARGS: --hostname example-box
 
   release/build:
     desc: Build the base disk of ARCH into dist/

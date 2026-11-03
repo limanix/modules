@@ -1,8 +1,4 @@
-# Check that releases.nix covers exactly the declared version lines.
-#
-# catalog.nix passes the lines from module.toml and the release records here.
-# Missing or extra lines are rejected before module evaluation.
-# Package source details are checked by the source resolver, not by this file.
+# Require releases.nix to cover exactly the version lines in module.toml.
 name: lines: releases:
 let
   require =

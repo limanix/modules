@@ -81,7 +81,7 @@ def wait_input(client, path, expected):
 def shared_settings(
     client, key_mode="vi", terminal="tmux-256color", escape_time="10",
     status_style="bg=default,fg=default", pane_border="fg=magenta",
-    mode_style="bg=magenta,fg=default",
+    mode_style="fg=magenta,bg=default,reverse",
 ):
     assert client.text("show-options", "-gv", "mouse") == "on"
     assert client.text("show-options", "-sv", "set-clipboard") == "on"

@@ -9,7 +9,7 @@ in
     tips = [
       {
         label = "PostgreSQL";
-        text = "harlequin --adapter postgres \"postgresql://USER@HOST/DATABASE\"";
+        text = "harlequin --adapter postgres --host \"$XDG_RUNTIME_DIR/postgresql-18\" --dbname postgres";
       }
       {
         label = "SQLite";

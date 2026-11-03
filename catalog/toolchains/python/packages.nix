@@ -37,7 +37,9 @@ assert release.matches python.version;
 {
   inherit python runtime;
   virtualenv = pkgs.writeShellScriptBin "virtualenv" ''
-    export VIRTUALENV_PYTHON="''${VIRTUALENV_PYTHON:-${runtime}/bin/${interpreter}}"
+    python=$(command -v ${interpreter} || echo ${runtime}/bin/${interpreter})
+    export VIRTUALENV_PYTHON="''${VIRTUALENV_PYTHON:-$python}"
+    export VIRTUALENV_TRY_FIRST_WITH="''${VIRTUALENV_TRY_FIRST_WITH:-$python}"
     exec ${packages.virtualenv}/bin/virtualenv "$@"
   '';
   inherit (release) endOfLife;

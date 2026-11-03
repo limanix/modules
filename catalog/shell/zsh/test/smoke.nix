@@ -7,8 +7,7 @@
   ...
 }:
 let
-  # Login startup rebuilds PATH from /run/current-system/sw. Add the base
-  # commands used by global shell setup and assertions to the catalog profile.
+  # Login startup resets PATH; include the commands its setup and checks need.
   startupProfile = pkgs.buildEnv {
     name = "zsh-startup-profile-${name}";
     paths = [

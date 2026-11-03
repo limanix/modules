@@ -3,14 +3,10 @@
   imports = [ ./help.nix ];
 
   environment.systemPackages = [
+    # Harlequin refuses Textual's terminal theme, so the system theme draws the palette's colors.
     (import ./package.nix {
       inherit pkgs;
-      # Harlequin refuses Textual's terminal theme, so the system flavor keeps Mocha.
-      flavor =
-        if config.lmx.capabilities.theme.flavor == "system" then
-          "mocha"
-        else
-          config.lmx.capabilities.theme.flavor;
+      inherit (config.lmx.capabilities) theme;
     })
   ];
 }

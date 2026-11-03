@@ -1,0 +1,4 @@
+[pure]
+name = "Pure"
+text = "The default Zsh prompt, in the colors of the theme."
+with = ["zsh", "theme"]

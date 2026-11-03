@@ -1,8 +1,7 @@
-# Resolves one version line of a module's releases.nix. A line comes from the base Nixpkgs, from
-# the catalog's nixos-unstable revision in unstable.toml, or from a snapshot { rev, sha256 }.
-# Lines from the base and unstable follow their patch releases; a snapshot keeps its exact version.
+# Resolve a module's version line and validate its release record.
+# Base and unstable follow patch updates; snapshots require an exact version.
 {
-  # The module's releases.nix, as a path: its directory names the module in diagnostics.
+  # Keep a path so diagnostics can identify the module.
   releases,
   line,
   pkgs,

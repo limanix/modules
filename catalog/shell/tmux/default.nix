@@ -5,9 +5,10 @@
   ...
 }:
 let
-  inherit (config.lmx.capabilities) theme;
-  names = builtins.attrNames theme.palette;
-  # tmux's names of the terminal's 16 colors, which it also prints back.
+  inherit (config.lmx.capabilities.theme) colors;
+  roles = builtins.attrNames colors;
+
+  # Indexed terminal colors use tmux's names.
   terminal = [
     "black"
     "red"
@@ -26,16 +27,18 @@ let
     "brightcyan"
     "brightwhite"
   ];
-  # A palette name as a tmux color: the terminal's own with the system flavor, the flavor's otherwise.
   color =
-    name:
-    if theme.flavor != "system" then
-      theme.palette.${name}
-    else if theme.ansi.${name} == null then
+    role:
+    let
+      value = colors.${role};
+    in
+    if builtins.isString value then
+      value
+    else if value == null then
       "default"
     else
-      builtins.elemAt terminal theme.ansi.${name};
-  styles = lib.replaceStrings (map (name: "@theme-${name}@") names) (map color names) (
+      builtins.elemAt terminal value;
+  styles = lib.replaceStrings (map (role: "@theme-${role}@") roles) (map color roles) (
     builtins.readFile ./tmux.conf
   );
 in

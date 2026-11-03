@@ -1,0 +1,4 @@
+description = "Oh My Posh, a prompt for Bash and Zsh with the user, the directory, Git state and command duration, in the colors of the guest's theme."
+
+[prompt]
+shells = ["bash", "zsh"]

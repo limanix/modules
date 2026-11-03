@@ -5,7 +5,17 @@ version:
   lib,
 }:
 let
+  inherit (config.lmx.capabilities) theme;
   serverName = import ./server-name.nix;
+  native = (import ../neovim/colorschemes.nix pkgs).${theme.name} or null;
+  themeSettings = {
+    inherit (theme) name dark;
+    catppuccin = import ../../_shared/lib/catppuccin.nix theme.palette;
+  }
+  // lib.optionalAttrs (native != null) {
+    inherit (native) colorscheme;
+    plugin = "${pluginSources}/theme";
+  };
   packages = import ./packages.nix {
     inherit pkgs lib version;
     parsers = lib.unique (
@@ -31,6 +41,10 @@ let
   ++ lib.optional (!(packages.plugins ? "folke/lazy.nvim")) {
     name = "lazy.nvim";
     path = pkgs.vimPlugins.lazy-nvim;
+  }
+  ++ lib.optional (native != null) {
+    name = "theme";
+    path = native.plugin;
   };
   sourceNames = map (entry: entry.name) sourceEntries;
   pluginSources =
@@ -82,7 +96,7 @@ in
         else
           local paths = vim.json.decode(table.concat(vim.fn.readfile("${paths}"), "\n"))
           local setup = dofile("${./init.lua}")
-          setup(paths, ${builtins.toJSON config.lmx.capabilities.theme.flavor})
+          setup(paths, vim.json.decode([==[${builtins.toJSON themeSettings}]==]))
         end
       '';
     };

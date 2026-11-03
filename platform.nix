@@ -1,24 +1,4 @@
-# Base NixOS settings for a LimaNix virtual machine (VM).
-#
-# flake.nix uses this module to build the base disk.
-# The client uses it again when it rebuilds the system inside a VM.
-# Both use one set of settings to boot the system and mount its disk.
-#
-# This module sets:
-# - VM support, the EFI boot loader, and automatic disk growth.
-# - The root and boot file systems, with the disk labels from image.nix.
-# - Lima and SSH services for access from the host computer, with key login only and
-#   /etc/ssh/authorized_keys.d readable: Lima creates it private, which hides the keys that
-#   NixOS accounts declare.
-# - nix-ld, which runs programs built for other Linux systems, such as editor servers.
-# - GNU tar that can extract symbolic links into shared folders: Apple's virtiofs refuses the
-#   mode-0 placeholder files that GNU tar creates for them.
-# - User accounts that can change outside the Nix configuration.
-# - Sudo without a password and trusted Nix access for the wheel group.
-# - Support for the new Nix commands and flakes.
-# - A default stateVersion based on the NixOS release.
-#
-# image.nix creates the disk; this file tells NixOS how to use it.
+# Guest platform shared by base images and VM rebuilds.
 {
   config,
   lib,
@@ -39,6 +19,7 @@
     kernelParams = [ "console=tty0" ];
   };
 
+  # Labels and formats must match image.nix.
   fileSystems = {
     "/" = {
       device = "/dev/disk/by-label/nixos";
@@ -65,8 +46,11 @@
       KbdInteractiveAuthentication = false;
     };
   };
+
+  # Keep NixOS-declared keys accessible alongside Lima's keys.
   systemd.tmpfiles.rules = [ "d /etc/ssh/authorized_keys.d 0755 root root -" ];
   environment.systemPackages = [
+    # Apple's virtiofs rejects mode-0 symlink placeholders; create them as 0600.
     (lib.hiPrio (
       pkgs.gnutar.overrideAttrs (previous: {
         postPatch = previous.postPatch or "" + ''

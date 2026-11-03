@@ -1,50 +1,31 @@
 # Shared helpers
 
-`_shared` is the toolbox for catalog module authors: option schemas that let
-modules exchange data, helpers for `test.nix` and common data. It knows no
-module names. Your module's checks and policy stay in your module.
+Schemas, package sources and test helpers for catalog modules. Keep module
+policy in the module; the [catalog contract](../README.md) defines the rules.
 
-```mermaid
-flowchart LR
-    subgraph mod[Your module]
-        default[default.nix]
-        test[test.nix]
-    end
-    subgraph shared[_shared]
-        schemas[Schemas: languageSupport, pins, theme]
-        helpers[Test helpers in test/]
-        data[palette.toml, unstable.toml]
-    end
-    default -- sets and reads lmx options --> schemas
-    default -. reads .-> data
-    schemas -. reads .-> data
-    test -- imports --> helpers
-```
-
-Every evaluated system loads the root `*.nix` schemas; `test.nix` is the shared
-layer's own test export. Everything else is used only through an explicit
-import.
+Every system loads root `*.nix` schemas except `test.nix`, the shared test
+export. Import helpers from `lib/` and `test/` explicitly.
 
 ## Find what you need
 
-| I want to | Use |
+| Task | Helper |
 | -- | -- |
-| Check that my module installs a package or sets an option | [`test/helpers.nix`](#check-a-configuration) |
-| Check each version line of my module | [`test/lines.nix`](#test-version-lines) |
-| Add a language to `[toolchains]` | [`lib/toolchain.nix` and `test/toolchain.nix`](#define-a-toolchain) |
-| Let a C compiler find headers and libraries in the system profile | [`lib/compiler.nix`](#build-against-the-system-profile) |
-| Check which line's executable a command runs | [`test/profile-commands.nix`](#check-profile-commands) |
-| Take packages from another Nixpkgs revision | [`lmx.pins` and `pinned`](#use-another-nixpkgs-revision) |
-| Take each version line from the base, unstable or a snapshot | [`lib/release.nix`](#resolve-a-version-line) |
-| Take a module without lines from nixos-unstable | [`lib/source.nix`](#resolve-a-version-line) |
-| Offer a language server or parsers to editors | [`languageSupport`](#share-language-tools) |
-| Use the guest's theme colors | [`theme`](#theme-colors) |
-| Drive a terminal program or a language server in `run` | [Process helpers](#drive-processes) |
+| Check configuration and installed packages | [test/helpers.nix](#check-a-configuration) |
+| Check version lines | [test/lines.nix](#test-version-lines) |
+| Define a versioned toolchain | [lib/toolchain.nix and test/toolchain.nix](#define-a-toolchain) |
+| Use system-profile headers and libraries | [lib/compiler.nix](#build-against-the-system-profile) |
+| Check executable selection | [test/profile-commands.nix](#check-profile-commands) |
+| Use another Nixpkgs revision | [lmx.pins and pinned](#use-another-nixpkgs-revision) |
+| Resolve releases or a package source | [lib/release.nix and lib/source.nix](#resolve-a-version-line) |
+| Provide language tools and parsers | [languageSupport](#share-language-tools) |
+| Apply theme colors | [theme](#theme-colors) |
+| Add shell colors or prompt status | [Shell helpers](#colors-in-shell-code) |
+| Test terminal programs or language servers | [Process helpers](#drive-processes) |
 
 ## Check a configuration
 
-[test/helpers.nix](test/helpers.nix) evaluates public entry points and checks
-the result:
+[test/helpers.nix](test/helpers.nix) evaluates module entries and checks their
+configuration:
 
 ```nix
 { evalSystem, pkgs, lib }:
@@ -63,22 +44,22 @@ in
 
 | Helper | Result |
 | -- | -- |
-| `evaluate modules` | Configuration record `{ config; pkgs; lib; }` |
-| `installed configuration package` | `true` when `systemPackages` contains the package |
-| `installedAsDeclared configuration package` | The same, with the package's declared priority |
-| `selectedPackage configuration package` | `true` when the package beats others with the same name |
-| `packagePriority package` | The package's priority; `5` by default |
-| `profileFor configuration` | The system profile for `run` checks |
-| `sourceFor configuration source` | The packages and pins of a source such as `"unstable"`, as the evaluated system resolves them |
-| `verify label value configuration` | `true`, or an error naming `label` when `value` is not `true` |
+| `evaluate modules` | `{ config; pkgs; lib; }` |
+| `installed configuration package` | Whether the package is in `systemPackages` |
+| `installedAsDeclared configuration package` | Also checks the declared priority |
+| `selectedPackage configuration package` | Whether it wins over packages with the same identity (`pname`, otherwise `name`) |
+| `packagePriority package` | `meta.priority`, or the Nixpkgs default |
+| `profileFor configuration` | `config.system.path`, for execution checks |
+| `sourceFor configuration source` | `{ packages; pins; }`, using the system's pins and unfree permissions |
+| `verify label value configuration` | `true`, or an error naming `label` |
 
-A profile is the evaluated `config.system.path`. Running it proves commands, not
-activation.
+`verify` requires Boolean `true`. Running the profile checks commands, not
+system activation.
 
 ## Test version lines
 
-For a module with `versions` in `module.toml`, [test/lines.nix](test/lines.nix)
-evaluates each line's public entry and calls your callbacks:
+[test/lines.nix](test/lines.nix) evaluates each declared line and calls your
+callbacks:
 
 ```nix
 lineTests = import ../../_shared/test/lines.nix {
@@ -89,91 +70,96 @@ lineTests = import ../../_shared/test/lines.nix {
 };
 ```
 
-`checkLine` returns a Boolean; `runLine` is optional and returns a derivation.
-Export `inherit (lineTests) eval run;` to get `eval."line-<line>"` and
-`run."commands-<line>"`. The helper checks lines one by one. Whether several
-lines work together is your module's decision: export your own `eval.allLines`
-or an expected failure such as `fails.twoLines`.
+`checkLine` returns a Boolean; optional `runLine` returns a derivation. Export
+`inherit (lineTests) eval run;` for `eval."line-<line>"` and
+`run."commands-<line>"`. Test coexistence separately, for example in
+`eval.allLines` or `fails.twoLines`.
 
 <details>
 <summary>Other results and laziness</summary>
 
 | Result | Value |
 | -- | -- |
-| `lines` | Declared lines in numeric order, for example `1.9`, `1.10` |
+| `lines` | Lines in numeric order, such as `1.9`, `1.10` |
 | `metadata` | Parsed `module.toml` |
-| `configurations.<line>` | Configuration record for `versions/<line>.nix` |
-| `defaultConfiguration` | Configuration record for `default.nix` |
-| `allConfiguration` | Configuration record importing every line |
+| `configurations.<line>` | Configuration for `versions/<line>.nix` |
+| `defaultConfiguration` | Configuration for `default.nix` |
+| `allConfiguration` | Configuration importing all lines |
 
-Reading `lines` or `metadata` evaluates no system. Each configuration is
-evaluated once and shared by the callbacks that use it.
+Reading `lines` or `metadata` evaluates no system. Configurations are evaluated
+once and shared by callbacks.
 
 </details>
 
 ## Define a toolchain
 
-[lib/lines.nix](lib/lines.nix) is the module with version lines: it declares
-`lmx.internal.<name>.versions` and `.packages`, recommends the default line,
-resolves each selected line through `lib/release.nix`, installs what the line
-supplies, warns at end of life and writes the help card with the selected
-versions in its title. The module keeps one file with what differs between
-modules and makes `default.nix` the module itself:
+[lib/lines.nix](lib/lines.nix) handles version selection, packages, end-of-life
+warnings and help cards. Supply a module spec, as PostgreSQL does:
 
 ```nix
 # default.nix
 import ../../_shared/lib/lines.nix (import ./lines.nix)
+```
 
-# versions/18.nix, through module.nix
+```nix
+# module.nix
 version: {
   imports = [ ./default.nix ];
   lmx.internal.postgres.versions = [ version ];
 }
 ```
 
-| Field of `lines.nix` | Meaning |
-| -- | -- |
-| `name`, `title`, `directory`, `page` | The module name, its product name, its directory and its page under `docs.limanix.dev` |
-| `main`, `packages` | The package whose version names the line, and the `packages.nix` function that resolves a line's packages |
-| `line` | A function of `{ version, tools, rank, priority, config, lib, pkgs }` with the line's own configuration |
-| `commands`, `versioned`, `tips` | The help card: commands on PATH, the per-line command names, the tips |
-| `single`, `priorityOffset`, `product`, `extra` | One line at a time; a lower package priority; another product name in warnings; configuration outside any line |
+```nix
+# versions/18.nix
+import ../module.nix "18"
+```
 
-[lib/toolchain.nix](lib/toolchain.nix) is a lines module that also offers a
-language server: `tool`, `parsers`, `provider` and `systemPackages` describe the
-server, the Tree-sitter parsers and the installed packages of a line, and the
-newest selected line's server wins. [test/toolchain.nix](test/toolchain.nix)
-exports the tests of such a module: `eval.line-<line>`, `eval.allLines`,
-`eval.userOverride`, `run.commands-<line>`, `run.languageServer`,
-`run.userOverride` and `run.allLines`. The module adds its `commands` smoke
-test, the `coexisting` package attributes, the `profileCommands` of the shared
-profile and, when it has them, extra `eval` cases and `builds`.
+| Spec field | Meaning |
+| -- | -- |
+| `name`, `title`, `directory`, `page` | Module name, product title, directory and page under `docs.limanix.dev` |
+| `main` | Package attribute whose version names the line, such as `"go"` |
+| `packages` | Function resolving a line's packages |
+| `line` | Configuration callback receiving `{ version, tools, rank, priority, config, lib, pkgs }` |
+| `commands`, `versioned`, `tips` | Commands, per-line command names and help tips |
+| `single` | Require one selected line |
+| `priorityOffset` | Lower package priorities by this amount |
+| `product`, `extra` | Product name in warnings; configuration outside a line |
+
+[lib/toolchain.nix](lib/toolchain.nix) adds editor support. `tool`, `parsers`,
+`provider` and `systemPackages` describe the tool identity, parsers, provider
+record and installed packages. The newest selected line recommends its server;
+`providerPriority` can override the recommendation's default base priority.
+
+[test/toolchain.nix](test/toolchain.nix) exports:
+
+| Group | Checks |
+| -- | -- |
+| `eval` | `line-<line>`, `allLines`, `userOverride` |
+| `run` | `commands-<line>`, `languageServer`, `userOverride`, `allLines` |
+
+The module supplies `commands`, `coexisting` package attributes and
+`profileCommands`, plus any extra `eval` checks and `builds`.
 
 ## Build against the system profile
 
-[lib/compiler.nix](lib/compiler.nix) takes a Nixpkgs compiler wrapper, such as
-`gcc15` or `clang_22`, and returns one that searches
-`/run/current-system/sw/include` after its own and the libc headers, and
-`/run/current-system/sw/lib` after the directories on its command line. Dynamic
-links get the same directory as their last `RUNPATH` entry, so a program falls
-back to the system profile only for libraries it finds nowhere else. Pass
-`prefix` to point a test compiler at another directory.
+[lib/compiler.nix](lib/compiler.nix) wraps a Nixpkgs compiler with fallback
+paths: `/run/current-system/sw/include` after compiler and libc headers, and
+`/run/current-system/sw/lib` after command-line library paths and last in
+dynamic `RUNPATH`. Pass `prefix` to use another profile in tests.
 
 ```nix
 gcc = import ../../_shared/lib/compiler.nix { compiler = packages.gcc15; };
 ```
 
-NixOS links only some directories and outputs into the profile: the module that
-installs the compiler adds `/include` to `environment.pathsToLink` and `dev`,
-`out` and `lib` to `environment.extraOutputsToInstall`. A package with a `bin`
-output, such as OpenSSL, keeps its libraries in `out` or `lib`; by default NixOS
-installs only its `bin` and `man` outputs.
+The compiler module adds `/include` to `environment.pathsToLink` and `dev`,
+`out`, `lib` to `environment.extraOutputsToInstall`. This matters for packages
+such as OpenSSL: NixOS otherwise installs only `bin` and `man` when a `bin`
+output exists, leaving libraries out.
 
 ## Check profile commands
 
-When several lines install the same command,
 [test/profile-commands.nix](test/profile-commands.nix) checks which executable
-the profile resolves to:
+wins when several lines supply a command:
 
 ```nix
 run.newestCommand = import ../../_shared/test/profile-commands.nix {
@@ -183,16 +169,12 @@ run.newestCommand = import ../../_shared/test/profile-commands.nix {
 };
 ```
 
-> [!TIP]
->
-> The platform sorts `systemPackages` by store path and then priority, and
-> import order never decides a collision. Give colliding commands explicit
-> priorities with `lib.setPrio`.
+The test platform sorts packages by store path, then priority. Resolve command
+collisions with explicit priorities (`lib.setPrio`), never import order.
 
 ## Use another Nixpkgs revision
 
-Declare the revision and its hash in `lmx.pins`, then read packages from the
-`pinned` module argument:
+Declare a revision and hash in `lmx.pins`, then use the `pinned` argument:
 
 ```nix
 { pinned, ... }:
@@ -202,33 +184,23 @@ Declare the revision and its hash in `lmx.pins`, then read packages from the
 }
 ```
 
-- Write the hash as a plain constant, without `mkDefault` or `mkForce`. Modules
-  that declare the same revision with the same hash agree; different hashes
-  fail.
-- Use `pinned` only in configuration values, never in `imports` or option
-  declarations.
-- An unfree package needs its name in `nixpkgs.config.allowUnfreePackages`;
-  pinned package sets follow that list.
-- The `unstableSource` module argument holds the `rev` and `sha256` of the
-  catalog's nixos-unstable revision from [unstable.toml](unstable.toml). A
-  platform that offers packages from it declares that pin, then reads
+- Pins are plain constants, without `mkDefault` or `mkForce`. Different hashes
+  for one revision fail evaluation.
+- Use `pinned` in configuration values, never `imports` or option declarations.
+- List unfree package names in `nixpkgs.config.allowUnfreePackages`.
+- `unstableSource` exposes `rev` and `sha256` from
+  [unstable.toml](unstable.toml). Platforms declare its pin before reading
   `pinned.${unstableSource.rev}`; modules use `lib/source.nix` instead.
 
-<details>
-<summary>How pinned package sets are built</summary>
-
-Each revision is imported lazily, once per evaluated system, for the system's
-platform and without overlays. An unused revision is never downloaded. The
-unfree check compares names with the pinned source's own `lib.getName`. A shared
-source does not guarantee a binary-cache hit; local builds follow the
-[local-build policy](../README.md#local-builds-and-runtime).
-
-</details>
+Each revision is imported lazily once per system, without overlays, and follows
+the unfree list using its own `lib.getName`. Unused revisions are not fetched. A
+pin does not guarantee a cache hit or authorize a
+[local build](../README.md#local-builds-and-runtime).
 
 ## Resolve a version line
 
-A versioned module whose lines come from Nixpkgs lists them in `releases.nix`,
-one record per line:
+For version lines from Nixpkgs, `releases.nix` maps each declared line to a
+record:
 
 ```nix
 {
@@ -243,14 +215,14 @@ one record per line:
 }
 ```
 
-| Source | Packages | Version check |
+| Source | Package set | Version check |
 | -- | -- | -- |
-| `"base"` | The system's `pkgs`, from `flake.lock` | The line: `1.27` accepts any `1.27.x` |
-| `"unstable"` | The catalog's nixos-unstable revision in [`unstable.toml`](unstable.toml) | The line |
-| `{ rev, sha256 }` | That snapshot | The exact `version` of the record |
+| `"base"` | System `pkgs`, from `flake.lock` | Selected line (`1.27` accepts `1.27.x`) |
+| `"unstable"` | [unstable.toml](unstable.toml) revision | Selected line |
+| `{ rev, sha256 }` | Pinned snapshot | Exact `version` |
 
-[lib/release.nix](lib/release.nix) resolves the selected line. The record comes
-back with the line's package set, the pin it needs and its version check:
+[lib/release.nix](lib/release.nix) returns the record with `packages`, `pins`,
+`matches` and `resolve`:
 
 ```nix
 { version, pinned, pkgs }:
@@ -266,12 +238,11 @@ assert release.matches go.version;
 { inherit go; }
 ```
 
-Declare `release.pins` in `lmx.pins`: it never evaluates a package set. Other
-fields of the record are the module's own, and `release.resolve` resolves one of
-them as a source too, such as a separately pinned compiler.
+Declare `release.pins` in `lmx.pins`; reading them evaluates no package set.
+Other record fields remain available; `release.resolve` resolves an additional
+source, such as a separately pinned compiler.
 
-A module without lines takes its packages from a source directly with
-[lib/source.nix](lib/source.nix), such as a fast-moving CLI from unstable:
+For a module without lines, use [lib/source.nix](lib/source.nix) directly:
 
 ```nix
 { pkgs, pinned, ... }:
@@ -287,29 +258,16 @@ in
 }
 ```
 
-- Lines from the base and unstable record no version and receive their patch
-  releases: every Monday the Check update flow opens one pull request that moves
-  both revisions.
-- A snapshot keeps its exact version and never moves.
-- The harness requires `releases.nix` to map exactly the lines of `module.toml`.
-  The resolver rejects a record without a valid source, package or `endOfLife`,
-  a version on a line from the base or unstable, and a snapshot without one.
+Base and unstable follow patch updates without a `version` field; snapshots
+require one and stay fixed. The weekly update flow checks both moving pins and
+opens a PR when either changes. The resolver validates `source`, `package`,
+`endOfLife` (`true`, `false` or `null`) and the version rule; the harness checks
+that records match the lines in `module.toml`.
 
 ## Share language tools
 
-Language modules publish their tools and parsers; editor modules read the final
-result:
-
-```mermaid
-flowchart LR
-    go[go module] -- tools.gopls, languages.go --> cap[languageSupport]
-    python[python module] -- tools.pyright, languages.python --> cap
-    cap -- final tools and parsers --> editor[Editor module]
-```
-
-A provider declares a complete tool record. Its module computes `rank` as the
-number of declared releases older than the selected release; newer releases get
-a larger rank and a lower, stronger `mkOverride` priority:
+Providers publish tool records and parsers in
+`lmx.capabilities.languageSupport`; editors consume the result:
 
 ```nix
 lmx.capabilities.languageSupport = {
@@ -322,35 +280,29 @@ lmx.capabilities.languageSupport = {
 };
 ```
 
-- A tool record is replaced as a whole: the strongest priority wins with all its
-  fields. Use `lib.mkOverride (1000 - rank)` with `0 <= rank < 100` so a newer
-  line wins. A user's ordinary definition or `mkForce` still overrides it.
-- Equal records at the same priority agree; different records fail evaluation.
-- The provider installs the winning `package`. A consumer maps `command` and
-  `args` into its own settings.
-- Parser lists from all modules add up without duplicates and need no tool.
-
-<details>
-<summary>Fields</summary>
+- Tool records merge as a whole. The strongest priority wins; equal records at
+  the same priority agree, different records fail.
+- `rank` counts declared lines older than the selection, with `0 <= rank < 100`.
+  The helper uses `(spec.providerPriority or 1000) - rank`; a user definition or
+  `mkForce` overrides the recommendation. Name tools by executable identity,
+  such as `gopls`, rather than module name.
+- Providers install the winning `package`; consumers use its `command` and
+  `args`.
+- Parser lists merge without duplicates and do not require a tool.
 
 | Field | Type |
 | -- | -- |
 | `tools.<identity>.package` | Package; required |
-| `tools.<identity>.command` | Executable path; required |
-| `tools.<identity>.args` | List of strings; default `[]` |
-| `tools.<identity>.languages` | List of language names; default `[]` |
-| `languages.<language>.parsers` | List of parser names; default `[]` |
-
-The tool identity names the tool itself, such as `gopls`, not the module that
-provides it.
-
-</details>
+| `tools.<identity>.command` | String (executable); required |
+| `tools.<identity>.args` | String list; default `[]` |
+| `tools.<identity>.languages` | Language-name list; default `[]` |
+| `languages.<language>.parsers` | Parser-name list; default `[]` |
 
 ## Drive processes
 
-[test/terminal.py](test/terminal.py) runs a command in a pseudo-terminal with
-deadlines and bounded output. Add `PYTHONPATH = ../../../_shared/test;` to the
-`runCommand` environment:
+[test/terminal.py](test/terminal.py) runs commands in a pseudo-terminal with
+timeouts and bounded output. In a module's `test/run.nix`, add
+`PYTHONPATH = ../../../_shared/test;` to the `runCommand` environment:
 
 ```python
 from terminal import TerminalProcess
@@ -360,8 +312,8 @@ with TerminalProcess([program], env=environment) as process:
     process.send(b"q")
 ```
 
-[test/lsp-smoke.py](test/lsp-smoke.py) starts a language server and checks that
-it initializes and shuts down:
+[test/lsp-smoke.py](test/lsp-smoke.py) checks language-server initialization and
+shutdown:
 
 ```sh
 python ${../../../_shared/test/lsp-smoke.py} --timeout 10 ${profile}/bin/gopls
@@ -369,45 +321,77 @@ python ${../../../_shared/test/lsp-smoke.py} --timeout 10 ${profile}/bin/gopls
 
 ## Theme colors
 
-`lmx.capabilities.theme` holds the guest's colors: the terminal's own colors, or
-a Catppuccin flavor and its colors. Read it in configuration values:
+Read `lmx.capabilities.theme` in configuration values:
 
 ```nix
 { config, ... }:
 let
-  inherit (config.lmx.capabilities.theme) flavor palette ansi;
+  inherit (config.lmx.capabilities.theme) name palette colors dark;
 in
 {
-  # flavor == "system" by default: ansi.blue == 4, the terminal's blue
-  # flavor == "mocha": palette.blue == "#89b4fa"
+  # system: colors.accent == 5 (terminal magenta)
+  # tokyo-night: colors.accent == palette.accent == "#7aa2f7"
 }
 ```
 
-- `flavor` is `system`, the default, or `latte`, `frappe`, `macchiato` or
-  `mocha`. A system has one flavor: equal definitions agree, different
-  definitions at the same priority fail. The user selects it with `[theme]` in
-  `limanix.toml`; modules never set it. Every catalog module with colors reads
-  it.
-- `palette` is read-only: the flavor's 26 colors by name, such as `blue`, as
-  `#rrggbb`. With `system` it holds Mocha's colors, for a tool that knows only
-  explicit colors.
-- `ansi` is read-only: for each name of `palette`, the terminal color that
-  stands for it with `system`. A number from 0 to 15 is one of the terminal's 16
-  colors; `null` is its default foreground or background, so the terminal's own
-  background shows through. [ansi.toml](ansi.toml) holds the table.
-- With `system`, use `ansi` and leave backgrounds to the terminal: the colors
-  then follow the theme of the terminal on the Mac, and change with it.
-- [palette.toml](palette.toml) copies the four flavors of Catppuccin palette
-  v1.8.0 from the revision that `pkgs.catppuccin` packages; a check compares the
-  two.
+| Field | Value |
+| -- | -- |
+| `name` | `system` (default) or a table name from [themes.toml](themes.toml); chosen by the user, not modules |
+| `palette` | 18 role colors as `#rrggbb`; Catppuccin Mocha under `system` for explicit-color tools |
+| `dark` | Whether the palette uses a dark background |
+| `ansi` | Role mapping from [ansi.toml](ansi.toml): indices `0..15`, or `null` for terminal defaults |
+| `colors` | `ansi` under `system`, otherwise `palette` |
+
+All fields except `name` are read-only. Equal `name` definitions agree;
+conflicting definitions at the same priority fail. Under `system`, leave
+backgrounds to the terminal so colors follow the Mac terminal's theme.
+
+| Role | Use |
+| -- | -- |
+| `background` | Main background |
+| `background_dark` | Darker panels and bars |
+| `background_darker` | Deepest background |
+| `surface` | Raised elements: current line, menu, message |
+| `selection` | Selected text and items |
+| `border` | Borders, separators, inactive outlines |
+| `muted` | Comments, hints, disabled text |
+| `subtle` | Secondary text and labels |
+| `foreground` | Main text |
+| `accent` | Focus, active items, highlights |
+| `red`, `orange`, `yellow`, `green`, `cyan`, `blue`, `purple`, `pink` | Hues: red for errors, yellow for warnings, green for success, blue for information |
+
+To add a theme, provide `title`, `homepage`, `dark` and all roles in
+[themes.toml](themes.toml). Take colors from its Neovim colorscheme in locked
+Nixpkgs and its published palette; name those sources in a comment. Choose the
+nearest source color for a missing role. Update the theme-set expectations in
+[theme-tests.nix](test/theme-tests.nix); the tests also compare Catppuccin Mocha
+with `pkgs.catppuccin`. See [theme integration](../README.md#colors-and-themes)
+for previews and module checks.
+
+## Colors in shell code
+
+[lib/sgr.nix](lib/sgr.nix) encodes a foreground color: `"34"` for terminal blue,
+`"38;2;122;162;247"` for a palette color, `"39"` for the terminal default.
+
+```nix
+blue = import ../../_shared/lib/sgr.nix lib config.lmx.capabilities.theme.colors.blue;
+prompt = ''\[\e[${blue}m\]\w\[\e[0m\] '';
+```
+
+[lib/status-words.nix](lib/status-words.nix) supplies `bash` and `zsh` code that
+refreshes `LMX_STATUS_WORDS` from `lmx status --short`, empty inside tmux.
+Source it after prompt initialization when the prompt displays an environment
+variable instead of running its own status command.
+
+[test/prompt-smoke.nix](test/prompt-smoke.nix) runs prompt initialization and a
+check script in interactive Bash or Zsh without user startup files.
 
 ## Change `_shared`
 
-> [!IMPORTANT]
->
-> Shared code never names a module, chooses its lines or rebuilds its test
-> scenarios. A change under `_shared` makes CI check the whole catalog.
+Add shared code only when several modules need it. Keep named-module policy,
+version choices and module-specific tests outside `_shared`. Root `.nix` schemas
+are loaded automatically, except the `test.nix` export; put pure functions in
+`lib/` and test helpers in `test/`.
 
-Add code here only when several modules need it without module policy. A root
-`*.nix` file is an option schema that every system loads; pure functions belong
-in `lib/` and test helpers in `test/`. Check new behavior in `_shared/test.nix`.
+Add tests in [\_shared/test.nix](test.nix). A change here makes CI check the
+whole catalog.

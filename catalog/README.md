@@ -1,21 +1,19 @@
 # Catalog contract
 
-Rules for catalog module authors, revision 6. NixOS combines modules into one
-configuration. Nix evaluates that configuration; builds and system activation
-are separate steps.
+Module layout, public interfaces and checks for catalog authors. For setup, pull
+requests and releases, see the
+[contribution guide](https://docs.limanix.dev/contributing/).
 
 ## Add a module
 
-Create `catalog/<kind>/<name>/` with four files:
+Create `catalog/<kind>/<name>/` with these files:
 
 | File | Purpose |
 | -- | -- |
-| `module.toml` | Describe the module and any version lines |
-| `default.nix` | Provide the module's default configuration and help card |
-| `test.nix` | Check the module's own behavior; at least one `eval` check is required |
-| `README.md` | Explain usage and public settings |
-
-Choose the kind that matches how the client selects the module:
+| `module.toml` | Description and optional version lines |
+| `default.nix` | Default configuration and help card |
+| `test.nix` | Behavior checks, including at least one `eval` check |
+| `README.md` | Usage and public settings |
 
 | Kind | Purpose | Selected through |
 | -- | -- | -- |
@@ -23,46 +21,39 @@ Choose the kind that matches how the client selects the module:
 | `toolchains` | Language compilers, runtimes and tools | `[toolchains]` |
 | `modules` | Services and standalone tools | `[nixos] modules` |
 
-The client owns shell presets and toolchain keys. Only the `modules` kind
-accepts user selectors in `[nixos] modules`. All kinds follow the same ownership
-and import rules. The catalog also has `_shared` for common schemas, data and
+The client owns shell presets and toolchain keys; only `modules` accepts user
+selectors in `[nixos] modules`. `_shared` holds common schemas, data and
 helpers. Other top-level directories are rejected.
 
-Module names must be unique across kinds and match
-`[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*`. Names have at most 63 characters. `_shared`,
-`internal`, `capabilities` and `pins` are reserved.
+Names must be unique across kinds, match `[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*` and
+have at most 63 characters. `_shared`, `internal`, `capabilities` and `pins` are
+reserved.
 
 | `module.toml` field | Rule |
 | -- | -- |
 | `description` | Required nonempty string |
 | `versions` | Optional list of unique lines matching `[0-9]+(\.[0-9]+)*`, each at most 63 characters |
 | `default` | Required member of nonempty `versions`; absent otherwise |
+| `prompt` | Optional, `shell` only: `shells` lists `bash`, `zsh` or both; see [Prompts](#prompts) |
 
-Unknown metadata fields are errors. A module without version lines needs only
-`description`. Add a `versions/<line>.nix` entry for each declared line. The
-`test/` directory is optional; use it when tests need separate files or data.
-Other implementation filenames are private.
+Unknown fields are errors. Add `versions/<line>.nix` for each declared line.
+Other implementation filenames are private; an optional `test/` directory can
+hold test code and data.
 
-Run from the repository root, with your module name in place of `example`:
-
-```sh
-task ci/catalog/modules MODULES=example
-```
-
-This runs configuration and execution checks in a container. Use `MODE=eval` for
-configuration and expected-error checks only. See
-[development setup](../README.md#development) for Task and Docker requirements.
+From the repository root, replace `example` with your module name in
+`task ci/catalog/modules MODULES=example`. Use `MODE=eval` for configuration and
+expected-error checks only.
 
 ## Module boundaries
 
-A module owns its packages, settings, tests and README. An aggregate owns its
-component choices and their integration tests. `_shared` provides generic
-helpers and does not contain policy for named modules.
+A module owns its packages, settings, tests and README; an aggregate owns its
+component choices and integration tests. `_shared` provides generic helpers,
+without policy for named modules.
 
-Import another module through its `default.nix` or a declared version entry. Use
-its documented public options and shared capabilities. Do not read its private
-files, tests or `lmx.internal.<name>` values. Keep cross-module paths explicit;
-the CI planner cannot follow fully computed paths.
+Import other modules only through `default.nix` or a declared version entry. Use
+their public options and shared capabilities, never private files, tests or
+`lmx.internal.<name>`. Keep cross-module paths explicit: the CI planner cannot
+follow fully computed paths.
 
 | Options | Declared by | Use |
 | -- | -- | -- |
@@ -73,153 +64,169 @@ the CI planner cannot follow fully computed paths.
 | `lmx.pins` | `_shared/pins.nix` | Additional Nixpkgs revisions |
 | Standard NixOS options | Nixpkgs | Normal NixOS settings |
 
-The platform supplies the account name, home and shared schemas. Modules may set
-existing public options; ownership checks apply to declarations. Use option
-defaults or `lib.mkDefault` for settings that users may replace. Use an
-assertion with a clear message for a required condition. Give packages that
-provide the same command explicit package priorities. Import order and
-`mkBefore` must not choose the winner.
+The platform supplies account identity and shared schemas. Ownership applies to
+declarations; modules may assign existing public options. Use defaults or
+`lib.mkDefault` for settings users may replace, and assertions with clear
+messages for required conditions. Resolve command collisions with explicit
+package priorities, never import order or `mkBefore`.
 
-Declare `limanix.help.<name>` for every public entry of your module:
+Every public entry must declare `limanix.help.<name>`:
 
-- Use `description` from `module.toml` as `summary`.
-- List the commands the module adds to `PATH`.
-- Link `guide` to the module's page under `https://docs.limanix.dev/`.
-- Use at most four tips, with labels no longer than 10 characters.
+- Take `summary` from the metadata's `description`.
+- List the commands added to `PATH`.
+- Set `guide` to the module's page under `https://docs.limanix.dev/`.
+- Use at most four tips, with labels of at most 10 characters.
 
-The harness checks the guide's address prefix; reviewers check the page itself.
-See [interface.nix](../interface.nix) for option types and defaults. A session
-command takes one literal session name and returns status 64 for an invalid
-name. See [language tools](_shared/README.md#share-language-tools) and
-[theme colors](_shared/README.md#theme-colors) when your module uses
-capabilities. A tool provider must not enable an editor just by declaring its
-tools.
+The harness checks the guide prefix; reviewers check the page. See
+[interface.nix](../interface.nix) for option types. A session command receives
+one literal session name and returns status 64 for an invalid name. Language
+providers use [shared capabilities](_shared/README.md#share-language-tools) and
+must not enable an editor merely by offering tools.
+
+## Colors and themes
+
+Use [theme roles](_shared/README.md#theme-colors), not hardcoded themes or
+colors. Draw with `colors.<role>`; use `palette.<role>` only when a tool needs
+explicit colors under `system`. Otherwise, preserve terminal colors and
+backgrounds under `system`. Keep settings user-overridable and document which
+settings carry colors and how to replace them.
+
+Reuse the [Catppuccin](_shared/lib/catppuccin.nix) and
+[Textual](_shared/lib/textual.nix) adapters. Neovim may use a theme's own
+colorscheme from [colorschemes.nix](shell/neovim/colorschemes.nix); otherwise it
+draws the palette through catppuccin-nvim. Tools without system-wide color
+settings keep their own colors; name these exceptions in the module README.
+
+To add a theme:
+
+1. Add its table to [themes.toml](_shared/themes.toml), following the
+   [palette and source rules](_shared/README.md#theme-colors).
+1. Add its Neovim colorscheme when Nixpkgs packages it.
+1. Run `task generate/previews`, `task ci/catalog/layer` and the checks of the
+   modules that read the theme:
+   `task ci/catalog/modules MODULES="tmux lazygit yazi zsh cli-tools astronvim neovim harlequin posting"`.
+
+## Prompts
+
+A prompt is a `shell` component selected by `[shell] prompt`. Declare its
+supported shells in `module.toml`; the client accepts it only with a compatible
+preset:
+
+```toml
+description = "Example prompt in the guest's theme."
+
+[prompt]
+shells = ["bash", "zsh"]
+```
+
+- Set `programs.<shell>.promptInit` with `lib.mkDefault` for each declared
+  shell. Do not change other startup settings or initialize undeclared shells.
+- Use theme roles and symbols that work without Nerd Fonts or Powerline fonts.
+- Show `lmx status --short` outside tmux; tmux's status line shows it inside.
+  [Shell helpers](_shared/README.md#colors-in-shell-code) provide status and
+  colors.
+- Let personal settings take precedence and document their file.
+
+Run `task generate/previews` after adding or changing a prompt.
 
 ## Version lines
 
 `lmx:<name>` selects `default.nix`; `lmx:<name>-<line>` selects
-`versions/<line>.nix`. Unknown modules and lines are errors. `default.nix` loads
-the implementation and recommends the metadata's default line with
-`lib.mkDefault`. An explicit entry uses the same implementation and selects its
-line. Adding `default.nix` before or after it must not change the selected
-line's result.
+`versions/<line>.nix`. Unknown modules and lines are errors. Both entries load
+the same implementation; the default recommends the metadata's line with
+`lib.mkDefault`. An explicit line must replace it in either import order.
 
-Several explicit lines must either work together as documented or fail with a
-clear assertion. Do not drop a selection or choose a line through import order.
-If lines coexist, check their aliases and the priority of ordinary commands. See
+Explicit lines must coexist as documented or fail with a clear assertion. Check
+aliases and command priorities when lines coexist. See
 [toolchain helpers](_shared/README.md#define-a-toolchain) and
-[version tests](_shared/README.md#test-version-lines) for examples.
+[version tests](_shared/README.md#test-version-lines).
 
 ### Release maps
 
-Modules with version lines from Nixpkgs provide `releases.nix`. It must map
-exactly the lines in `module.toml`. Each record declares `source`, `package` and
-`endOfLife` (`true`, `false` or `null`). Base and unstable sources follow their
-line without an exact version field. A snapshot `{ rev, sha256 }` requires an
-exact `version`. See [release sources](_shared/README.md#resolve-a-version-line)
-for the format and helpers.
+For version lines from Nixpkgs, `releases.nix` must cover exactly the lines in
+`module.toml`. Follow the
+[release record format](_shared/README.md#resolve-a-version-line): base and
+unstable follow patch updates; snapshots require an exact version. `endOfLife`
+is `true`, `false` or `null`.
 
 ### Package pins and unfree permissions
 
-The base Nixpkgs revision comes from [flake.lock](../flake.lock). The shared
-unstable revision comes from [\_shared/unstable.toml](_shared/unstable.toml).
-Declare other revisions in `lmx.pins` and read them through the `pinned`
-argument. Pins are plain constants, without priority overrides. Use `pinned` in
-configuration values, never in `imports` or option declarations. Declare unfree
-package names as constants in `nixpkgs.config.allowUnfreePackages`. Permission
-to use an unfree package does not permit a local build. See
-[using another revision](_shared/README.md#use-another-nixpkgs-revision) for
-details.
+The base revision is in [flake.lock](../flake.lock); unstable is in
+[unstable.toml](_shared/unstable.toml). For other revisions, follow
+[pin declarations and usage](_shared/README.md#use-another-nixpkgs-revision).
+Declare unfree package names as constants in
+`nixpkgs.config.allowUnfreePackages`. Unfree permission does not authorize a
+local build.
 
 ## Required checks for every module
 
-The harness checks metadata and each public entry's configuration, assertions,
-option declarations, module imports and help card. For each version, it checks
-that an explicit line replaces the default in either import order. The module
-import graph cannot check ordinary Nix `import` and `readFile` expressions;
-review them separately.
+The harness checks metadata, public entries, assertions, ownership, imports,
+help cards and explicit-version precedence. The import graph does not cover
+ordinary Nix `import` or `readFile`; review those separately.
 
-The run phase adds a `help-commands` check for each public entry. It checks that
-the listed commands are executable in the system profile's `bin/`. It does not
-run those commands or prove the module's own behavior. That behavior belongs in
-`test.nix`, which the harness calls as:
-
-```nix
-import (moduleDirectory + "/test.nix") { inherit evalSystem pkgs lib; }
-```
-
-`evalSystem` takes a list of NixOS modules and returns their checked `config`
-without building it. `pkgs` and `lib` are the runner's base packages and
-library. Reuse a configuration across related checks. See
-[configuration helpers](_shared/README.md#check-a-configuration) for an example.
+The run phase verifies that help commands are executable in the profile's
+`bin/`, without running them. Test the module's own behavior in `test.nix`,
+which receives `{ evalSystem, pkgs, lib }`. `evalSystem modules` returns checked
+configuration without building it; reuse configurations across related checks.
+`pkgs` and `lib` come from the runner's base package set. See
+[configuration helpers](_shared/README.md#check-a-configuration).
 
 | Group | Required | Contents |
 | -- | -- | -- |
-| `eval` | Yes | Nonempty set of configuration checks; each must return Boolean `true` |
-| `fails` | No | Records containing exactly `modules` (a list of NixOS modules) and `message` (a nonempty string) |
+| `eval` | Yes | Nonempty set of configuration checks; each returns Boolean `true` |
+| `fails` | No | Records with exactly `modules` (NixOS module list) and `message` (nonempty string) |
 | `run` | No | Test derivations for the runner's Linux system |
 | `builds` | No | Exact derivations for that system allowed to build locally; permission only |
 
-Optional groups default to `{}`; unknown groups fail. Test names must match
+Optional groups default to `{}`; unknown groups fail. Test names match
 `[a-z][A-Za-z0-9._-]*`. Names such as `packages`, `commands`, `line-<line>` and
-`artifact` are conventions, not extra requirements. A `fails` case must fail
-with the expected diagnostic; a crash or unrelated error does not pass.
+`artifact` are conventions. Expected failures must match the intended
+diagnostic; crashes and unrelated errors do not pass.
 
-Test key module behavior and concrete regressions at the cheapest sufficient
-level. Do not repeat NixOS merge tests or shared scenarios in every module.
-Configuration and execution checks prove different things; keep both when
-needed. Remove tests that no longer protect a required guarantee. Run fixtures
-offline, without personal host state or external services. They must not use a
-VM or `system.build.toplevel`. These checks do not prove NixOS login, service
-activation or `/etc` activation.
+Test behavior and regressions at the cheapest sufficient level. Avoid repeating
+NixOS merge tests and shared scenarios. Keep configuration and execution checks
+where each protects a guarantee; remove obsolete tests. Fixtures must run
+offline without personal host state, external services, VMs or
+`system.build.toplevel`. These checks do not prove login or service and `/etc`
+activation.
 
 ### Local builds and runtime
 
-Before running builds, the harness checks the dry-run plan. It allows only the
-selected test derivations, derivations with `preferLocalBuild = true`, and exact
-derivations listed in `builds`. The `builds` list also includes declarations
-from modules imported by the selected public entries. Test-only imports do not
-add permissions, and permission for a derivation does not cover its
-dependencies. Reading another module's `builds` does not schedule its tests.
-Other uncached builds fail before execution. A cached result does not prove a
-new execution. See [build policy](../checks/build-plan.nix) for the
-implementation.
+The dry-run plan allows selected tests, `preferLocalBuild = true` derivations
+and exact entries in `builds`. Permissions include declarations from modules
+imported by selected public entries, but not test-only imports. They do not
+extend to dependencies or schedule another module's tests.
+
+Other uncached builds fail before execution; a cache hit does not prove a new
+execution. See the [build policy](../checks/build-plan.nix).
 
 ## Module README
 
-The module README is the source for its page on `docs.limanix.dev`. The site
-reads all module READMEs from a published catalog release. Keep them in plain
-Markdown: headings, tables, fenced code and GitHub alerts. Use relative links
-for files in this repository and full URLs for the site. The site maps links
-between module READMEs to its catalog pages.
+Module READMEs become documentation pages from a published catalog release. Use
+plain Markdown: headings, tables, fenced code and GitHub alerts. Keep file links
+relative and site links absolute; the site maps links between module READMEs to
+their pages.
 
-Start with a short description and `## Select`, then explain versions and use.
-Put settings, state and corner cases after the main examples. Say whether a
-command runs on the Mac or inside the VM. Use simple English and keep details
-about one module in its own README.
+Start with a description and `## Select`, then cover versions, use, public
+settings, files, services, persistent state and corner cases where relevant.
+Distinguish Mac and VM commands. Use simple English; omit generic test sections
+that repeat this contract.
 
-Explain what the module installs, how to select it and which settings users may
-change. Describe multiple-line behavior, files, services, persistent data and
-corner cases where relevant. Do not add a generic test section that repeats this
-contract.
-
-An optional `graph.toml` describes the module on the site's catalog graph. Each
-node has `name`, `text` and related node ids in `with`. Run
-`task generate/graph` after editing it; the generated `graph.json` adds each
-node's kind and module.
+An optional `graph.toml` defines nodes with `name`, `text` and related ids in
+`with`. Run `task generate/graph` after editing it to update
+`catalog/graph.json`.
 
 ## Compatibility and CI
 
-Each client build bundles one catalog release and is tested with it. Changes to
-selector grammar, metadata, public options, capabilities or the test interface
-must ship with client support when they break compatibility. Private layout and
+Follow the
+[cross-repository release order](https://docs.limanix.dev/contributing/#changes-across-repositories)
+for changes to selectors, metadata or public interfaces. Private layout and
 version-line changes need no client change. Adding or removing lines and
-changing the default require a catalog release. When removing a line, explain
+changing the default require a catalog release. When removing a line, document
 the migration and link to the previous release in release notes.
 
-PR checks run on both Linux architectures and include affected dependent
-modules. Scheduling, cache handling and reports are described in the
-implementation: [planner](../tools/harness/plan.py),
-[runner](../tools/harness/checks.py), [cache](../tools/harness/cache.py) and
+PR checks cover both Linux architectures and affected dependents. See the
+[planner](../tools/harness/plan.py), [runner](../tools/harness/checks.py),
+[cache](../tools/harness/cache.py) and
 [PR workflow](../.github/workflows/pr.yml). The
 [release workflow](../.github/workflows/release.yml) does not run module tests.

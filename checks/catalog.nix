@@ -1,11 +1,5 @@
-# Discover catalog modules and check their public files.
-#
-# Each module lives in catalog/<kind>/<name>, with a name unique across kinds.
-# It needs module.toml, default.nix, test.nix, and README.md.
-# Each declared version line also needs a versions/<line>.nix file.
-# This checks metadata and any release map.
-# It returns module records for the harness without loading private code.
-# A missing test.nix is an error, even before the module's tests are evaluated.
+# Discover catalog modules and validate their layout, metadata and release maps.
+# Names are unique across kinds; configurations and tests stay unevaluated.
 modulesDir:
 let
   require = condition: message: if condition then true else throw "Module catalog: ${message}";
@@ -54,6 +48,9 @@ let
     assert require (
       normalized.lines == [ ] || files.versions or null == "directory"
     ) "${label}: versions must be a directory";
+    assert require (
+      !(normalized ? prompt) || kind == "shell"
+    ) "${label}: only a shell component declares prompt shells";
     assert require (builtins.all (
       line: versionFiles."${line}.nix" or null == "regular"
     ) normalized.lines) "${label}: every declared line needs a regular versions/<line>.nix";

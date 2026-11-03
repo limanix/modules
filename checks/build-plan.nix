@@ -1,9 +1,5 @@
-# Check which planned derivations may be built locally.
-#
-# The Python harness supplies the dry-run plan and derivation metadata.
-# Test roots, explicit builds, and derivations with preferLocalBuild are allowed.
-# Permission for one derivation does not allow its dependencies.
-# The result lists blocked paths and tells the harness whether it may continue.
+# Allow local builds only for test roots, explicit builds and preferLocalBuild.
+# Permission never propagates to dependencies.
 {
   planned,
   roots,

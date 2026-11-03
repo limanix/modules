@@ -1,9 +1,5 @@
-# Validate shared option schemas without a complete NixOS system.
-#
-# The supplied modules are evaluated with lib.evalModules and the test packages.
-# Every imported file must be a public schema listed by shared-files.nix.
-# Application modules and private test helpers are rejected.
-# Option declarations must also pass the ownership rules.
+# Validate shared schemas without a NixOS system.
+# Imports must stay within public schemas and declarations must respect ownership.
 {
   lib,
   pkgs,

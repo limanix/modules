@@ -1,9 +1,4 @@
-# Test the public limanix.* options and their use in the test system.
-#
-# The eval cases check defaults, help cards, and development account settings.
-# They also check that a module can select a different login shell.
-# The fails cases describe invalid values and their expected error messages.
-# common.nix includes these cases in the platform suite.
+# Test public limanix.* options, platform identity and invalid settings.
 {
   evalSystem,
   pkgs,

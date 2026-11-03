@@ -32,6 +32,13 @@ nvim notes.md
 
 The `vi` and `vim` aliases also launch Neovim.
 
+With a theme other than `system` in `[theme]` of `limanix.toml`, Neovim uses the
+theme's own colorscheme, the same one as
+[AstroNvim](../astronvim/README.md#personal-configuration); a theme without one
+draws its palette with catppuccin-nvim. Your `init.lua` or `init.vim` runs after
+it and may choose another colorscheme. The `system` theme keeps Neovim's default
+colorscheme.
+
 ## Make Neovim the default editor
 
 The module leaves `EDITOR` at its NixOS default, `nano`. To make Neovim the

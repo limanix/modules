@@ -37,10 +37,10 @@ in
       pkgs.pkg-config
       pkgs.gdb
     ]
-    # Another provider replaces the rustup proxy of the same name.
+
+    # Give another analyzer provider priority over rustup's proxy.
     ++ lib.optional (analyzer.package.outPath != pkgs.rustup.outPath) (lib.hiPrio analyzer.package);
 
-    # Commands from cargo install come first, as rustup's own installer arranges.
     environment.extraInit = ''
       case ":$PATH:" in
         *":$HOME/.cargo/bin:"*) ;;

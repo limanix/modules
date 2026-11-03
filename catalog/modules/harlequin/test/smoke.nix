@@ -1,9 +1,11 @@
-{ pkgs, profile, ... }:
+{
+  pkgs,
+  profile,
+  theme,
+  ...
+}:
 let
-  package = import ../package.nix {
-    inherit pkgs;
-    flavor = "mocha";
-  };
+  package = import ../package.nix { inherit pkgs theme; };
   python = pkgs.lib.last package.propagatedBuildInputs;
 in
 {

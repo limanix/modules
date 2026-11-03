@@ -13,9 +13,9 @@ error:
              |     ^
           294| }
 
-       … while evaluating the option `lmx.capabilities.theme.flavor':
+       … while evaluating the option `lmx.capabilities.theme.name':
 
        (stack trace truncated; use '--show-trace' to show the full, detailed trace)
 
-       error: A definition for option `lmx.capabilities.theme.flavor' is not of type `one of "system", "frappe", "latte", "macchiato", "mocha"'. Definition values:
+       error: A definition for option `lmx.capabilities.theme.name' is not of type `one of "system", "catppuccin-mocha", "dracula", "everforest-dark", "github-light", "gruvbox-dark", "kanagawa-wave", "nord", "rose-pine", "solarized-light", "tokyo-night"'. Definition values:
        - In `/workspace/checks/nixos.nix': "espresso"

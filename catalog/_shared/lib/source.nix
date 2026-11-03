@@ -1,6 +1,4 @@
-# Resolves a package source: "base", the catalog's nixos-unstable revision in unstable.toml, or a
-# snapshot { rev, sha256 }. Returns its package set and the pin it declares in lmx.pins; the pin
-# never evaluates a package set.
+# Resolve package sources; collecting `pins` never evaluates the package set.
 {
   source,
   pkgs,

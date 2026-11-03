@@ -28,13 +28,13 @@ let
       };
     }
   ];
-  latte = evaluate [
+  solarized = evaluate [
     module.path
-    { lmx.capabilities.theme.flavor = "latte"; }
+    { lmx.capabilities.theme.name = "solarized-light"; }
   ];
 in
 {
-  configurations = { inherit managedOverride managedFlavor latte; };
+  configurations = { inherit managedOverride managedFlavor solarized; };
   evaluation = {
     independentShell = verify "Yazi provides shell integration without enabling Zsh" (
       !defaultConfiguration.config.programs.zsh.enable

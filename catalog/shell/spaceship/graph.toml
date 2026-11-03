@@ -1,0 +1,4 @@
+[spaceship]
+name = "Spaceship"
+text = "A Zsh prompt whose sections take the theme's colors."
+with = ["zsh", "theme"]

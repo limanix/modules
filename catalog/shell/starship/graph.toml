@@ -1,0 +1,4 @@
+[starship]
+name = "Starship"
+text = "A prompt for Bash and Zsh with the theme as its palette."
+with = ["zsh", "theme"]

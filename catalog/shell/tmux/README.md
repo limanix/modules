@@ -86,10 +86,10 @@ custom module.
 
 ## Appearance
 
-The colors come from the guest's theme. With the default `system` flavor they
-are the terminal's own colors, and the status line has no background of its own:
-the terminal's shows through. A Catppuccin flavor in `[theme]` of `limanix.toml`
-uses its [palette](https://catppuccin.com/palette/) instead. The styles load
+The colors come from the guest's theme. With the default `system` theme they are
+the terminal's own colors, and the status line has no background of its own: the
+terminal's shows through. Another theme in `[theme]` of `limanix.toml` draws the
+status line, borders and selection in its palette instead. The styles load
 before the restoration plugins, which preserve continuum's status-line hook.
 
 The right side of the status line starts with the words of `lmx status --short`
@@ -144,11 +144,15 @@ reconnecting; continuum restores the latest snapshot when the tmux server
 starts.
 
 The snapshot includes sessions, windows, pane layout, and working directories.
-Resurrect restarts its upstream default list of programs, such as editors,
-pagers, and terminal monitors. It does not preserve running processes or unsaved
-editor buffers. Development servers and test commands need to be started again.
-See
-[the supported program list](https://github.com/tmux-plugins/tmux-resurrect/blob/master/docs/restoring_programs.md).
+Resurrect restarts a program from its
+[default list](https://github.com/tmux-plugins/tmux-resurrect/blob/master/docs/restoring_programs.md)
+only when the saved command starts with the program's name, as with `less` and
+`top`. Neovim, its `vi` and `vim` aliases, and `man` start through Nix wrappers,
+so the snapshot records a full path and their panes come back as shells. To
+reopen AstroNvim's files and splits, quit the editor before `limanix update` and
+[resume its last session](../astronvim/README.md#save-and-resume-a-project) in a
+new `nvim`. Resurrect does not preserve running processes or unsaved editor
+buffers. Development servers and test commands need to be started again.
 
 Personal overrides belong in `~/.tmux.conf` inside the VM. Keep the status line
 enabled and preserve continuum's `status-right` hook if you customize it.

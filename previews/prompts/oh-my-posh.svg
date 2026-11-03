@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 633 172" role="img" aria-label="Oh My Posh">
+<title>Oh My Posh</title>
+<rect width="100%" height="100%" rx="10" fill="#1e1e2e"/>
+
+<g font-family="'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">
+<text x="14.0" y="27.5" fill="#cba6f7">dev@example-box</text>
+<text x="148.4" y="27.5" fill="#89b4fa">~/greeter</text>
+<text x="232.4" y="27.5" fill="#cba6f7">master</text>
+<text x="282.8" y="27.5" fill="#fab387">*</text>
+<text x="14.0" y="45.5" fill="#a6e3a1">❯</text>
+<text x="30.8" y="45.5" fill="#cdd6f4">git</text>
+<text x="64.4" y="45.5" fill="#cdd6f4">status</text>
+<text x="123.2" y="45.5" fill="#cdd6f4">--short</text>
+<text x="22.4" y="63.5" fill="#f38ba8">M</text>
+<text x="39.2" y="63.5" fill="#cdd6f4">init.lua</text>
+<text x="14.0" y="81.5" fill="#cba6f7">dev@example-box</text>
+<text x="148.4" y="81.5" fill="#89b4fa">~/greeter</text>
+<text x="232.4" y="81.5" fill="#cba6f7">master</text>
+<text x="282.8" y="81.5" fill="#fab387">*</text>
+<text x="14.0" y="99.5" fill="#a6e3a1">❯</text>
+<text x="30.8" y="99.5" fill="#cdd6f4">false</text>
+<text x="14.0" y="117.5" fill="#cba6f7">dev@example-box</text>
+<text x="148.4" y="117.5" fill="#89b4fa">~/greeter</text>
+<text x="232.4" y="117.5" fill="#cba6f7">master</text>
+<text x="282.8" y="117.5" fill="#fab387">*</text>
+<text x="14.0" y="135.5" fill="#f38ba8">❯</text>
+</g>
+</svg>

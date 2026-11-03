@@ -6,7 +6,7 @@
   setups,
 }:
 let
-  # Rust from Nixpkgs stands in for a downloaded toolchain, so the proxies run offline.
+  # Exercise rustup's proxies with an offline Nixpkgs toolchain.
   linked = pkgs.symlinkJoin {
     name = "rust-linked-toolchain";
     paths = [
@@ -19,7 +19,7 @@ let
     # rustup links only a directory with bin/rustc and lib/.
     postBuild = ''mkdir -p "$out/lib"'';
   };
-  # Records each call and keeps the default toolchain the way rustup does.
+  # Track setup calls and default-toolchain changes without downloads.
   fakeRustup = pkgs.writeShellScript "rustup" ''
     set -eu
     printf '%s\n' "$*" >>"$LOG"

@@ -1,0 +1,4 @@
+description = "Starship, a fast prompt for Bash and Zsh with the hostname, Git state, language versions and exit status, in the colors of the guest's theme."
+
+[prompt]
+shells = ["bash", "zsh"]

@@ -1,9 +1,5 @@
-# Test the local build rules in build-plan.nix.
-#
-# Small records stand in for derivation metadata; no packages are built here.
-# The cases cover test roots, explicit builds, and preferLocalBuild.
-# They also check that permissions do not spread to dependencies.
-# Missing metadata, invalid paths, and unknown JSON versions must be rejected.
+# Test local build permissions with synthetic derivation metadata.
+# Allowed roots must not grant permission to their dependencies.
 { system, ... }:
 let
   policy = import ./build-plan.nix;

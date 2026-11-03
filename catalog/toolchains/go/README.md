@@ -21,13 +21,18 @@ The value selects one line:
 
 | Value | Go | gopls | Delve | Notes |
 | -- | -- | -- | -- | -- |
-| `1.27` | 1.27.x | Base | Base | Recommended |
+| `1.27` | 1.27.x | Unstable | Unstable | Recommended |
 | `1.26` | 1.26.x | Base | Base |  |
 | `1.25` | 1.25.x | Base | Base | End of life |
 
-Lines marked `.x` and their gopls and Delve come from the
+Lines marked `.x` come from the
 [base Nixpkgs revision](../../README.md#package-pins-and-unfree-permissions) and
-receive its updates with each catalog release.
+receive its updates with each catalog release. Up to the base's default Go, a
+line takes gopls and Delve from the base too. A newer line takes both from the
+catalog's
+[nixos-unstable revision](../../README.md#package-pins-and-unfree-permissions),
+because the base builds them for its default Go and its Delve cannot debug a
+newer one.
 
 Support status follows the
 [Go release policy](https://go.dev/doc/devel/release). Selecting an end-of-life
@@ -53,6 +58,9 @@ go test -race ./...
 Packages that link to C libraries also need those libraries; see
 [Handle native dependencies](https://docs.limanix.dev/inside/languages#native-libraries).
 The Delve debugger runs as `dlv`.
+
+`go install` puts commands in `~/go/bin` by default; the module puts that
+directory on `PATH` before the system profile.
 
 ## Toolchain downloads
 
@@ -84,7 +92,7 @@ and the [gopls editor setup](https://go.dev/gopls/#editors).
 | Boundary | Contract |
 | -- | -- |
 | Public capability | `lmx.capabilities.languageSupport.tools.gopls`; Go, gomod and gosum parsers |
-| Personal state | Go module and build caches; project `go.mod` and `go.work` |
+| Personal state | Go module and build caches; commands from `go install` in `~/go/bin`; project `go.mod` and `go.work` |
 | Integration | Declares the selected server without enabling an editor; AstroNvim consumes it |
 | Services | No daemon |
 

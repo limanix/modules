@@ -1,0 +1,4 @@
+[bash-git-prompt]
+name = "bash-git-prompt"
+text = "A Bash prompt with Git state in the theme's colors."
+with = ["theme"]

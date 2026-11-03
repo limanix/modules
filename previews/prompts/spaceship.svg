@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 633 172" role="img" aria-label="Spaceship">
+<title>Spaceship</title>
+<rect width="100%" height="100%" rx="10" fill="#1e1e2e"/>
+
+<g font-family="'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">
+<text x="14.0" y="27.5" fill="#a6e3a1" font-weight="700">➜</text>
+<text x="30.8" y="27.5" fill="#cdd6f4">git</text>
+<text x="64.4" y="27.5" fill="#cdd6f4">status</text>
+<text x="123.2" y="27.5" fill="#cdd6f4">--short</text>
+<text x="22.4" y="45.5" fill="#f38ba8">M</text>
+<text x="39.2" y="45.5" fill="#cdd6f4">init.lua</text>
+<text x="14.0" y="81.5" fill="#94e2d5" font-weight="700">greeter</text>
+<text x="81.2" y="81.5" fill="#cdd6f4" font-weight="700">on</text>
+<text x="106.4" y="81.5" fill="#cba6f7" font-weight="700">master</text>
+<text x="165.2" y="81.5" fill="#f38ba8" font-weight="700">[!]</text>
+<text x="14.0" y="99.5" fill="#a6e3a1" font-weight="700">➜</text>
+<text x="30.8" y="99.5" fill="#cdd6f4">false</text>
+<text x="14.0" y="135.5" fill="#94e2d5" font-weight="700">greeter</text>
+<text x="81.2" y="135.5" fill="#cdd6f4" font-weight="700">on</text>
+<text x="106.4" y="135.5" fill="#cba6f7" font-weight="700">master</text>
+<text x="165.2" y="135.5" fill="#f38ba8" font-weight="700">[!]</text>
+<text x="14.0" y="153.5" fill="#f38ba8" font-weight="700">➜</text>
+</g>
+</svg>

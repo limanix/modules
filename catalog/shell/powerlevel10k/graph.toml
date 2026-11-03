@@ -1,0 +1,4 @@
+[powerlevel10k]
+name = "Powerlevel10k"
+text = "A fast Zsh prompt in a style made from the theme's colors."
+with = ["zsh", "theme"]

@@ -36,12 +36,12 @@ and `?` to see the keys. Configure your commit identity as described in
 
 ## Customize
 
-With the default `system` flavor, Lazygit keeps its own theme, which uses the
-terminal's colors and background. A Catppuccin flavor in `[theme]` of
-`limanix.toml` sets the colors of its palette in `/etc/xdg/lazygit/config.yml`.
-Lazygit reads only the first `config.yml` it finds: a personal
-`~/.config/lazygit/config.yml` replaces the managed file, with the clipboard
-command and any Catppuccin colors it sets. To keep them, start from a copy:
+With the default `system` theme, Lazygit keeps its own theme, which uses the
+terminal's colors and background. Another theme in `[theme]` of `limanix.toml`
+sets the colors of its palette in `/etc/xdg/lazygit/config.yml`. Lazygit reads
+only the first `config.yml` it finds: a personal `~/.config/lazygit/config.yml`
+replaces the managed file, with the clipboard command and any theme colors it
+sets. To keep them, start from a copy:
 
 ```console
 install -D -m 644 /etc/xdg/lazygit/config.yml ~/.config/lazygit/config.yml
