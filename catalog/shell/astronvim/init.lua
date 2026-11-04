@@ -66,6 +66,26 @@ local function use_mac_clipboard()
   }
 end
 
+local function set_up_debuggers(debuggers)
+  local dap = require("dap")
+  local adapters = require("mason-nvim-dap.mappings.adapters")
+  local configurations = require("mason-nvim-dap.mappings.configurations")
+  local filetypes = require("mason-nvim-dap.mappings.filetypes")
+  for name, debugger in pairs(debuggers) do
+    local adapter = vim.deepcopy(adapters[name])
+    if adapter and not dap.adapters[name] then
+      local launcher = adapter.executable or adapter
+      launcher.command = debugger.command
+      require("mason-nvim-dap").default_setup({
+        name = name,
+        adapters = adapter,
+        configurations = configurations[name],
+        filetypes = filetypes[name],
+      })
+    end
+  end
+end
+
 return function(paths, theme)
   use_mac_clipboard()
   vim.opt.rtp:prepend(paths.lazy)
@@ -159,6 +179,13 @@ return function(paths, theme)
       end,
     },
     { "nvim-treesitter/nvim-treesitter", opts = { install_dir = parser_dir } },
+    {
+      "mfussenegger/nvim-dap",
+      config = function(...)
+        require("astronvim.plugins.configs.nvim-dap")(...)
+        set_up_debuggers(paths.debuggers)
+      end,
+    },
     { "mrjones2014/smart-splits.nvim", lazy = false },
     { "nvim-mini/mini.icons", lazy = false, priority = 1000 },
     { "mason-org/mason.nvim", lazy = false, opts = { PATH = "append" } },

@@ -4,6 +4,7 @@
   directory = ./.;
   main = "go";
   tool = "gopls";
+  debugger = "delve";
   parsers.go = [
     "go"
     "gomod"
@@ -17,6 +18,13 @@
       command = "${tools.gopls}/bin/gopls";
       languages = [ "go" ];
     };
+  debuggerProvider =
+    { tools, ... }:
+    {
+      package = tools.delve;
+      command = "${tools.delve}/bin/dlv";
+      languages = [ "go" ];
+    };
   systemPackages =
     {
       version,
@@ -25,11 +33,8 @@
       lib,
       priority,
     }:
-    map (lib.setPrio priority) [
-      tools.go
-      tools.delve
-    ]
-    ++ [
+    [
+      (lib.setPrio priority tools.go)
       (pkgs.runCommandLocal "go-${version}-command" { } ''
         mkdir -p "$out/bin"
         ln -s "${tools.go}/bin/go" "$out/bin/go-${version}"

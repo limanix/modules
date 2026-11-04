@@ -64,6 +64,9 @@ let
           cmd = [ tool.command ] ++ tool.args;
         }
       ) config.lmx.capabilities.languageSupport.tools;
+      debuggers = builtins.mapAttrs (_: debugger: {
+        inherit (debugger) command;
+      }) config.lmx.capabilities.languageSupport.debuggers;
       plugins = lib.mapAttrs (
         repository: _: "${pluginSources}/${builtins.baseNameOf repository}"
       ) packages.plugins;

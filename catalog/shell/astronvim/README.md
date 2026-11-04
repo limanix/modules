@@ -96,6 +96,15 @@ individual tools may also need libraries, an interpreter, or a compiler. Mason
 installs need network access and are user-managed, outside the catalog's package
 pins.
 
+## Debuggers
+
+A toolchain with a debugger declares it next to its language server; the
+toolchain's page names it. AstroNvim gives nvim-dap the adapter and launch
+configurations that mason-nvim-dap defines for that debugger, started with the
+declared command. In a file of that language, `F5` asks which configuration to
+run, such as the program or the tests of the current file, and starts it. `F9`
+toggles a breakpoint, and `Space d` shows the other debugger keys.
+
 ## Personal configuration
 
 An existing `~/.config/nvim/init.lua` or `init.vim` takes precedence over the
@@ -193,7 +202,7 @@ usage.
 | Standard settings | `programs.neovim.defaultEditor` remains overridable |
 | Personal configuration | Native Neovim XDG directory: `init.lua`, `init.vim`, `lua/plugins/` and `lua/polish.lua` |
 | Integration | Consumes public language-support declarations; imports Neovim, Git and Lazygit |
-| Services | No daemon; plugins, parsers and language servers run with the editor |
+| Services | No daemon; plugins, parsers, language servers and debuggers run with the editor |
 
 ## Corner cases
 
