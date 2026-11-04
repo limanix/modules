@@ -87,13 +87,19 @@ Protocol. See
 [Editor integration](https://docs.limanix.dev/config/toolchains#language-servers-in-the-editor)
 and the [gopls editor setup](https://go.dev/gopls/#editors).
 
+It also declares Delve as the `delve` debugger under
+`lmx.capabilities.languageSupport`. Selecting
+[AstroNvim](../../shell/astronvim/README.md#debuggers) alongside Go lets `F5`
+run the program or the tests of the current file in Delve; installing Go alone
+does not enable an editor.
+
 ## Configuration and integration
 
 | Boundary | Contract |
 | -- | -- |
-| Public capability | `lmx.capabilities.languageSupport.tools.gopls`; Go, gomod and gosum parsers |
+| Public capability | `lmx.capabilities.languageSupport.tools.gopls` and `debuggers.delve`; Go, gomod and gosum parsers |
 | Personal state | Go module and build caches; commands from `go install` in `~/go/bin`; project `go.mod` and `go.work` |
-| Integration | Declares the selected server without enabling an editor; AstroNvim consumes it |
+| Integration | Declares the selected server and debugger without enabling an editor; AstroNvim consumes them |
 | Services | No daemon |
 
 ## Corner cases

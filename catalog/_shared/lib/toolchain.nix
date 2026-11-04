@@ -1,5 +1,5 @@
 # Extend versioned modules with editor support.
-# Recommend the newest selected line's server, unless the user overrides it.
+# Recommend the newest selected line's server and debugger, unless the user overrides them.
 spec:
 import ./lines.nix (
   spec
@@ -15,7 +15,11 @@ import ./lines.nix (
         ...
       }:
       let
-        offer = spec.provider { inherit tools pkgs; };
+        recommend =
+          offer:
+          lib.mkOverride ((spec.providerPriority or 1000) - rank) (
+            offer // { package = lib.setPrio priority offer.package; }
+          );
       in
       {
         assertions = [
@@ -27,9 +31,10 @@ import ./lines.nix (
 
         lmx.capabilities.languageSupport = {
           languages = builtins.mapAttrs (_: parsers: { inherit parsers; }) spec.parsers;
-          tools.${spec.tool} = lib.mkOverride ((spec.providerPriority or 1000) - rank) (
-            offer // { package = lib.setPrio priority offer.package; }
-          );
+          tools.${spec.tool} = recommend (spec.provider { inherit tools pkgs; });
+          debuggers = lib.optionalAttrs (spec ? debugger) {
+            ${spec.debugger} = recommend (spec.debuggerProvider { inherit tools pkgs; });
+          };
         };
 
         environment.systemPackages = spec.systemPackages {
@@ -45,11 +50,15 @@ import ./lines.nix (
 
     extra =
       { config, lib, ... }@context:
+      let
+        inherit (config.lmx.capabilities) languageSupport;
+      in
       lib.mkMerge [
         {
           environment.systemPackages = [
-            config.lmx.capabilities.languageSupport.tools.${spec.tool}.package
-          ];
+            languageSupport.tools.${spec.tool}.package
+          ]
+          ++ lib.optional (spec ? debugger) languageSupport.debuggers.${spec.debugger}.package;
         }
         ((spec.extra or (_: { })) context)
       ];

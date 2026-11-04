@@ -23,6 +23,21 @@ let
         in
         if merged == null then null else toolDeclaration merged;
     };
+  executable = {
+    package = lib.mkOption {
+      type = lib.types.package;
+      description = "Package supplying the declared executable.";
+    };
+    command = lib.mkOption {
+      type = lib.types.str;
+      description = "Executable used to launch this tool.";
+    };
+    languages = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Consumer-independent language identities supported by this tool.";
+    };
+  };
 in
 {
   options.lmx.capabilities.languageSupport = {
@@ -32,29 +47,21 @@ in
       type = lib.types.attrsOf (
         toolDeclaration (
           lib.types.submodule {
-            options = {
-              package = lib.mkOption {
-                type = lib.types.package;
-                description = "Package supplying the declared executable.";
-              };
-              command = lib.mkOption {
-                type = lib.types.str;
-                description = "Executable used to launch this tool.";
-              };
+            options = executable // {
               args = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
                 default = [ ];
                 description = "Arguments passed to the executable.";
               };
-              languages = lib.mkOption {
-                type = lib.types.listOf lib.types.str;
-                default = [ ];
-                description = "Consumer-independent language identities supported by this tool.";
-              };
             };
           }
         )
       );
+    };
+    debuggers = lib.mkOption {
+      default = { };
+      description = "Debug adapters keyed by consumer-independent executable identity.";
+      type = lib.types.attrsOf (toolDeclaration (lib.types.submodule { options = executable; }));
     };
     languages = lib.mkOption {
       default = { };

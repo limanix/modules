@@ -127,8 +127,10 @@ import ../module.nix "18"
 
 [lib/toolchain.nix](lib/toolchain.nix) adds editor support. `tool`, `parsers`,
 `provider` and `systemPackages` describe the tool identity, parsers, provider
-record and installed packages. The newest selected line recommends its server;
-`providerPriority` can override the recommendation's default base priority.
+record and installed packages; the optional `debugger` and `debuggerProvider`
+add a debugger the same way. The newest selected line recommends its server and
+debugger; `providerPriority` can override the recommendation's default base
+priority.
 
 [test/toolchain.nix](test/toolchain.nix) exports:
 
@@ -266,7 +268,7 @@ that records match the lines in `module.toml`.
 
 ## Share language tools
 
-Providers publish tool records and parsers in
+Providers publish tool records, debugger records and parsers in
 `lmx.capabilities.languageSupport`; editors consume the result:
 
 ```nix
@@ -277,17 +279,23 @@ lmx.capabilities.languageSupport = {
     command = "${tools.gopls}/bin/gopls";
     languages = [ "go" ];
   };
+  debuggers.delve = lib.mkOverride (1000 - rank) {
+    package = tools.delve;
+    command = "${tools.delve}/bin/dlv";
+    languages = [ "go" ];
+  };
 };
 ```
 
-- Tool records merge as a whole. The strongest priority wins; equal records at
-  the same priority agree, different records fail.
+- Tool and debugger records merge as a whole. The strongest priority wins; equal
+  records at the same priority agree, different records fail.
 - `rank` counts declared lines older than the selection, with `0 <= rank < 100`.
   The helper uses `(spec.providerPriority or 1000) - rank`; a user definition or
   `mkForce` overrides the recommendation. Name tools by executable identity,
   such as `gopls`, rather than module name.
-- Providers install the winning `package`; consumers use its `command` and
-  `args`.
+- Providers install the winning `package`; consumers use its `command` and, for
+  a tool, its `args`. A debugger record has no `args`: each consumer starts the
+  command in the debug-adapter mode it needs.
 - Parser lists merge without duplicates and do not require a tool.
 
 | Field | Type |
@@ -296,6 +304,9 @@ lmx.capabilities.languageSupport = {
 | `tools.<identity>.command` | String (executable); required |
 | `tools.<identity>.args` | String list; default `[]` |
 | `tools.<identity>.languages` | Language-name list; default `[]` |
+| `debuggers.<identity>.package` | Package; required |
+| `debuggers.<identity>.command` | String (executable); required |
+| `debuggers.<identity>.languages` | Language-name list; default `[]` |
 | `languages.<language>.parsers` | Parser-name list; default `[]` |
 
 ## Drive processes
