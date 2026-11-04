@@ -57,13 +57,14 @@ directly; it does not clone plugins on first launch or update them when you log
 in. Apply a catalog update to update bundled plugins. Lazy's cache, lock file,
 sessions, and Mason installations remain in your user directories.
 
-The base parser list is read from the pinned AstroNvim configuration. Each
-selected [toolchain](https://docs.limanix.dev/modules/#toolchains) adds the
-parsers of its languages through the NixOS configuration. Nix builds these
-parsers with their queries, and at each start the editor links them into
-Tree-sitter's install directory, `~/.local/share/nvim/site`. Automatic parser
-installation is disabled. A catalog update replaces the links; `:TSUpdate`
-leaves catalog parsers alone.
+The base parser list is read from the pinned AstroNvim configuration, and the
+module adds parsers for Dockerfile, JSON, TOML and YAML files. Each selected
+[toolchain](https://docs.limanix.dev/modules/#toolchains) adds the parsers of
+its languages through the NixOS configuration. Nix builds these parsers with
+their queries, and at each start the editor links them into Tree-sitter's
+install directory, `~/.local/share/nvim/site`. Automatic parser installation is
+disabled. A catalog update replaces the links; `:TSUpdate` leaves catalog
+parsers alone.
 
 For another language, run `:TSInstall LANGUAGE`. It downloads and compiles the
 parser into the same directory; the module provides `curl`, the `tree-sitter`
