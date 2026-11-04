@@ -1,9 +1,10 @@
 # Python
 
-Installs the Python interpreter, virtualenv, and the Pyright language server for
-project environments inside the VM. Binary wheels from PyPI load as on other
-Linux systems. The interpreter's separate HTML documentation is not installed
-automatically. Runtime `help()` and standard-library help remain available.
+Installs the Python interpreter, virtualenv, the Pyright language server, and
+the Ruff linter and formatter for project environments inside the VM. Binary
+wheels from PyPI load as on other Linux systems. The interpreter's separate HTML
+documentation is not installed automatically. Runtime `help()` and
+standard-library help remain available.
 
 ## Select
 
@@ -65,7 +66,7 @@ A package that compiles C code while it installs needs a compiler and the
 headers of the library it uses: select [GCC](../gcc/README.md) and add the
 library to `[nixos] packages`.
 
-## Language server
+## Language servers
 
 The module installs [Pyright](https://github.com/microsoft/pyright) from the
 catalog's base Nixpkgs revision. The language server package follows that
@@ -78,6 +79,14 @@ reads project settings from `pyrightconfig.json` or `[tool.pyright]` in
 `pyproject.toml`; see its
 [configuration reference](https://github.com/microsoft/pyright/blob/main/docs/configuration.md).
 
+The module also installs [Ruff](https://docs.astral.sh/ruff/) from the same
+revision and declares the `ruff` tool with `ruff server`. Ruff formats Python
+files and reports lint findings; Pyright still checks types. With AstroNvim,
+saving a Python file formats it with Ruff. Ruff reads `[tool.ruff]` in
+`pyproject.toml` or a `ruff.toml`; see its
+[settings](https://docs.astral.sh/ruff/settings/). The editor starts the
+catalog's Ruff even when the project environment installs another version.
+
 An ordinary user definition may replace the complete tool declaration, including
 its package, command, and arguments. The final declared package is also
 installed in the system profile.
@@ -86,10 +95,10 @@ installed in the system profile.
 
 | Boundary | Contract |
 | -- | -- |
-| Public capability | `lmx.capabilities.languageSupport.tools.pyright`; Python parser |
-| Personal state | Project virtual environments, pip cache and Pyright project configuration |
+| Public capability | `lmx.capabilities.languageSupport.tools.pyright` and `tools.ruff`; Python parser |
+| Personal state | Project virtual environments, pip cache, and Pyright and Ruff project configuration |
 | Runtime libraries | `python3.X` is a copy of the interpreter that loads `libstdc++.so.6` and `libz.so.1` at startup; `python` and `python3` point to it |
-| Integration | Declares Pyright independently of interpreter lines without enabling an editor |
+| Integration | Declares Pyright and Ruff independently of interpreter lines without enabling an editor |
 | Services | No daemon |
 
 ## Corner cases
@@ -100,3 +109,4 @@ installed in the system profile.
 | A wheel needs another system library, such as `libGL.so.1` | Add the library to `[nixos] packages` and run Python with `LD_LIBRARY_PATH=/run/current-system/sw/lib` |
 | HTML manuals are absent | Runtime `help()` remains available; select an HTML documentation package separately if needed |
 | Pyright cannot find project dependencies | Configure the project environment in `pyrightconfig.json` or `pyproject.toml` |
+| Saving reformats a file in another style | Ruff formats like Black; configure `[tool.ruff.format]`, or turn off format on save in [AstroNvim](../../shell/astronvim/README.md#personal-configuration) |

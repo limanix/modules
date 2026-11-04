@@ -30,10 +30,27 @@
         ln -s "${tools.runtime}/bin/python${tools.python.pythonVersion}" "$out/bin/python-${version}"
       '')
     ];
+  extra =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    {
+      lmx.capabilities.languageSupport.tools.ruff = lib.mkDefault {
+        package = pkgs.ruff;
+        command = "${pkgs.ruff}/bin/ruff";
+        args = [ "server" ];
+        languages = [ "python" ];
+      };
+      environment.systemPackages = [ config.lmx.capabilities.languageSupport.tools.ruff.package ];
+    };
   commands = [
     "python"
     "virtualenv"
     "pyright"
+    "ruff"
   ];
   versioned = line: [ "python-${line}" ];
   tips = [
