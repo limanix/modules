@@ -36,11 +36,17 @@ let
   parserDeclarations = builtins.filter (
     line: builtins.match "[[:space:]]*ensure_installed = [{].*[}],[[:space:]]*" line != null
   ) (lib.splitString "\n" (builtins.readFile "${source}/lua/astronvim/plugins/_astrocore.lua"));
+  configurationParsers = [
+    "dockerfile"
+    "json"
+    "toml"
+    "yaml"
+  ];
   parserNames =
     assert lib.assertMsg (
       builtins.length parserDeclarations == 1
     ) "AstroNvim changed its default Tree-sitter parser declaration";
-    lib.unique (quotedStrings (builtins.head parserDeclarations) ++ parsers);
+    lib.unique (quotedStrings (builtins.head parserDeclarations) ++ configurationParsers ++ parsers);
   treesitter = pkgs.vimPlugins.nvim-treesitter.withPlugins (
     available:
     map (name: available.${name} or (throw "AstroNvim: unknown Tree-sitter parser ${name}")) parserNames
