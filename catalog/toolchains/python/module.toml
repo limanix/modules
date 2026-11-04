@@ -1,4 +1,4 @@
-description = "Python 3 with venv, virtualenv, and the Pyright language server."
+description = "Python 3 with venv, virtualenv, the Pyright language server, and the Ruff linter and formatter."
 
 versions = ["3.12", "3.13", "3.14", "3.15"]
 default = "3.15"
