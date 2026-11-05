@@ -68,10 +68,11 @@ parsers alone.
 
 For another language, run `:TSInstall LANGUAGE`. It downloads and compiles the
 parser into the same directory; the module provides `curl`, the `tree-sitter`
-CLI and a C compiler. Parsers installed this way are yours: `:TSUpdate` updates
-them, and after a catalog update that brings a newer nvim-treesitter, run
-`:TSUpdate` to keep them compatible with it. `:TSInstall! LANGUAGE` replaces a
-catalog parser with your own build; `:TSUninstall LANGUAGE` returns to the
+CLI and a C compiler. Open files of that language switch to the new parser when
+the installation finishes. Parsers installed this way are yours: `:TSUpdate`
+updates them, and after a catalog update that brings a newer nvim-treesitter,
+run `:TSUpdate` to keep them compatible with it. `:TSInstall! LANGUAGE` replaces
+a catalog parser with your own build; `:TSUninstall LANGUAGE` returns to the
 catalog parser at the next start. To have Nix build and pin an additional parser
 instead, declare it in a custom module, for example
 `lmx.capabilities.languageSupport.languages.zig.parsers = [ "zig" ];`.
@@ -87,15 +88,74 @@ Installing an additional executable on `PATH` alone does not enable an LSP
 server. Enable additional servers, including those supplied by a project
 environment, through the AstroLSP `servers` option in user configuration.
 
-Mason remains available for explicit additional installations with `:Mason` or
-`:LspInstall`; enable additional installed servers through AstroLSP's `servers`
-option. Automatic installation and registry refresh at startup are disabled.
-Nix-provided tools precede Mason tools on `PATH`. Mason tools are generic Linux
-binaries, which run with [nix-ld](https://github.com/nix-community/nix-ld), on
-in every LimaNix VM. This does not guarantee every Mason package works on NixOS:
-individual tools may also need libraries, an interpreter, or a compiler. Mason
-installs need network access and are user-managed, outside the catalog's package
-pins.
+### Tools from Mason
+
+Mason installs language servers, linters, formatters and debuggers that no
+toolchain provides. It keeps them in `~/.local/share/nvim/mason` in the VM: the
+catalog does not pin them, and a new VM starts without them. `:Mason` lists the
+packages. Installation needs network access and the package manager of the
+tool's language, such as `npm` from the `nodejs` toolchain or `pip` from
+`python`. The catalog has no toolchain for Ruby, PHP or Julia and no LuaRocks,
+so packages that need them fail; for example, `rubocop` stops with
+`Could not find executable "gem" in PATH`.
+
+| Package | Install | Then |
+| -- | -- | -- |
+| Language server | `:MasonInstall dockerfile-language-server` | Add `dockerls` to AstroLSP's `servers` |
+| Linter or formatter | `:MasonInstall hadolint` | Nothing: none-ls runs it |
+| Debugger | `:MasonInstall debugpy` | Nothing: mason-nvim-dap sets it up for `F5` |
+| Tree-sitter parser | `:TSInstall helm` | Nothing |
+
+Automatic installation and registry refresh at startup are disabled. Mason's
+`bin` folder comes last on `PATH`, so a tool from Nix takes precedence over a
+Mason tool with the same name. Mason tools are generic Linux binaries, which run
+with [nix-ld](https://github.com/nix-community/nix-ld), on in every LimaNix VM;
+a tool can still need libraries, an interpreter or a compiler.
+
+AstroLSP starts only the servers in its `servers` list. Some servers also need a
+file type that Neovim does not detect: `helm_ls` starts in `helm` files, and
+Neovim opens Helm templates as `yaml`. A personal specification, such as
+`~/.config/nvim/lua/plugins/lsp.lua`, does both:
+
+```lua
+return {
+  {
+    "AstroNvim/astrolsp",
+    opts = { servers = { "dockerls", "helm_ls" } },
+  },
+  {
+    "AstroNvim/astrocore",
+    opts = {
+      filetypes = {
+        pattern = {
+          [".*/templates/.*%.yaml"] = "helm",
+          [".*/templates/.*%.tpl"] = "helm",
+        },
+      },
+    },
+  },
+}
+```
+
+To get the same tools in every VM, keep these specifications in
+`.config/nvim/lua/plugins` of your
+[dotfiles](https://docs.limanix.dev/config/dotfiles), without an `init.lua`: it
+would replace the bundled setup. List the Mason packages for
+mason-tool-installer:
+
+```lua
+return {
+  "WhoIsSethDaniel/mason-tool-installer.nvim",
+  opts = {
+    ensure_installed = { "dockerfile-language-server", "hadolint", "debugpy", "helm-ls" },
+  },
+}
+```
+
+In a new VM, run `:MasonToolsInstall` once. A tool that every VM needs can come
+from the catalog instead: select the toolchain that provides it, or declare it
+in a custom module through the
+[language support capability](../../_shared/README.md#share-language-tools).
 
 ## Debuggers
 

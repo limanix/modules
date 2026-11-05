@@ -86,6 +86,29 @@ local function set_up_debuggers(debuggers)
   end
 end
 
+local function enable_parsers_after_changes()
+  local install = require("nvim-treesitter.install")
+  for _, name in ipairs({ "install", "update", "uninstall" }) do
+    local change = install[name]
+    install[name] = function(...)
+      local task = change(...)
+      task:await(vim.schedule_wrap(function()
+        local treesitter = require("astrocore.treesitter")
+        treesitter.installed(true)
+        for _, buffer in ipairs(vim.api.nvim_list_bufs()) do
+          local filetype = vim.bo[buffer].filetype
+          if vim.api.nvim_buf_is_loaded(buffer) and filetype ~= "" and not treesitter.is_enabled(buffer) then
+            vim.api.nvim_buf_call(buffer, function()
+              vim.api.nvim_exec_autocmds("FileType", { group = "astrocore_treesitter", pattern = filetype, modeline = false })
+            end)
+          end
+        end
+      end))
+      return task
+    end
+  end
+end
+
 return function(paths, theme)
   use_mac_clipboard()
   vim.opt.rtp:prepend(paths.lazy)
@@ -186,7 +209,14 @@ return function(paths, theme)
         end
       end,
     },
-    { "nvim-treesitter/nvim-treesitter", opts = { install_dir = parser_dir } },
+    {
+      "nvim-treesitter/nvim-treesitter",
+      opts = { install_dir = parser_dir },
+      config = function(_, opts)
+        require("nvim-treesitter").setup(opts)
+        enable_parsers_after_changes()
+      end,
+    },
     {
       "mfussenegger/nvim-dap",
       config = function(...)
