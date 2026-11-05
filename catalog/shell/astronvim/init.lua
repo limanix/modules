@@ -104,15 +104,23 @@ return function(paths, theme)
   for repository, directory in pairs(paths.plugins) do
     table.insert(specs, { repository, dir = directory, optional = true, build = false })
   end
-  -- With the system theme the terminal's background shows through, and the light or dark
-  -- background that Neovim detects in the terminal chooses Latte or Mocha for the text. Neovim
+  -- The terminal's background shows through every theme. With the system theme, the light or
+  -- dark background that Neovim detects in the terminal chooses Latte or Mocha for the text. Neovim
   -- bundles a colorscheme of its own named catppuccin; catppuccin-nvim is the plugin's.
   local system = theme.name == "system"
   local flavour = theme.dark and "mocha" or "latte"
   if theme.colorscheme then
     vim.o.background = theme.dark and "dark" or "light"
+    for name, value in pairs(theme.transparent.globals or {}) do vim.g[name] = value end
     vim.list_extend(specs, {
-      { name = "theme", dir = theme.plugin, lazy = false, priority = 1000 },
+      {
+        name = "theme",
+        dir = theme.plugin,
+        lazy = false,
+        priority = 1000,
+        main = theme.transparent.module,
+        opts = theme.transparent.options,
+      },
       { "AstroNvim/astroui", opts = { colorscheme = theme.colorscheme } },
     })
   else
@@ -127,7 +135,7 @@ return function(paths, theme)
           flavour = "auto",
           background = { light = "latte", dark = "mocha" },
           transparent_background = true,
-        } or { flavour = flavour, color_overrides = { [flavour] = theme.catppuccin } },
+        } or { flavour = flavour, color_overrides = { [flavour] = theme.catppuccin }, transparent_background = true },
       },
       { "AstroNvim/astroui", opts = { colorscheme = system and "catppuccin-nvim" or "catppuccin-" .. flavour } },
     })

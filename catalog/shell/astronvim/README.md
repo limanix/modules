@@ -127,27 +127,32 @@ stay in the Nix store. Additional user plugins can be installed explicitly with
 data, state, and cache directory overrides are respected.
 
 Each theme in `[theme]` of `limanix.toml` draws the editor with its own Neovim
-colorscheme from the catalog's Nixpkgs, on the theme's background:
+colorscheme from the catalog's Nixpkgs. The colorscheme's background setting
+turns its background off, and the terminal's background shows through:
 
-| Theme | Plugin | Colorscheme |
-| -- | -- | -- |
-| `catppuccin-mocha` | catppuccin-nvim | `catppuccin-mocha` |
-| `tokyo-night` | tokyonight.nvim | `tokyonight-night` |
-| `dracula` | dracula.nvim | `dracula` |
-| `nord` | nord.nvim | `nord` |
-| `gruvbox-dark` | gruvbox.nvim | `gruvbox` |
-| `rose-pine` | rose-pine | `rose-pine-main` |
-| `kanagawa-wave` | kanagawa.nvim | `kanagawa-wave` |
-| `everforest-dark` | everforest | `everforest` |
-| `solarized-light` | nvim-solarized-lua | `solarized` |
-| `github-light` | github-nvim-theme | `github_light_default` |
+| Theme | Plugin | Colorscheme | Background setting |
+| -- | -- | -- | -- |
+| `catppuccin-mocha` | catppuccin-nvim | `catppuccin-mocha` | `transparent_background = true` |
+| `tokyo-night` | tokyonight.nvim | `tokyonight-night` | `transparent = true`; `styles.sidebars` and `styles.floats` are `"transparent"` |
+| `dracula` | dracula.nvim | `dracula` | `transparent_bg = true` |
+| `nord` | nord.nvim | `nord` | `vim.g.nord_disable_background = true` |
+| `gruvbox-dark` | gruvbox.nvim | `gruvbox` | `transparent_mode = true` |
+| `rose-pine` | rose-pine | `rose-pine-main` | `styles.transparency = true` |
+| `kanagawa-wave` | kanagawa.nvim | `kanagawa-wave` | `transparent = true` |
+| `everforest-dark` | everforest | `everforest` | `vim.g.everforest_transparent_background = 1` |
+| `solarized-light` | nvim-solarized-lua | `solarized` | `vim.g.solarized_termtrans = 1` |
+| `github-light` | github-nvim-theme | `github_light_default` | `options.transparent = true` |
 
-With the default `system` theme the colorscheme is Catppuccin with a transparent
-background. The terminal's background shows through. The light or dark
-background that Neovim detects in the terminal chooses Latte or Mocha for the
-text. A theme without a colorscheme of its own draws its palette with
-Catppuccin's. For another colorscheme, assign AstroUI's `colorscheme` in a
-personal Lazy specification:
+Settings without `vim.g` go to the plugin's `setup`. In every theme the text
+area and the file tree show the terminal's background; floating windows, bars
+and, in some colorschemes, the line-number column keep their own colors. With
+the default `system` theme the colorscheme is Catppuccin with a transparent
+background. The light or dark background that Neovim detects in the terminal
+chooses Latte or Mocha for the text. A theme without a colorscheme of its own
+draws its palette with Catppuccin's, also on the terminal's background. For the
+theme's own background, choose the same theme in your terminal on the Mac. For
+another colorscheme, assign AstroUI's `colorscheme` in a personal Lazy
+specification:
 
 ```lua
 return {
@@ -213,6 +218,7 @@ usage.
 | Missing language server | Select a provider or declare the tool through the public capability; a binary on PATH alone is insufficient |
 | Foreign plugin or Mason tool | Extra tools may need libraries or interpreters; add libraries to `programs.nix-ld.libraries` in a custom module |
 | Two AstroNvim lines | Choose one line; different supported lines fail with `astronvim: select one line` |
+| Terminal background far from the theme's | The editor draws the theme's text colors on the terminal's background; choose the same theme in your terminal |
 | `:TSInstall` for a new language | Downloads the grammar and compiles it in the guest; needs network access |
 | Catalog update with a newer nvim-treesitter | Catalog parsers update with it; run `:TSUpdate` for parsers you installed |
 | Unsaved edits or running terminal jobs | Save edits and finish jobs; restoring a session restores layout and file positions rather than unsaved contents or processes |
