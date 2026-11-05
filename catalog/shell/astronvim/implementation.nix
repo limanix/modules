@@ -13,7 +13,7 @@ let
     catppuccin = import ../../_shared/lib/catppuccin.nix theme.palette;
   }
   // lib.optionalAttrs (native != null) {
-    inherit (native) colorscheme;
+    inherit (native) colorscheme transparent;
     plugin = "${pluginSources}/theme";
   };
   packages = import ./packages.nix {

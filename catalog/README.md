@@ -101,7 +101,9 @@ To add a theme:
 
 1. Add its table to [themes.toml](_shared/themes.toml), following the
    [palette and source rules](_shared/README.md#theme-colors).
-1. Add its Neovim colorscheme when Nixpkgs packages it.
+1. Add its Neovim colorscheme when Nixpkgs packages it, with the setting that
+   turns its background off in `transparent`: the Lua `module` and the `options`
+   for its `setup`, or `globals` for `vim.g`.
 1. Run `task generate/previews`, `task ci/catalog/layer` and the checks of the
    modules that read the theme:
    `task ci/catalog/modules MODULES="tmux lazygit yazi zsh cli-tools astronvim neovim harlequin posting"`.
