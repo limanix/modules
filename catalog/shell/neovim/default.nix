@@ -7,12 +7,20 @@
 let
   inherit (config.lmx.capabilities) theme;
   native = (import ./colorschemes.nix pkgs).${theme.name} or null;
+  transparent = if native == null then { } else native.transparent;
+  transparentGlobals = lib.concatMapStringsSep "\n" (name: ''
+    vim.g.${name} = vim.json.decode("${builtins.toJSON transparent.globals.${name}}")
+  '') (builtins.attrNames (transparent.globals or { }));
+  transparentSetup = lib.optionalString (transparent ? module) ''
+    require("${transparent.module}").setup(vim.json.decode([==[${builtins.toJSON transparent.options}]==]))
+  '';
   flavour = if theme.dark then "mocha" else "latte";
   colorscheme =
     if native == null then
       ''
         require("catppuccin").setup({
           flavour = "${flavour}",
+          transparent_background = true,
           color_overrides = {
             ${flavour} = vim.json.decode([==[${builtins.toJSON (import ../../_shared/lib/catppuccin.nix theme.palette)}]==]),
           },
@@ -21,6 +29,8 @@ let
       ''
     else
       ''
+        ${transparentGlobals}
+        ${transparentSetup}
         vim.cmd.colorscheme("${native.colorscheme}")
       '';
 in
