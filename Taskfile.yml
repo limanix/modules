@@ -13,7 +13,7 @@ includes:
     internal: true
 
 vars:
-  NIX_IMAGE: ghcr.io/mr-chelyshkin/ci/nix:2.35.2@sha256:ce7c5934137723d9f6b735daa1aa16f849b760271e5771bcfd0578184987a127
+  NIX_IMAGE: ghcr.io/mr-chelyshkin/ci/nix:2.35.2@sha256:f84a02fabfb0efadbcdb7b9e751a6cb1db4ba573c94152adae914d8b37a17eb9
 
   nix_cache_env: XDG_CACHE_HOME=/workspace/.cache
   nix_build_caps: >-
